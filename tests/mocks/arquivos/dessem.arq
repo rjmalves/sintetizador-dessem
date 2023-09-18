@@ -1,0 +1,32 @@
+&Mnem        Descricao                           Arquivo
+&XXXXXXXX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+CASO      NOME DO CASO                   (F)     DAT                                                                             
+TITULO    TITULO DO ESTUDO               (F)     TE  PMO - SETEMBRO/22 - OUTUBRO/22 - REV 1 - FCF COM CVAR - 12 REE - VALOR ESPE 
+VAZOES    VAZOES NATURAIS                (F)     dadvaz.dat                                                                      
+DADGER    DADOS GERAIS DO PROBLEMA       (F)     entdados.dat                                                                    
+MAPFCF    MAPA DOS CORTES DO DECOMP     (NF)     mapcut.rv1                                                                      
+CORTFCF   CORTES DO DECOMP              (NF)     cortdeco.rv1                                                                    
+CADUSIH   CADASTRO DAS USINAS HIDROELETRICAS     hidr.dat                                                                        
+OPERUH    RESTRICOES DE OPERACAO HIDRAULICA      operuh.dat                                                                      
+DEFLANT   DEFLUENCIAS ANTERIORES         (F)     deflant.dat                                                                     
+CADTERM   CADASTRO DAS USINAS TERMICAS   (F)     termdat.dat                                                                     
+OPERUT    OPERACAO DAS UNIDADES TERMICAS (F)     operut.dat                                                                      
+INDELET   ARQ. INDICE DA REDE ELETRICA   (F)     desselet.dat                                                                    
+ILSTRI    CANAL PEREIRA BARRETO          (F)     ils_tri.dat                                                                     
+COTASR11  COTAS NA R11 ANTERIORES        (F)     cotasr11.dat                                                                    
+&SIMUL    ARQ. COM DADOS PARA A SIMULACAO(F)                                                                                      
+AREACONT  CADASTRO DE RESERVA DE POTENCIA(F)     areacont.dat                                                                    
+RESPOT    ESTUDO DE  RESERVA DE POTENCIA (F)     respot.dat                                                                      
+MLT       DADOS PARA A FPHA (MLT)        (F)     mlt.dat                                                                         
+&TOLPERD  ARQ. DE TOLERANCIAS DAS PERDAS (F)                                                                                      
+CURVTVIAG CURVA DE PROPAGACAO DO TVIAG   (F)     curvtviag.dat                                                                   
+PTOPER    PONTO DE OPERAÇÃO DE USINAS GNL (F)    ptoper.dat                                                                      
+INFOFCF   INFORMACAO SOBRE OS CORTES      (F)    infofcf.dat                                                                     
+&META     RESTRICOES DE METAS             (F)      metas.dat                                                                      
+REE       RESERVATORIO EQUIVALENTES DE ENERGIA   entdados.dat                                                                    
+EOLICA    USINAS EOLICAS - RENOVAVEIS            renovaveis.dat                                                                  
+RAMPAS    ARQUIVO DE TRAJETORIAS                 rampas.dat                                                                      
+RSTLPP    RESTRICOES LPP                         rstlpp.dat                                                                      
+RESTSEG   RESTRICOES TABELA                      restseg.dat                                                                     
+RESPOTELE RESERVA DE POTENCIA REDE ELETR (F)     respotele.dat                                                                   
+ILIBS     FUNCIONALIDADES LIBS                   indice.csv                                                                      

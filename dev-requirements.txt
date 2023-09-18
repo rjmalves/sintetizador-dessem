@@ -1,0 +1,13 @@
+click
+pyarrow
+idessem>=0.0.12
+pylama
+mypy
+pytest
+sphinx
+sphinx-gallery
+sphinx-rtd-theme
+plotly
+nb2plots
+numpydoc
+black
