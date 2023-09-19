@@ -4,6 +4,8 @@ import numpy as np
 from traceback import print_exc
 
 from idessem.dessem.pdo_sist import PdoSist
+
+from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_operacao import PdoOperacao
 
 from sintetizador.services.unitofwork import AbstractUnitOfWork
@@ -25,6 +27,7 @@ class OperationSynthetizer:
         "GTER_SIN_EST",
         "EARMF_SBM_EST",
         "EARMF_SIN_EST",
+        "VARPF_UHE_EST",
     ]
 
     def __init__(self) -> None:
@@ -79,6 +82,11 @@ class OperationSynthetizer:
                 SpatialResolution.SISTEMA_INTERLIGADO,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_sist_sin("energia_armazenada"),
+            (
+                Variable.VOLUME_ARMAZENADO_PERCENTUAL_FINAL,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("volume_final_percentual"),
         }
 
     @property
@@ -115,6 +123,19 @@ class OperationSynthetizer:
     def _get_pdo_sist(self) -> PdoSist:
         with self.uow:
             pdo = self.uow.files.get_pdo_sist()
+            if pdo is None:
+                logger = Log.log()
+                if logger is not None:
+                    logger.error(
+                        "Erro no processamento do PDO_SIST para"
+                        + " síntese da operação"
+                    )
+                raise RuntimeError()
+            return pdo
+
+    def _get_pdo_hidr(self) -> PdoHidr:
+        with self.uow:
+            pdo = self.uow.files.get_pdo_hidr()
             if pdo is None:
                 logger = Log.log()
                 if logger is not None:
@@ -213,6 +234,25 @@ class OperationSynthetizer:
         return df[["estagio", "dataInicio", "dataFim", col]].rename(
             columns={col: "valor"}
         )
+
+    def __processa_pdo_hidr_uhe(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_hidr().tabela.copy()
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_HIDR para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
+
+        df[["dataInicio", "dataFim"]] = df.apply(
+            self.__extrai_datas, axis=1, result_type="expand"
+        )
+        return df.loc[
+            df["conjunto"] == 99,
+            ["nome_usina", "estagio", "dataInicio", "dataFim", col],
+        ].rename(columns={col: "valor", "nome_usina": "usina"})
 
     def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):
         self.__uow = uow

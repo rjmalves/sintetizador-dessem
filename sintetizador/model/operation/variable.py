@@ -7,6 +7,7 @@ class Variable(Enum):
     ENERGIA_ARMAZENADA_ABSOLUTA_FINAL = "EARMF"
     GERACAO_HIDRAULICA = "GHID"
     GERACAO_TERMICA = "GTER"
+    VOLUME_ARMAZENADO_PERCENTUAL_FINAL = "VARPF"
 
     @classmethod
     def factory(cls, val: str) -> "Variable":
