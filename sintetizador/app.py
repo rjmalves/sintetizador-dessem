@@ -1,6 +1,5 @@
 import click
 import os
-from sintetizador.model.settings import Settings
 import sintetizador.domain.commands as commands
 import sintetizador.services.handlers as handlers
 from sintetizador.services.unitofwork import factory
@@ -33,7 +32,7 @@ def operacao(variaveis, formato):
 
     uow = factory(
         "FS",
-        Settings().synthesis_dir,
+        os.curdir,
     )
     command = commands.SynthetizeOperation(variaveis)
     handlers.synthetize_operation(command, uow)
@@ -65,7 +64,7 @@ def completa(operacao, formato):
 
     uow = factory(
         "FS",
-        Settings().synthesis_dir,
+        os.curdir,
     )
     command = commands.SynthetizeOperation(operacao)
     handlers.synthetize_operation(command, uow)
