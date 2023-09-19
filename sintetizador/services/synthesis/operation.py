@@ -18,9 +18,13 @@ class OperationSynthetizer:
     DEFAULT_OPERATION_SYNTHESIS_ARGS: List[str] = [
         "CMO_SBM_EST",
         "MER_SBM_EST",
+        "MER_SIN_EST",
         "GHID_SBM_EST",
+        "GHID_SIN_EST",
         "GTER_SBM_EST",
+        "GTER_SIN_EST",
         "EARMF_SBM_EST",
+        "EARMF_SIN_EST",
     ]
 
     def __init__(self, uow: AbstractUnitOfWork) -> None:
@@ -34,27 +38,47 @@ class OperationSynthetizer:
                 Variable.CUSTO_MARGINAL_OPERACAO,
                 SpatialResolution.SUBMERCADO,
                 TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist("cmo"),
+            ): lambda: self.__processa_pdo_sist_sbm("cmo"),
             (
                 Variable.MERCADO,
                 SpatialResolution.SUBMERCADO,
                 TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist("demanda"),
+            ): lambda: self.__processa_pdo_sist_sbm("demanda"),
+            (
+                Variable.MERCADO,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist_sin("demanda"),
             (
                 Variable.GERACAO_HIDRAULICA,
                 SpatialResolution.SUBMERCADO,
                 TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist("geracao_hidraulica"),
+            ): lambda: self.__processa_pdo_sist_sbm("geracao_hidraulica"),
+            (
+                Variable.GERACAO_HIDRAULICA,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist_sin("geracao_hidraulica"),
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.SUBMERCADO,
                 TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist("geracao_termica"),
+            ): lambda: self.__processa_pdo_sist_sbm("geracao_termica"),
+            (
+                Variable.GERACAO_TERMICA,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist_sin("geracao_termica"),
             (
                 Variable.ENERGIA_ARMAZENADA_ABSOLUTA_FINAL,
                 SpatialResolution.SUBMERCADO,
                 TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist("energia_armazenada"),
+            ): lambda: self.__processa_pdo_sist_sbm("energia_armazenada"),
+            (
+                Variable.ENERGIA_ARMAZENADA_ABSOLUTA_FINAL,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist_sin("energia_armazenada"),
         }
 
     def _default_args(self) -> List[str]:
@@ -139,8 +163,8 @@ class OperationSynthetizer:
             .flatten()
         )
 
-    def __processa_pdo_sist(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_sist().tabela
+    def __processa_pdo_sist_sbm(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_sist().tabela.copy()
         if df is None:
             logger = Log.log()
             if logger is not None:
@@ -163,6 +187,26 @@ class OperationSynthetizer:
         return df[
             ["submercado", "estagio", "dataInicio", "dataFim", col]
         ].rename(columns={col: "valor"})
+
+    def __processa_pdo_sist_sin(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_sist().tabela.copy()
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_SIST para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
+
+        df = df.groupby("estagio", as_index=False).sum()
+        df.sort_values(["estagio"], inplace=True)
+        df[["dataInicio", "dataFim"]] = df.apply(
+            self.__extrai_datas, axis=1, result_type="expand"
+        )
+        return df[["estagio", "dataInicio", "dataFim", col]].rename(
+            columns={col: "valor"}
+        )
 
     def synthetize(self, variables: List[str]):
         logger = Log.log()

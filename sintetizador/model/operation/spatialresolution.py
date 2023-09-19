@@ -3,6 +3,7 @@ from enum import Enum
 
 class SpatialResolution(Enum):
     SUBMERCADO = "SBM"
+    SISTEMA_INTERLIGADO = "SIN"
 
     @classmethod
     def factory(cls, val: str) -> "SpatialResolution":
