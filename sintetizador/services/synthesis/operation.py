@@ -17,6 +17,10 @@ from sintetizador.model.operation.operationsynthesis import OperationSynthesis
 class OperationSynthetizer:
     DEFAULT_OPERATION_SYNTHESIS_ARGS: List[str] = [
         "CMO_SBM_EST",
+        "MER_SBM_EST",
+        "GHID_SBM_EST",
+        "GTER_SBM_EST",
+        "EARMF_SBM_EST",
     ]
 
     def __init__(self, uow: AbstractUnitOfWork) -> None:
@@ -31,6 +35,26 @@ class OperationSynthetizer:
                 SpatialResolution.SUBMERCADO,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_sist("cmo"),
+            (
+                Variable.MERCADO,
+                SpatialResolution.SUBMERCADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist("demanda"),
+            (
+                Variable.GERACAO_HIDRAULICA,
+                SpatialResolution.SUBMERCADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist("geracao_hidraulica"),
+            (
+                Variable.GERACAO_TERMICA,
+                SpatialResolution.SUBMERCADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist("geracao_termica"),
+            (
+                Variable.ENERGIA_ARMAZENADA_ABSOLUTA_FINAL,
+                SpatialResolution.SUBMERCADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist("energia_armazenada"),
         }
 
     def _default_args(self) -> List[str]:
