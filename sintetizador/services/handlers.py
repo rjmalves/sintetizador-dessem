@@ -9,8 +9,8 @@ from sintetizador.services.synthesis.operation import OperationSynthetizer
 def synthetize_operation(
     command: commands.SynthetizeOperation, uow: AbstractUnitOfWork
 ):
-    synthetizer = OperationSynthetizer(uow)
-    synthetizer.synthetize(command.variables)
+    synthetizer = OperationSynthetizer()
+    synthetizer.synthetize(command.variables, uow)
 
 
 def clean():

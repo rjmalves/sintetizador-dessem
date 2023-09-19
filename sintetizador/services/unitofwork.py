@@ -41,24 +41,22 @@ class AbstractUnitOfWork(ABC):
 class FSUnitOfWork(AbstractUnitOfWork):
     def __init__(self, directory: str):
         self._current_path = Path(curdir).resolve()
-        self._synthesis_directory = directory
+        self._path = str(Path(directory).resolve())
         self._files = None
         self._exporter = None
 
     def __create_repository(self):
         if self._files is None:
-            self._files = RawFilesRepository(str(self._current_path))
+            self._files = RawFilesRepository(str(self._path))
         if self._exporter is None:
-            synthesis_outdir = self._current_path.joinpath(
-                self._synthesis_directory
-            )
+            synthesis_outdir = self._current_path.joinpath(self._path)
             synthesis_outdir.mkdir(parents=True, exist_ok=True)
             self._exporter = export_factory(
                 Settings().synthesis_format, str(synthesis_outdir)
             )
 
     def __enter__(self) -> "AbstractUnitOfWork":
-        chdir(self._current_path)
+        chdir(self._path)
         self.__create_repository()
         return super().__enter__()
 

@@ -4,6 +4,7 @@ idessem>=0.0.12
 pylama
 mypy
 pytest
+pytest-cov
 sphinx
 sphinx-gallery
 sphinx-rtd-theme

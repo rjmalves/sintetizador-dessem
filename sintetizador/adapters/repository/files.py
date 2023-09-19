@@ -67,7 +67,9 @@ class RawFilesRepository(AbstractFilesRepository):
             try:
                 reg_caso = self.__dessemarq.caso
                 if reg_caso is None:
-                    raise RuntimeError("Extensão não encontrada")
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
                 extensao = (
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
@@ -91,7 +93,9 @@ class RawFilesRepository(AbstractFilesRepository):
             try:
                 reg_caso = self.__dessemarq.caso
                 if reg_caso is None:
-                    raise RuntimeError("Extensão não encontrada")
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
                 extensao = (
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )

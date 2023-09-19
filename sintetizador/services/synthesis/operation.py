@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import pandas as pd  # type: ignore
 import numpy as np
 from traceback import print_exc
@@ -19,8 +19,8 @@ class OperationSynthetizer:
         "CMO_SBM_EST",
     ]
 
-    def __init__(self, uow: AbstractUnitOfWork) -> None:
-        self.__uow = uow
+    def __init__(self) -> None:
+        self.__uow: Optional[AbstractUnitOfWork] = None
         self.__stages_durations = None
         self.__rules: Dict[
             Tuple[Variable, SpatialResolution, TemporalResolution],
@@ -32,6 +32,12 @@ class OperationSynthetizer:
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_sist("cmo"),
         }
+
+    @property
+    def uow(self) -> AbstractUnitOfWork:
+        if self.__uow is None:
+            raise RuntimeError()
+        return self.__uow
 
     def _default_args(self) -> List[str]:
         return self.__class__.DEFAULT_OPERATION_SYNTHESIS_ARGS
@@ -59,8 +65,8 @@ class OperationSynthetizer:
         return variables
 
     def _get_pdo_sist(self) -> PdoSist:
-        with self.__uow:
-            pdo = self.__uow.files.get_pdo_sist()
+        with self.uow:
+            pdo = self.uow.files.get_pdo_sist()
             if pdo is None:
                 logger = Log.log()
                 if logger is not None:
@@ -72,8 +78,8 @@ class OperationSynthetizer:
             return pdo
 
     def _get_pdo_operacao(self) -> PdoOperacao:
-        with self.__uow:
-            pdo = self.__uow.files.get_pdo_operacao()
+        with self.uow:
+            pdo = self.uow.files.get_pdo_operacao()
             if pdo is None:
                 logger = Log.log()
                 if logger is not None:
@@ -140,7 +146,8 @@ class OperationSynthetizer:
             ["submercado", "estagio", "dataInicio", "dataFim", col]
         ].rename(columns={col: "valor"})
 
-    def synthetize(self, variables: List[str]):
+    def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):
+        self.__uow = uow
         logger = Log.log()
         if len(variables) == 0:
             variables = self._default_args()
@@ -159,5 +166,5 @@ class OperationSynthetizer:
                 continue
             if df is None:
                 continue
-            with self.__uow:
-                self.__uow.export.synthetize_df(df, filename)
+            with self.uow:
+                self.uow.export.synthetize_df(df, filename)
