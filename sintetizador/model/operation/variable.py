@@ -8,6 +8,13 @@ class Variable(Enum):
     GERACAO_HIDRAULICA = "GHID"
     GERACAO_TERMICA = "GTER"
     VOLUME_ARMAZENADO_PERCENTUAL_FINAL = "VARPF"
+    VOLUME_ARMAZENADO_ABSOLUTO_FINAL = "VARMF"
+    VALOR_AGUA = "VAGUA"
+    VAZAO_TURBINADA = "QTUR"
+    VAZAO_VERTIDA = "QVER"
+    VAZAO_INCREMENTAL = "QINC"
+    VAZAO_AFLUENTE = "QAFL"
+    VAZAO_DEFLUENTE = "QDEF"
 
     @classmethod
     def factory(cls, val: str) -> "Variable":

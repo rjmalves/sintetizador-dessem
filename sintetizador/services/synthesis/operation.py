@@ -21,6 +21,7 @@ class OperationSynthetizer:
         "CMO_SBM_EST",
         "MER_SBM_EST",
         "MER_SIN_EST",
+        "GHID_UHE_EST",
         "GHID_SBM_EST",
         "GHID_SIN_EST",
         "GTER_SBM_EST",
@@ -28,6 +29,13 @@ class OperationSynthetizer:
         "EARMF_SBM_EST",
         "EARMF_SIN_EST",
         "VARPF_UHE_EST",
+        "VARMF_UHE_EST",
+        "VAGUA_UHE_EST",
+        "QTUR_UHE_EST",
+        "QVER_UHE_EST",
+        "QINC_UHE_EST",
+        "QAFL_UHE_EST",
+        "QDEF_UHE_EST",
     ]
 
     def __init__(self) -> None:
@@ -87,6 +95,46 @@ class OperationSynthetizer:
                 SpatialResolution.USINA_HIDROELETRICA,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_hidr_uhe("volume_final_percentual"),
+            (
+                Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("volume_final_hm3"),
+            (
+                Variable.VALOR_AGUA,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("valor_agua"),
+            (
+                Variable.GERACAO_HIDRAULICA,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("geracao"),
+            (
+                Variable.VAZAO_TURBINADA,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("vazao_turbinada_m3s"),
+            (
+                Variable.VAZAO_VERTIDA,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("vazao_vertida_m3s"),
+            (
+                Variable.VAZAO_INCREMENTAL,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("vazao_incremental_m3s"),
+            (
+                Variable.VAZAO_AFLUENTE,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("vazao_afluente_m3s"),
+            (
+                Variable.VAZAO_DEFLUENTE,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_uhe("vazao_defluente_m3s"),
         }
 
     @property
@@ -136,6 +184,31 @@ class OperationSynthetizer:
     def _get_pdo_hidr(self) -> PdoHidr:
         with self.uow:
             pdo = self.uow.files.get_pdo_hidr()
+            df = pdo.tabela
+
+            # Acrescenta datas iniciais e finais
+            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
+            num_unidades = len(df.loc[df["estagio"] == 1])
+            df_datas = self.__resolve_stages_durations()[
+                ["data_inicial", "data_final"]
+            ]
+            df["dataInicio"] = np.repeat(
+                df_datas["data_inicial"].tolist(), num_unidades
+            )
+            df["dataFim"] = np.repeat(
+                df_datas["data_final"].tolist(), num_unidades
+            )
+
+            # Acrescenta novas variáveis a partir de operação de colunas já existentes
+            df["vazao_defluente_m3s"] = (
+                df["vazao_turbinada_m3s"] + df["vazao_vertida_m3s"]
+            )
+            df["vazao_afluente_m3s"] = (
+                df["vazao_incremental_m3s"]
+                + df["vazao_montante_m3s"]
+                + df["vazao_montante_tempo_viagem_m3s"]
+            )
+
             if pdo is None:
                 logger = Log.log()
                 if logger is not None:
@@ -144,7 +217,7 @@ class OperationSynthetizer:
                         + " síntese da operação"
                     )
                 raise RuntimeError()
-            return pdo
+            return df
 
     def _get_pdo_operacao(self) -> PdoOperacao:
         with self.uow:
@@ -167,8 +240,8 @@ class OperationSynthetizer:
 
     def __resolve_stages_durations(self) -> pd.DataFrame:
         logger = Log.log()
-        if logger is not None:
-            logger.info("Obtendo início dos estágios")
+        # if logger is not None:
+        #     logger.info("Obtendo início dos estágios")
         arq_pdo = self._get_pdo_operacao()
         df = arq_pdo.discretizacao
         if df is None:
@@ -236,7 +309,7 @@ class OperationSynthetizer:
         )
 
     def __processa_pdo_hidr_uhe(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_hidr().tabela.copy()
+        df = self._get_pdo_hidr().copy()
         if df is None:
             logger = Log.log()
             if logger is not None:
@@ -246,9 +319,6 @@ class OperationSynthetizer:
                 )
             raise RuntimeError()
 
-        df[["dataInicio", "dataFim"]] = df.apply(
-            self.__extrai_datas, axis=1, result_type="expand"
-        )
         return df.loc[
             df["conjunto"] == 99,
             ["nome_usina", "estagio", "dataInicio", "dataFim", col],
