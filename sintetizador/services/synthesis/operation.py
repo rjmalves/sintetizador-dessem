@@ -140,7 +140,7 @@ class OperationSynthetizer:
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.USINA_TERMELETRICA,
                 TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_oper_uct_uhe("geracao"),
+            ): lambda: self.__processa_pdo_oper_uct_ute("geracao"),
         }
 
     @property
@@ -359,7 +359,7 @@ class OperationSynthetizer:
             ["nome_usina", "estagio", "dataInicio", "dataFim", col],
         ].rename(columns={col: "valor", "nome_usina": "usina"})
 
-    def __processa_pdo_oper_uct_uhe(self, col: str) -> pd.DataFrame:
+    def __processa_pdo_oper_uct_ute(self, col: str) -> pd.DataFrame:
         df = self._get_pdo_oper_uct().copy()
         if df is None:
             logger = Log.log()
