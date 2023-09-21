@@ -7,7 +7,7 @@ from idessem.dessem.pdo_sist import PdoSist
 
 from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_operacao import PdoOperacao
-
+from idessem.dessem.pdo_oper_uct import PdoOperUct
 from sintetizador.services.unitofwork import AbstractUnitOfWork
 from sintetizador.utils.log import Log
 from sintetizador.model.operation.variable import Variable
@@ -24,6 +24,7 @@ class OperationSynthetizer:
         "GHID_UHE_EST",
         "GHID_SBM_EST",
         "GHID_SIN_EST",
+        "GTER_UTE_EST",
         "GTER_SBM_EST",
         "GTER_SIN_EST",
         "EARMF_SBM_EST",
@@ -135,6 +136,11 @@ class OperationSynthetizer:
                 SpatialResolution.USINA_HIDROELETRICA,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_hidr_uhe("vazao_defluente_m3s"),
+            (
+                Variable.GERACAO_TERMICA,
+                SpatialResolution.USINA_TERMELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_oper_uct_uhe("geracao"),
         }
 
     @property
@@ -232,6 +238,35 @@ class OperationSynthetizer:
                 raise RuntimeError()
             return pdo
 
+    def _get_pdo_oper_uct(self) -> PdoOperUct:
+        with self.uow:
+            pdo = self.uow.files.get_pdo_oper_uct()
+            df = pdo.tabela
+
+            # Acrescenta datas iniciais e finais
+            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
+
+            num_unidades = len(df.loc[df["estagio"] == 1])
+            df_datas = self.__resolve_stages_durations()[
+                ["data_inicial", "data_final"]
+            ]
+            df["dataInicio"] = np.repeat(
+                df_datas["data_inicial"].tolist(), num_unidades
+            )
+            df["dataFim"] = np.repeat(
+                df_datas["data_final"].tolist(), num_unidades
+            )
+
+            if pdo is None:
+                logger = Log.log()
+                if logger is not None:
+                    logger.error(
+                        "Erro no processamento do PDO_OPER_UCT para"
+                        + " síntese da operação"
+                    )
+                raise RuntimeError()
+            return df
+
     @property
     def stages_durations(self) -> pd.DataFrame:
         if self.__stages_durations is None:
@@ -323,6 +358,25 @@ class OperationSynthetizer:
             df["conjunto"] == 99,
             ["nome_usina", "estagio", "dataInicio", "dataFim", col],
         ].rename(columns={col: "valor", "nome_usina": "usina"})
+
+    def __processa_pdo_oper_uct_uhe(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_oper_uct().copy()
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_OPER_UCT para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
+
+        df = df.groupby(
+            ["nome_usina", "estagio", "dataInicio", "dataFim"], as_index=False
+        )[col].sum(numeric_only=True)
+
+        df.sort_values(["estagio", "nome_usina"], inplace=True)
+
+        return df.rename(columns={col: "valor", "nome_usina": "usina"})
 
     def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):
         self.__uow = uow
