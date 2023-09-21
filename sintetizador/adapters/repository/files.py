@@ -5,6 +5,8 @@ from os.path import join
 
 from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.pdo_sist import PdoSist
+from idessem.dessem.pdo_oper_uct import PdoOperUct
+from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_operacao import PdoOperacao
 
 from sintetizador.utils.log import Log
@@ -38,6 +40,14 @@ class AbstractFilesRepository(ABC):
     def get_pdo_sist(self) -> Optional[PdoSist]:
         raise NotImplementedError
 
+    @abstractmethod
+    def get_pdo_hidr(self) -> Optional[PdoHidr]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_pdo_oper_uct(self) -> Optional[PdoOperUct]:
+        raise NotImplementedError
+
 
 class RawFilesRepository(AbstractFilesRepository):
     def __init__(self, tmppath: str):
@@ -55,6 +65,10 @@ class RawFilesRepository(AbstractFilesRepository):
         self.__read_pdo_sist = False
         self.__pdo_operacao: Optional[PdoOperacao] = None
         self.__read_pdo_operacao = False
+        self.__pdo_hidr: Optional[PdoHidr] = None
+        self.__read_pdo_hidr = False
+        self.__pdo_oper_uct: Optional[PdoOperUct] = None
+        self.__read_pdo_oper_uct = False
 
     @property
     def dessemarq(self) -> DessemArq:
@@ -111,6 +125,58 @@ class RawFilesRepository(AbstractFilesRepository):
                     logger.error(f"Erro na leitura do PDO_SIST: {e}")
                 raise e
         return self.__pdo_sist
+
+    def get_pdo_hidr(self) -> Optional[PdoHidr]:
+        if self.__read_pdo_hidr is False:
+            self.__read_pdo_hidr = True
+            logger = Log.log()
+            try:
+                reg_caso = self.__dessemarq.caso
+                if reg_caso is None:
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
+                extensao = (
+                    reg_caso.valor if reg_caso.valor is not None else "DAT"
+                )
+                nome_arquivo = f"PDO_HIDR.{extensao}"
+                caminho = str(
+                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                )
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {nome_arquivo}")
+                self.__pdo_hidr = PdoHidr.read(caminho)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(f"Erro na leitura do PDO_HIDR: {e}")
+                raise e
+        return self.__pdo_hidr
+
+    def get_pdo_oper_uct(self) -> Optional[PdoOperUct]:
+        if self.__read_pdo_oper_uct is False:
+            self.__read_pdo_oper_uct = True
+            logger = Log.log()
+            try:
+                reg_caso = self.__dessemarq.caso
+                if reg_caso is None:
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
+                extensao = (
+                    reg_caso.valor if reg_caso.valor is not None else "DAT"
+                )
+                nome_arquivo = f"PDO_OPER_UCT.{extensao}"
+                caminho = str(
+                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                )
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {nome_arquivo}")
+                self.__pdo_oper_uct = PdoOperUct.read(caminho)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(f"Erro na leitura do PDO_OPER_UCT: {e}")
+                raise e
+        return self.__pdo_oper_uct
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractFilesRepository:
