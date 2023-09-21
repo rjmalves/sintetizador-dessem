@@ -21,3 +21,11 @@ def test_get_pdo_sist(test_settings):
     assert pdo.data_estudo == datetime(2022, 9, 3)
     assert pdo.versao == "19.4.5"
     assert isinstance(pdo.tabela, pd.DataFrame)
+
+
+def test_get_pdo_oper_uct(test_settings):
+    repo = factory("FS", DECK_TEST_DIR)
+    pdo = repo.get_pdo_oper_uct()
+    assert pdo.data_estudo == datetime(2022, 9, 3)
+    assert pdo.versao == "19.4.5"
+    assert isinstance(pdo.tabela, pd.DataFrame)

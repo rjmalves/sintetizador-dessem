@@ -187,11 +187,19 @@ class OperationSynthetizer:
                 raise RuntimeError()
             return pdo
 
-    def _get_pdo_hidr(self) -> PdoHidr:
+    def _get_pdo_hidr(self) -> pd.DataFrame:
         with self.uow:
             pdo = self.uow.files.get_pdo_hidr()
-            df = pdo.tabela
+            if pdo is None:
+                logger = Log.log()
+                if logger is not None:
+                    logger.error(
+                        "Erro no processamento do PDO_SIST para"
+                        + " síntese da operação"
+                    )
+                raise RuntimeError()
 
+            df = pdo.tabela
             # Acrescenta datas iniciais e finais
             # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
             num_unidades = len(df.loc[df["estagio"] == 1])
@@ -204,7 +212,6 @@ class OperationSynthetizer:
             df["dataFim"] = np.repeat(
                 df_datas["data_final"].tolist(), num_unidades
             )
-
             # Acrescenta novas variáveis a partir de operação de colunas já existentes
             df["vazao_defluente_m3s"] = (
                 df["vazao_turbinada_m3s"] + df["vazao_vertida_m3s"]
@@ -214,15 +221,6 @@ class OperationSynthetizer:
                 + df["vazao_montante_m3s"]
                 + df["vazao_montante_tempo_viagem_m3s"]
             )
-
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_SIST para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
             return df
 
     def _get_pdo_operacao(self) -> PdoOperacao:
@@ -238,14 +236,21 @@ class OperationSynthetizer:
                 raise RuntimeError()
             return pdo
 
-    def _get_pdo_oper_uct(self) -> PdoOperUct:
+    def _get_pdo_oper_uct(self) -> pd.DataFrame:
         with self.uow:
             pdo = self.uow.files.get_pdo_oper_uct()
-            df = pdo.tabela
+            if pdo is None:
+                logger = Log.log()
+                if logger is not None:
+                    logger.error(
+                        "Erro no processamento do PDO_OPER_UCT para"
+                        + " síntese da operação"
+                    )
+                raise RuntimeError()
 
+            df = pdo.tabela
             # Acrescenta datas iniciais e finais
             # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
-
             num_unidades = len(df.loc[df["estagio"] == 1])
             df_datas = self.__resolve_stages_durations()[
                 ["data_inicial", "data_final"]
@@ -256,15 +261,6 @@ class OperationSynthetizer:
             df["dataFim"] = np.repeat(
                 df_datas["data_final"].tolist(), num_unidades
             )
-
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_OPER_UCT para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
             return df
 
     @property
@@ -354,10 +350,12 @@ class OperationSynthetizer:
                 )
             raise RuntimeError()
 
-        return df.loc[
+        df = df.loc[
             df["conjunto"] == 99,
             ["nome_usina", "estagio", "dataInicio", "dataFim", col],
-        ].rename(columns={col: "valor", "nome_usina": "usina"})
+        ]
+        df.reset_index(inplace=True)
+        return df.rename(columns={col: "valor", "nome_usina": "usina"})
 
     def __processa_pdo_oper_uct_ute(self, col: str) -> pd.DataFrame:
         df = self._get_pdo_oper_uct().copy()
@@ -375,7 +373,7 @@ class OperationSynthetizer:
         )[col].sum(numeric_only=True)
 
         df.sort_values(["estagio", "nome_usina"], inplace=True)
-
+        df.reset_index(inplace=True)
         return df.rename(columns={col: "valor", "nome_usina": "usina"})
 
     def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):
