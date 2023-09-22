@@ -10,13 +10,18 @@ from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_operacao import PdoOperacao
 
 from sintetizador.utils.log import Log
-
+from sintetizador.model.settings import Settings
+from sintetizador.utils.encoding import converte_codificacao
+import asyncio
 
 import platform
 
 if platform.system() == "Windows":
     DessemArq.ENCODING = "iso-8859-1"
     PdoSist.ENCODING = "iso-8859-1"
+    PdoHidr.ENCODING = "iso-8859-1"
+    PdoOperacao.ENCODING = "iso-8859-1"
+    PdoOperUct.ENCODING = "iso-8859-1"
 
 
 class AbstractFilesRepository(ABC):
@@ -53,9 +58,9 @@ class RawFilesRepository(AbstractFilesRepository):
     def __init__(self, tmppath: str):
         self.__tmppath = tmppath
         try:
-            self.__dessemarq = DessemArq.read(
-                join(str(self.__tmppath), "dessem.arq")
-            )
+            caminho = str(pathlib.Path(self.__tmppath).joinpath("dessem.arq"))
+            self.__converte_utf8(caminho)
+            self.__dessemarq = DessemArq.read(caminho)
         except FileNotFoundError as e:
             logger = Log.log()
             if logger is not None:
@@ -74,6 +79,12 @@ class RawFilesRepository(AbstractFilesRepository):
     def dessemarq(self) -> DessemArq:
         return self.__dessemarq
 
+    def __converte_utf8(self, caminho: str):
+        script = pathlib.Path(Settings().installdir).joinpath(
+            Settings().encoding_script
+        )
+        asyncio.run(converte_codificacao(caminho, script))
+
     def get_pdo_operacao(self) -> Optional[PdoOperacao]:
         if self.__read_pdo_operacao is False:
             self.__read_pdo_operacao = True
@@ -91,6 +102,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 caminho = str(
                     pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
                 )
+                self.__converte_utf8(caminho)
                 if logger is not None:
                     logger.info(f"Lendo arquivo {nome_arquivo}")
                 self.__pdo_operacao = PdoOperacao.read(caminho)
@@ -117,6 +129,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 caminho = str(
                     pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
                 )
+                self.__converte_utf8(caminho)
                 if logger is not None:
                     logger.info(f"Lendo arquivo {nome_arquivo}")
                 self.__pdo_sist = PdoSist.read(caminho)
@@ -143,6 +156,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 caminho = str(
                     pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
                 )
+                self.__converte_utf8(caminho)
                 if logger is not None:
                     logger.info(f"Lendo arquivo {nome_arquivo}")
                 self.__pdo_hidr = PdoHidr.read(caminho)
@@ -169,6 +183,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 caminho = str(
                     pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
                 )
+                self.__converte_utf8(caminho)
                 if logger is not None:
                     logger.info(f"Lendo arquivo {nome_arquivo}")
                 self.__pdo_oper_uct = PdoOperUct.read(caminho)
