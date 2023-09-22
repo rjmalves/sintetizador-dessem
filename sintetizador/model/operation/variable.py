@@ -3,6 +3,8 @@ from enum import Enum
 
 class Variable(Enum):
     CUSTO_MARGINAL_OPERACAO = "CMO"
+    CUSTO_OPERACAO = "COP"
+    CUSTO_FUTURO = "CFU"
     MERCADO = "MER"
     ENERGIA_ARMAZENADA_ABSOLUTA_FINAL = "EARMF"
     GERACAO_HIDRAULICA = "GHID"
