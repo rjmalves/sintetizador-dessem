@@ -35,6 +35,8 @@ class OperationSynthetizer:
         "QINC_UHE_EST",
         "QAFL_UHE_EST",
         "QDEF_UHE_EST",
+        "COP_SIN_EST",
+        "CFU_SIN_EST",
     ]
 
     def __init__(self) -> None:
@@ -139,6 +141,16 @@ class OperationSynthetizer:
                 SpatialResolution.USINA_TERMELETRICA,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_oper_uct_ute("geracao"),
+            (
+                Variable.CUSTO_OPERACAO,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_operacao_custos("custo_presente"),
+            (
+                Variable.CUSTO_FUTURO,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_operacao_custos("custo_futuro"),
         }
 
     @property
@@ -373,6 +385,26 @@ class OperationSynthetizer:
         df.sort_values(["estagio", "nome_usina"], inplace=True)
         df.reset_index(inplace=True)
         return df.rename(columns={col: "valor", "nome_usina": "usina"})
+
+    def __processa_pdo_operacao_custos(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_operacao().custos_operacao
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_HIDR para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
+
+        df[["dataInicio", "dataFim"]] = df.apply(
+            self.__extrai_datas, axis=1, result_type="expand"
+        )
+        df.sort_values(["estagio"], inplace=True)
+
+        return df[["estagio", "dataInicio", "dataFim", col]].rename(
+            columns={col: "valor"}
+        )
 
     def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):
         self.__uow = uow
