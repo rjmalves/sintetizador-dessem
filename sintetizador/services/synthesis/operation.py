@@ -4,10 +4,8 @@ import numpy as np
 from traceback import print_exc
 
 from idessem.dessem.pdo_sist import PdoSist
-
-from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_operacao import PdoOperacao
-from idessem.dessem.pdo_oper_uct import PdoOperUct
+
 from sintetizador.services.unitofwork import AbstractUnitOfWork
 from sintetizador.utils.log import Log
 from sintetizador.model.operation.variable import Variable

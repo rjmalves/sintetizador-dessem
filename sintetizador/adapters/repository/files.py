@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Type, Optional, TypeVar
 import pathlib
-from os.path import join
 
 from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.pdo_sist import PdoSist
@@ -80,8 +79,10 @@ class RawFilesRepository(AbstractFilesRepository):
         return self.__dessemarq
 
     def __converte_utf8(self, caminho: str):
-        script = pathlib.Path(Settings().installdir).joinpath(
-            Settings().encoding_script
+        script = str(
+            pathlib.Path(Settings().installdir).joinpath(
+                Settings().encoding_script
+            )
         )
         asyncio.run(converte_codificacao(caminho, script))
 
