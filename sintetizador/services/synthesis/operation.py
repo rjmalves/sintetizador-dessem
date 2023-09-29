@@ -19,6 +19,8 @@ class OperationSynthetizer:
         "CMO_SBM_EST",
         "MER_SBM_EST",
         "MER_SIN_EST",
+        "MERL_SBM_EST",
+        "MERL_SIN_EST",
         "GHID_UHE_EST",
         "GHID_SBM_EST",
         "GHID_SIN_EST",
@@ -61,6 +63,16 @@ class OperationSynthetizer:
                 SpatialResolution.SISTEMA_INTERLIGADO,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_sist_sin("demanda"),
+            (
+                Variable.MERCADO_LIQUIDO,
+                SpatialResolution.SUBMERCADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist_sbm("demanda_liquida"),
+            (
+                Variable.MERCADO_LIQUIDO,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_sist_sin("demanda_liquida"),
             (
                 Variable.GERACAO_HIDRAULICA,
                 SpatialResolution.SUBMERCADO,
@@ -318,6 +330,12 @@ class OperationSynthetizer:
         df[["dataInicio", "dataFim"]] = df.apply(
             self.__extrai_datas, axis=1, result_type="expand"
         )
+        df["demanda_liquida"] = (
+            df["demanda"]
+            - df["geracao_pequenas_usinas"]
+            - df["geracao_fixa_barra"]
+            - df["geracao_renovavel"]
+        )
         df["submercado"] = pd.Categorical(
             df["submercado"],
             categories=["SE", "S", "NE", "N", "FC"],
@@ -344,6 +362,12 @@ class OperationSynthetizer:
         df.sort_values(["estagio"], inplace=True)
         df[["dataInicio", "dataFim"]] = df.apply(
             self.__extrai_datas, axis=1, result_type="expand"
+        )
+        df["demanda_liquida"] = (
+            df["demanda"]
+            - df["geracao_pequenas_usinas"]
+            - df["geracao_fixa_barra"]
+            - df["geracao_renovavel"]
         )
         return df[["estagio", "dataInicio", "dataFim", col]].rename(
             columns={col: "valor"}

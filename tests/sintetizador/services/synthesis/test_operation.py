@@ -58,6 +58,39 @@ def test_sintese_mer_sin_est_pdo_sist(test_settings):
     assert df.at[0, "valor"] == 65233.07
 
 
+def test_sintese_merl_sbm_est_pdo_sist(test_settings):
+    m = MagicMock(lambda df, filename: df)
+    with patch(
+        "sintetizador.adapters.repository.export.ParquetExportRepository.synthetize_df",
+        new=m,
+    ):
+        synthetizer = OperationSynthetizer()
+        synthetizer.synthetize(["MERL_SBM_EST"], uow)
+    m.assert_called_once()
+    df = m.mock_calls[0].args[0]
+    assert df.at[0, "submercado"] == "SE"
+    assert df.at[0, "estagio"] == 1
+    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
+    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
+    assert df.at[0, "valor"] == 31325.35
+
+
+def test_sintese_merl_sin_est_pdo_sist(test_settings):
+    m = MagicMock(lambda df, filename: df)
+    with patch(
+        "sintetizador.adapters.repository.export.ParquetExportRepository.synthetize_df",
+        new=m,
+    ):
+        synthetizer = OperationSynthetizer()
+        synthetizer.synthetize(["MERL_SIN_EST"], uow)
+    m.assert_called_once()
+    df = m.mock_calls[0].args[0]
+    assert df.at[0, "estagio"] == 1
+    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
+    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
+    assert df.at[0, "valor"] == 42182.07
+
+
 def test_sintese_ghid_uhe_est_pdo_hidr(test_settings):
     m = MagicMock(lambda df, filename: df)
     with patch(
