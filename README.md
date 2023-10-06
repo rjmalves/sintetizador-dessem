@@ -20,10 +20,11 @@ O `sintetizador-dessem` busca organizar as informações de entrada e saída do 
 O `sintetizador-dessem` é uma aplicação CLI, que pode ser utilizada diretamente no terminal após a instalação:
 
 ```
-$ sintetizador-dessem completa
+$ sintetizador-dessem operacao
 
 > 2023-02-10 02:02:05,214 INFO: # Realizando síntese da OPERACAO #
-> 2023-02-10 02:02:05,225 INFO: Lendo arquivo relato.rv0
+> 2023-10-05 15:33:31,444 INFO: Realizando síntese de CMO_SBM_EST
+> 2023-10-05 15:33:31,473 INFO: Lendo arquivo PDO_SIST.DAT
 ...
 > 2023-02-10 02:02:06,636 INFO: # Fim da síntese #
 ```
