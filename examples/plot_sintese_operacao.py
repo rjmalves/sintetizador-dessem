@@ -55,7 +55,7 @@ mer.head(10)
 # %%
 # Para variáveis da operação que possuam diferentes subconjuntos, como os submercados, podem ser visualizadas as variáveis simultâneamente.
 fig = px.line(
-    mer,
+    gter,
     x="dataInicio",
     y="valor",
     color="submercado",
