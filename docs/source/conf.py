@@ -24,9 +24,9 @@ from sintetizador import __version__  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 
-project = "sintetizador-newave"
-copyright = f"{date.today().year}, Rogerio Alves"
-author = "Rogerio Alves"
+project = "sintetizador-dessem"
+copyright = f"{date.today().year}, Mariana Noel & Rogerio Alves"
+author = " Mariana Noel & Rogerio Alves"
 
 # The full version, including alpha/beta/rc tags
 release = __version__
@@ -89,7 +89,7 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "navigation_depth": 5,
 }
-github_url = "https://github.com/rjmalves/sintetizador-newave"
+github_url = "https://github.com/rjmalves/sintetizador-dessem"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -110,7 +110,7 @@ intersphinx_mapping = {
     ),
     "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "inewave": ("https://rjmalves.github.io/inewave/", None),
+    "idessem": ("https://rjmalves.github.io/idessem/", None),
 }
 
 # https://github.com/sphinx-gallery/sphinx-gallery

@@ -23,7 +23,6 @@ A saída observada deve ser::
     >>> 
     >>> Commands:
     >>>   completa  Realiza a síntese completa do DESSEM.
-    >>>   execucao  Realiza a síntese dos dados da execução do DESSEM.
     >>>   operacao  Realiza a síntese dos dados da operação do DESSEM.
     >>>   limpeza   Realiza a limpeza dos dados resultantes de uma síntese.
 
