@@ -38,6 +38,7 @@ class OperationSynthetizer:
         "QINC_UHE_EST",
         "QAFL_UHE_EST",
         "QDEF_UHE_EST",
+        "QDEF_SIN_EST",
         "COP_SIN_EST",
         "CFU_SIN_EST",
     ]
@@ -159,6 +160,11 @@ class OperationSynthetizer:
                 SpatialResolution.USINA_HIDROELETRICA,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_hidr_uhe("vazao_defluente_m3s"),
+            (
+                Variable.VAZAO_DEFLUENTE,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_sin("vazao_defluente_m3s"),
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.USINA_TERMELETRICA,
