@@ -1,4 +1,8 @@
 # sintetizador-dessem
+
+[![tests](https://github.com/rjmalves/sintetizador-dessem/actions/workflows/main.yml/badge.svg)](https://github.com/rjmalves/sintetizador-dessem/actions/workflows/main.yml)
+[![codecov](https://codecov.io/gh/rjmalves/sintetizador-dessem/graph/badge.svg?token=nijXUciVn8)](https://codecov.io/gh/rjmalves/sintetizador-dessem)
+
 Programa auxiliar para realizar a síntese de dados do programa DESSEM em arquivos ou banco de dados.
 
 
