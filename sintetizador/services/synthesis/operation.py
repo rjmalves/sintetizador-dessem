@@ -35,6 +35,7 @@ class OperationSynthetizer:
         "QTUR_UHE_EST",
         "QTUR_SIN_EST",
         "QVER_UHE_EST",
+        "QVER_SIN_EST",
         "QINC_UHE_EST",
         "QAFL_UHE_EST",
         "QDEF_UHE_EST",
