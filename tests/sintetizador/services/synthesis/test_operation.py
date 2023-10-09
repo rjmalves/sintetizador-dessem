@@ -292,6 +292,22 @@ def test_sintese_qtur_uhe_est_pdo_hidr(test_settings):
     assert df.at[0, "valor"] == 34.02
 
 
+def test_sintese_qtur_sin_est_pdo_hidr(test_settings):
+    m = MagicMock(lambda df, filename: df)
+    with patch(
+        "sintetizador.adapters.repository.export.ParquetExportRepository.synthetize_df",
+        new=m,
+    ):
+        synthetizer = OperationSynthetizer()
+        synthetizer.synthetize(["QTUR_SIN_EST"], uow)
+    m.assert_called_once()
+    df = m.mock_calls[0].args[0]
+    assert df.at[0, "estagio"] == 1
+    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
+    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
+    assert df.at[0, "valor"] == 79983.76
+
+
 def test_sintese_qver_uhe_est_pdo_hidr(test_settings):
     m = MagicMock(lambda df, filename: df)
     with patch(
@@ -307,6 +323,22 @@ def test_sintese_qver_uhe_est_pdo_hidr(test_settings):
     assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
     assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
     assert df.at[0, "valor"] == 0.00
+
+
+def test_sintese_qver_sin_est_pdo_hidr(test_settings):
+    m = MagicMock(lambda df, filename: df)
+    with patch(
+        "sintetizador.adapters.repository.export.ParquetExportRepository.synthetize_df",
+        new=m,
+    ):
+        synthetizer = OperationSynthetizer()
+        synthetizer.synthetize(["QVER_SIN_EST"], uow)
+    m.assert_called_once()
+    df = m.mock_calls[0].args[0]
+    assert df.at[0, "estagio"] == 1
+    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
+    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
+    assert df.at[0, "valor"] == 9239.699999999999
 
 
 def test_sintese_qinc_uhe_est_pdo_hidr(test_settings):
