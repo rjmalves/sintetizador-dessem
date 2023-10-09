@@ -10,4 +10,5 @@ sphinx-gallery
 sphinx-rtd-theme
 plotly
 numpydoc
+nb2plots
 black
