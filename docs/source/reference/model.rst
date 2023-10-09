@@ -330,22 +330,22 @@ que estão disponíveis no modelo.
      - `UHE`
      - `EST`
    * - `QDEF`
-     - `UHE`
+     - `UHE`, `SIN`
      - `EST`
    * - `QDES`
      -
      -
    * - `QINC`
-     - `UHE`
+     - `UHE`, `SIN`
      - `EST`
    * - `QRET`
      -
      -
    * - `QTUR`
-     - `SIN`
+     - `UHE`, `SIN`
      - `EST`
    * - `QVER`
-     - `SIN`
+     - `UHE`, `SIN`
      - `EST`
    * - `VDEFMAX`
      -

@@ -33,10 +33,12 @@ class OperationSynthetizer:
         "VARMF_UHE_EST",
         "VAGUA_UHE_EST",
         "QTUR_UHE_EST",
+        "QTUR_SIN_EST",
         "QVER_UHE_EST",
         "QINC_UHE_EST",
         "QAFL_UHE_EST",
         "QDEF_UHE_EST",
+        "QDEF_SIN_EST",
         "COP_SIN_EST",
         "CFU_SIN_EST",
     ]
@@ -129,10 +131,20 @@ class OperationSynthetizer:
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_hidr_uhe("vazao_turbinada_m3s"),
             (
+                Variable.VAZAO_TURBINADA,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_sin("vazao_turbinada_m3s"),
+            (
                 Variable.VAZAO_VERTIDA,
                 SpatialResolution.USINA_HIDROELETRICA,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_hidr_uhe("vazao_vertida_m3s"),
+            (
+                Variable.VAZAO_VERTIDA,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_sin("vazao_vertida_m3s"),
             (
                 Variable.VAZAO_INCREMENTAL,
                 SpatialResolution.USINA_HIDROELETRICA,
@@ -148,6 +160,11 @@ class OperationSynthetizer:
                 SpatialResolution.USINA_HIDROELETRICA,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_hidr_uhe("vazao_defluente_m3s"),
+            (
+                Variable.VAZAO_DEFLUENTE,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_hidr_sin("vazao_defluente_m3s"),
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.USINA_TERMELETRICA,
@@ -390,6 +407,30 @@ class OperationSynthetizer:
         ]
         df.reset_index(inplace=True)
         return df.rename(columns={col: "valor", "nome_usina": "usina"})
+
+    def __processa_pdo_hidr_sin(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_hidr().copy()
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_HIDR para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
+
+        df = df.loc[
+            df["conjunto"] == 99,
+            ["nome_usina", "estagio", "dataInicio", "dataFim", col],
+        ]
+
+        df = df.groupby(["estagio", "dataInicio", "dataFim"], as_index=False)[
+            col
+        ].sum(numeric_only=True)
+        df.sort_values(["estagio"], inplace=True)
+        df.reset_index(inplace=True)
+
+        return df.rename(columns={col: "valor"})
 
     def __processa_pdo_oper_uct_ute(self, col: str) -> pd.DataFrame:
         df = self._get_pdo_oper_uct().copy()
