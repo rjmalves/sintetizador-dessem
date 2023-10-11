@@ -78,10 +78,10 @@ def limpeza():
     "--operacao", multiple=True, help="variável da operação para síntese"
 )
 @click.option(
-    "--formato", default="PARQUET", help="formato para escrita da síntese"
+    "--execucao", multiple=True, help="variável da execução para síntese"
 )
 @click.option(
-    "--execucao", multiple=True, help="variável da execução para síntese"
+    "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
 def completa(operacao, execucao, formato):
     """
