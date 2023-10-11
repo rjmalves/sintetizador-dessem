@@ -40,6 +40,31 @@ def operacao(variaveis, formato):
     Log.log().info("# Fim da síntese #")
 
 
+@click.command("execucao")
+@click.argument(
+    "variaveis",
+    nargs=-1,
+)
+@click.option(
+    "--formato", default="PARQUET", help="formato para escrita da síntese"
+)
+def execucao(variaveis, formato):
+    """
+    Realiza a síntese dos dados da execução do DESSEM.
+    """
+    os.environ["FORMATO_SINTESE"] = formato
+    Log.log().info("# Realizando síntese da EXECUÇÃO #")
+
+    uow = factory(
+        "FS",
+        os.curdir,
+    )
+    command = commands.SynthetizeExecution(variaveis)
+    handlers.synthetize_execution(command, uow)
+
+    Log.log().info("# Fim da síntese #")
+
+
 @click.command("limpeza")
 def limpeza():
     """
@@ -53,9 +78,12 @@ def limpeza():
     "--operacao", multiple=True, help="variável da operação para síntese"
 )
 @click.option(
+    "--execucao", multiple=True, help="variável da execução para síntese"
+)
+@click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def completa(operacao, formato):
+def completa(operacao, execucao, formato):
     """
     Realiza a síntese completa do DESSEM.
     """
@@ -68,10 +96,13 @@ def completa(operacao, formato):
     )
     command = commands.SynthetizeOperation(operacao)
     handlers.synthetize_operation(command, uow)
+    command = commands.SynthetizeExecution(execucao)
+    handlers.synthetize_execution(command, uow)
 
     Log.log().info("# Fim da síntese #")
 
 
 app.add_command(completa)
 app.add_command(operacao)
+app.add_command(execucao)
 app.add_command(limpeza)

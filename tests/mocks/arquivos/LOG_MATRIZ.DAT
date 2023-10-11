@@ -1,0 +1,47 @@
+***********************************************************************
+*                                                                     *
+*            CEPEL - CENTRO DE PESQUISAS DE ENERGIA ELETRICA          *
+*  MODELO DESSEM     - VERSAO 19.4.4 - Agosto  de 2023 (CPLEX)                       *
+*                                                                     *
+***********************************************************************
+
+
+   PROGRAMA LICENCIADO PARA ONS                                                                                                                                                   
+
+
+____________________________________________________________________
+
+ TE  PMO - SETEMBRO/22 - OUTUBRO/22 - REV 1 - FCF COM CVAR - 12 REE - VALOR ESPE - Data do Caso: 03/09/2022                                                       
+____________________________________________________________________
+
+Valores da coluna STAT:
+01: LP otimo
+03: LP Inviavel
+05: LP Otimo, mas com pequenas inviabilidades no problema original
+06: LP com solucao disponivel, mas sem otimalidade provada, devido a dificuldades numericas
+10: LP Interrompido por limite de iteracoes
+11: LP Interrompido por limite de tempo
+12: LP Interrompido por limite no valor da funcao objetivo
+101: MIP otimo
+102: MIP viavel com GAP atingido
+103: MIP inviavel
+104: MIP viavel com numero maximo de solucoes viaveis alcancadas
+105: MIP viavel com numero maximo de nos explorados
+115: MIP otimo, mas com pequenas inviabilidades no problema original
+ 
+----;------------;---------;---------;---------;---------;---------;---------;-----------------;-----;
+  #      TIPO    ;VARIAVEIS;VAR. INT.;RESTR.   ;RESTR.INT;ELEMENTOS; TEMPO(M);  FOB            ;STAT ;
+----;------------;---------;---------;---------;---------;---------;---------;-----------------;-----;
+  1 ; PL         ;  654081 ;       0 ;  171897 ;       0 ; 1938821 ;     0.4 ;    -6624463.973 ;   1 ;
+  2 ; PL         ;  654081 ;       0 ;  172052 ;       0 ; 1943982 ;     0.7 ;    -6624203.115 ;   1 ;
+  3 ; PL         ;  654081 ;       0 ;  172086 ;       0 ; 1945280 ;     0.6 ;    -6624207.862 ;   1 ;
+  4 ; PL         ;  654081 ;       0 ;  172114 ;       0 ; 1948592 ;     0.8 ;    -6624207.214 ;   1 ;
+  5 ; PL         ;  654081 ;       0 ;  172116 ;       0 ; 1948682 ;     0.8 ;    -6624207.517 ;   1 ;
+  6 ; PL         ;  654081 ;       0 ;  172147 ;       0 ; 1949562 ;     0.7 ;    -6624207.342 ;   1 ;
+  7 ; PL         ;  654081 ;       0 ;  172147 ;       0 ; 1949562 ;     0.8 ;    -6624207.444 ;   1 ;
+  8 ; PL         ;  654081 ;       0 ;  172147 ;       0 ; 1949562 ;     0.8 ;    -6624207.382 ;   1 ;
+  9 ; PL         ;  654081 ;       0 ;  172147 ;       0 ; 1949562 ;     0.7 ;    -6624207.417 ;   1 ;
+ 10 ; PL         ;  654081 ;       0 ;  172147 ;       0 ; 1949562 ;     0.6 ;    -6624207.396 ;   1 ;
+ 11 ; MILP       ;  654081 ;  137900 ;  440953 ;  268806 ; 4177453 ;     4.6 ;    -6628250.542 ; 101 ;
+ 12 ; PL.Int.Fix ;  654081 ;  137900 ;  440973 ;  268806 ; 4184300 ;     0.8 ;    -6624204.374 ;   1 ;
+ 13 ; PL.CalcCMO ;  654081 ;  137900 ;  440973 ;  268806 ; 4184300 ;     0.7 ;    -6624204.374 ;   1 ;
