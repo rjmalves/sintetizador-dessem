@@ -1,7 +1,6 @@
 from typing import Callable, Dict, List, Optional
 from traceback import print_exc
 import pandas as pd  # type: ignore
-import numpy as np
 
 from sintetizador.services.unitofwork import AbstractUnitOfWork
 from sintetizador.utils.log import Log
@@ -61,14 +60,15 @@ class ExecutionSynthetizer:
     def _resolve_tempo(self) -> pd.DataFrame:
         with self.uow:
             logmatriz = self.uow.files.get_log_matriz()
-        df = logmatriz.tabela
-        logger = Log.log()
-        if df is None:
+
+        if logmatriz is None:
+            logger = Log.log()
             if logger is not None:
                 logger.error("Dados de tempo do LOG_MATRIZ não encontrados")
             raise RuntimeError()
-        df = df.rename(columns={"tipo": "etapa", "tempo_min": "tempo"})
 
+        df = logmatriz.tabela
+        df = df.rename(columns={"tipo": "etapa", "tempo_min": "tempo"})
         df["tempo"] = df["tempo"] * 60
 
         return df[["etapa", "tempo"]]
@@ -76,15 +76,16 @@ class ExecutionSynthetizer:
     def _resolve_costs(self) -> pd.DataFrame:
         with self.uow:
             deslogrelato = self.uow.files.get_des_log_relato()
-        df = deslogrelato.variaveis_otimizacao
-        logger = Log.log()
-        if df is None:
+
+        if deslogrelato is None:
+            logger = Log.log()
             if logger is not None:
                 logger.error(
                     "Bloco de variáveis da operação do DES_LOG_RELATO não encontrado"
                 )
             raise RuntimeError()
 
+        df = deslogrelato.variaveis_otimizacao
         variaveis = {
             "Parcela de custo presente": "PRESENTE",
             "Parcela de custo Futuro": "FUTURO",
