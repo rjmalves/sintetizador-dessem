@@ -4,6 +4,7 @@ import numpy as np
 from traceback import print_exc
 
 from idessem.dessem.pdo_sist import PdoSist
+from idessem.dessem.pdo_inter import PdoInter
 from idessem.dessem.pdo_operacao import PdoOperacao
 
 from sintetizador.services.unitofwork import AbstractUnitOfWork
@@ -42,6 +43,7 @@ class OperationSynthetizer:
         "QDEF_SIN_EST",
         "COP_SIN_EST",
         "CFU_SIN_EST",
+        "INT_SBP_EST",
     ]
 
     def __init__(self) -> None:
@@ -181,6 +183,11 @@ class OperationSynthetizer:
                 SpatialResolution.SISTEMA_INTERLIGADO,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_operacao_custos("custo_futuro"),
+            (
+                Variable.INTERCAMBIO,
+                SpatialResolution.PAR_SUBMERCADOS,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_inter_sbm("intercambio"),
         }
 
     @property
@@ -222,6 +229,19 @@ class OperationSynthetizer:
                 if logger is not None:
                     logger.error(
                         "Erro no processamento do PDO_SIST para"
+                        + " síntese da operação"
+                    )
+                raise RuntimeError()
+            return pdo
+
+    def _get_pdo_inter(self) -> PdoInter:
+        with self.uow:
+            pdo = self.uow.files.get_pdo_inter()
+            if pdo is None:
+                logger = Log.log()
+                if logger is not None:
+                    logger.error(
+                        "Erro no processamento do PDO_INTER para"
                         + " síntese da operação"
                     )
                 raise RuntimeError()
@@ -470,6 +490,54 @@ class OperationSynthetizer:
 
         return df[["estagio", "dataInicio", "dataFim", col]].rename(
             columns={col: "valor"}
+        )
+
+    def __processa_pdo_inter_sbm(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_inter().tabela.copy()
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_INTER para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
+
+        df[["dataInicio", "dataFim"]] = df.apply(
+            self.__extrai_datas, axis=1, result_type="expand"
+        )
+        df["nome_submercado_de"] = pd.Categorical(
+            df["nome_submercado_de"],
+            categories=df["nome_submercado_de"].unique().tolist(),
+            ordered=True,
+        )
+        df["nome_submercado_para"] = pd.Categorical(
+            df["nome_submercado_para"],
+            categories=df["nome_submercado_para"].unique().tolist(),
+            ordered=True,
+        )
+        df.sort_values(
+            ["nome_submercado_de", "nome_submercado_para", "estagio"],
+            inplace=True,
+        )
+        df = df.astype(
+            {"nome_submercado_de": str, "nome_submercado_para": str}
+        )
+        return df[
+            [
+                "nome_submercado_de",
+                "nome_submercado_para",
+                "estagio",
+                "dataInicio",
+                "dataFim",
+                col,
+            ]
+        ].rename(
+            columns={
+                "nome_submercado_de": "submercadoDe",
+                "nome_submercado_para": "submercadoPara",
+                col: "valor",
+            }
         )
 
     def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):

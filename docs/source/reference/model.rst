@@ -312,8 +312,8 @@ que estão disponíveis no modelo.
      -
      -
    * - `INT`
-     -
-     -
+     - `SBP`
+     - `EST`
    * - `MER`
      - `SIN`, `SBM` 
      - `EST`
