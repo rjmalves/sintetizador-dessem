@@ -4,6 +4,7 @@ import pathlib
 
 from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.pdo_sist import PdoSist
+from idessem.dessem.pdo_inter import PdoInter
 from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_operacao import PdoOperacao
@@ -49,6 +50,10 @@ class AbstractFilesRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_pdo_inter(self) -> Optional[PdoInter]:
+        raise NotImplementedError
+
+    @abstractmethod
     def get_pdo_hidr(self) -> Optional[PdoHidr]:
         raise NotImplementedError
 
@@ -79,6 +84,8 @@ class RawFilesRepository(AbstractFilesRepository):
             raise e
         self.__pdo_sist: Optional[PdoSist] = None
         self.__read_pdo_sist = False
+        self.__pdo_inter: Optional[PdoInter] = None
+        self.__read_pdo_inter = False
         self.__pdo_operacao: Optional[PdoOperacao] = None
         self.__read_pdo_operacao = False
         self.__pdo_hidr: Optional[PdoHidr] = None
@@ -155,6 +162,33 @@ class RawFilesRepository(AbstractFilesRepository):
                     logger.error(f"Erro na leitura do PDO_SIST: {e}")
                 raise e
         return self.__pdo_sist
+
+    def get_pdo_inter(self) -> Optional[PdoInter]:
+        if self.__read_pdo_inter is False:
+            self.__read_pdo_inter = True
+            logger = Log.log()
+            try:
+                reg_caso = self.__dessemarq.caso
+                if reg_caso is None:
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
+                extensao = (
+                    reg_caso.valor if reg_caso.valor is not None else "DAT"
+                )
+                nome_arquivo = f"PDO_INTER.{extensao}"
+                caminho = str(
+                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                )
+                self.__converte_utf8(caminho)
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {nome_arquivo}")
+                self.__pdo_inter = PdoInter.read(caminho)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(f"Erro na leitura do PDO_INTER: {e}")
+                raise e
+        return self.__pdo_inter
 
     def get_pdo_hidr(self) -> Optional[PdoHidr]:
         if self.__read_pdo_hidr is False:
