@@ -141,7 +141,7 @@ def test_sintese_ghid_sin_est_pdo_sist(test_settings):
     assert df.at[0, "valor"] == 40413.97
 
 
-def test_sintese_gter_ute_est_pdo_oper_uct(test_settings):
+def test_sintese_gter_ute_est_pdo_oper_term(test_settings):
     m = MagicMock(lambda df, filename: df)
     with patch(
         "sintetizador.adapters.repository.export.ParquetExportRepository.synthetize_df",

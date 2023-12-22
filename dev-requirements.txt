@@ -1,6 +1,6 @@
 click
 pyarrow
-idessem>=0.0.13
+idessem>=0.0.16
 pylama
 mypy
 pytest
