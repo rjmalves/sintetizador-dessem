@@ -13,6 +13,7 @@ from idessem.dessem.log_matriz import LogMatriz
 from idessem.dessem.pdo_oper_term import PdoOperTerm
 
 from sintetizador.utils.log import Log
+from sintetizador.utils.fs import find_file_case_insensitive
 from sintetizador.model.settings import Settings
 from sintetizador.utils.encoding import converte_codificacao
 import asyncio
@@ -131,8 +132,8 @@ class RawFilesRepository(AbstractFilesRepository):
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
                 nome_arquivo = f"PDO_OPERACAO.{extensao}"
-                caminho = str(
-                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
                 )
                 self.__converte_utf8(caminho)
                 if logger is not None:
@@ -158,8 +159,8 @@ class RawFilesRepository(AbstractFilesRepository):
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
                 nome_arquivo = f"PDO_SIST.{extensao}"
-                caminho = str(
-                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
                 )
                 self.__converte_utf8(caminho)
                 if logger is not None:
@@ -185,8 +186,8 @@ class RawFilesRepository(AbstractFilesRepository):
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
                 nome_arquivo = f"PDO_INTER.{extensao}"
-                caminho = str(
-                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
                 )
                 self.__converte_utf8(caminho)
                 if logger is not None:
@@ -212,8 +213,8 @@ class RawFilesRepository(AbstractFilesRepository):
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
                 nome_arquivo = f"PDO_HIDR.{extensao}"
-                caminho = str(
-                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
                 )
                 self.__converte_utf8(caminho)
                 if logger is not None:
@@ -239,8 +240,8 @@ class RawFilesRepository(AbstractFilesRepository):
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
                 nome_arquivo = f"PDO_OPER_UCT.{extensao}"
-                caminho = str(
-                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
                 )
                 self.__converte_utf8(caminho)
                 if logger is not None:
@@ -266,8 +267,8 @@ class RawFilesRepository(AbstractFilesRepository):
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
                 nome_arquivo = f"DES_LOG_RELATO.{extensao}"
-                caminho = str(
-                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
                 )
                 self.__converte_utf8(caminho)
                 if logger is not None:
@@ -293,8 +294,8 @@ class RawFilesRepository(AbstractFilesRepository):
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
                 nome_arquivo = f"LOG_MATRIZ.{extensao}"
-                caminho = str(
-                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
                 )
                 self.__converte_utf8(caminho)
                 if logger is not None:
@@ -320,8 +321,8 @@ class RawFilesRepository(AbstractFilesRepository):
                     reg_caso.valor if reg_caso.valor is not None else "DAT"
                 )
                 nome_arquivo = f"PDO_OPER_TERM.{extensao}"
-                caminho = str(
-                    pathlib.Path(self.__tmppath).joinpath(nome_arquivo)
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
                 )
                 self.__converte_utf8(caminho)
                 if logger is not None:
