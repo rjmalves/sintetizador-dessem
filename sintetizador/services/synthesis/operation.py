@@ -28,6 +28,8 @@ class OperationSynthetizer:
         "GTER_UTE_EST",
         "GTER_SBM_EST",
         "GTER_SIN_EST",
+        "GUNS_SBM_EST",
+        "GUNS_SIN_EST",
         "EARMF_SBM_EST",
         "EARMF_SIN_EST",
         "VARPF_UHE_EST",
@@ -98,6 +100,36 @@ class OperationSynthetizer:
                 SpatialResolution.SISTEMA_INTERLIGADO,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_sist_sin("geracao_termica"),
+            (
+                Variable.GERACAO_USINAS_NAO_SIMULADAS,
+                SpatialResolution.SUBMERCADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_eolica_sbm("geracao"),
+            (
+                Variable.GERACAO_USINAS_NAO_SIMULADAS,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_eolica_sin("geracao"),
+            (
+                Variable.GERACAO_USINAS_NAO_SIMULADAS_DISPONIVEL,
+                SpatialResolution.SUBMERCADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_eolica_sbm("geracao_pre_definida"),
+            (
+                Variable.GERACAO_USINAS_NAO_SIMULADAS_DISPONIVEL,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_eolica_sin("geracao_pre_definida"),
+            (
+                Variable.CORTE_GERACAO_USINAS_NAO_SIMULADAS,
+                SpatialResolution.SUBMERCADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_eolica_sbm("corte_geracao"),
+            (
+                Variable.CORTE_GERACAO_USINAS_NAO_SIMULADAS,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_eolica_sin("corte_geracao"),
             (
                 Variable.ENERGIA_ARMAZENADA_ABSOLUTA_FINAL,
                 SpatialResolution.SUBMERCADO,
@@ -281,6 +313,35 @@ class OperationSynthetizer:
                 + df["vazao_montante_m3s"]
                 + df["vazao_montante_tempo_viagem_m3s"]
             )
+            return df
+
+    def _get_pdo_eolica(self) -> pd.DataFrame:
+        with self.uow:
+            pdo = self.uow.files.get_pdo_eolica()
+            if pdo is None:
+                logger = Log.log()
+                if logger is not None:
+                    logger.error(
+                        "Erro no processamento do PDO_EOLICA para"
+                        + " síntese da operação"
+                    )
+                raise RuntimeError()
+
+            df = pdo.tabela
+            # Acrescenta datas iniciais e finais
+            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
+            num_usinas = len(df.loc[df["estagio"] == 1])
+            df_datas = self.__resolve_stages_durations()[
+                ["data_inicial", "data_final"]
+            ]
+            df["dataInicio"] = np.repeat(
+                df_datas["data_inicial"].tolist(), num_usinas
+            )
+            df["dataFim"] = np.repeat(
+                df_datas["data_final"].tolist(), num_usinas
+            )
+            # Acrescenta novas variáveis a partir de operação de colunas já existentes
+            df["corte_geracao"] = df["geracao_pre_definida"] - df["geracao"]
             return df
 
     def _get_pdo_operacao(self) -> PdoOperacao:
@@ -471,6 +532,53 @@ class OperationSynthetizer:
             df["conjunto"] == 99,
             ["nome_usina", "estagio", "dataInicio", "dataFim", col],
         ]
+
+        df = df.groupby(["estagio", "dataInicio", "dataFim"], as_index=False)[
+            col
+        ].sum(numeric_only=True)
+        df.sort_values(["estagio"], inplace=True)
+        df.reset_index(inplace=True)
+
+        return df.rename(columns={col: "valor"})
+
+    def __processa_pdo_eolica_sbm(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_eolica().copy()
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_EOLICA para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
+
+        df = df.groupby(
+            ["estagio", "nome_submercado", "dataInicio", "dataFim"],
+            as_index=False,
+        )[col].sum(numeric_only=True)
+
+        df["nome_submercado"] = pd.Categorical(
+            df["nome_submercado"],
+            categories=["SE", "S", "NE", "N", "FC"],
+            ordered=True,
+        )
+        df.sort_values(["nome_submercado", "estagio"], inplace=True)
+        df = df.astype({"nome_submercado": str})
+        df.reset_index(inplace=True)
+        return df[
+            ["nome_submercado", "estagio", "dataInicio", "dataFim", col]
+        ].rename(columns={col: "valor", "nome_submercado": "submercado"})
+
+    def __processa_pdo_eolica_sin(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_eolica().copy()
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_EOLICA para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
 
         df = df.groupby(["estagio", "dataInicio", "dataFim"], as_index=False)[
             col
