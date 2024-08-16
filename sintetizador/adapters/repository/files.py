@@ -179,7 +179,6 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_sist
 
-    
     def get_pdo_eolica(self) -> Optional[PdoEolica]:
         if self.__read_pdo_eolica is False:
             self.__read_pdo_eolica = True
@@ -206,7 +205,6 @@ class RawFilesRepository(AbstractFilesRepository):
                     logger.error(f"Erro na leitura do PDO_EOLICA: {e}")
                 raise e
         return self.__pdo_eolica
-
 
     def get_pdo_inter(self) -> Optional[PdoInter]:
         if self.__read_pdo_inter is False:
