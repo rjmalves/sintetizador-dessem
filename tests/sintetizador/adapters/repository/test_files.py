@@ -23,6 +23,14 @@ def test_get_pdo_sist(test_settings):
     assert isinstance(pdo.tabela, pd.DataFrame)
 
 
+def test_get_pdo_eolica(test_settings):
+    repo = factory("FS", DECK_TEST_DIR)
+    pdo = repo.get_pdo_eolica()
+    assert pdo.data_estudo == datetime(2022, 9, 3)
+    assert pdo.versao == "20.3"
+    assert isinstance(pdo.tabela, pd.DataFrame)
+
+
 def test_get_pdo_oper_uct(test_settings):
     repo = factory("FS", DECK_TEST_DIR)
     pdo = repo.get_pdo_oper_uct()

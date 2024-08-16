@@ -11,6 +11,7 @@ from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.log_matriz import LogMatriz
 from idessem.dessem.pdo_oper_term import PdoOperTerm
+from idessem.dessem.pdo_eolica import PdoEolica
 
 from sintetizador.utils.log import Log
 from sintetizador.utils.fs import find_file_case_insensitive
@@ -61,6 +62,10 @@ class AbstractFilesRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_pdo_eolica(self) -> Optional[PdoEolica]:
+        raise NotImplementedError
+
+    @abstractmethod
     def get_pdo_oper_uct(self) -> Optional[PdoOperUct]:
         raise NotImplementedError
 
@@ -105,6 +110,8 @@ class RawFilesRepository(AbstractFilesRepository):
         self.__read_log_matriz = False
         self.__pdo_oper_term: Optional[PdoOperTerm] = None
         self.__read_pdo_oper_term = False
+        self.__pdo_eolica: Optional[PdoEolica] = None
+        self.__read_pdo_eolica = False
 
     @property
     def dessemarq(self) -> DessemArq:
@@ -171,6 +178,35 @@ class RawFilesRepository(AbstractFilesRepository):
                     logger.error(f"Erro na leitura do PDO_SIST: {e}")
                 raise e
         return self.__pdo_sist
+
+    
+    def get_pdo_eolica(self) -> Optional[PdoEolica]:
+        if self.__read_pdo_eolica is False:
+            self.__read_pdo_eolica = True
+            logger = Log.log()
+            try:
+                reg_caso = self.__dessemarq.caso
+                if reg_caso is None:
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
+                extensao = (
+                    reg_caso.valor if reg_caso.valor is not None else "DAT"
+                )
+                nome_arquivo = f"PDO_EOLICA.{extensao}"
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
+                )
+                self.__converte_utf8(caminho)
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {nome_arquivo}")
+                self.__pdo_eolica = PdoEolica.read(caminho)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(f"Erro na leitura do PDO_EOLICA: {e}")
+                raise e
+        return self.__pdo_eolica
+
 
     def get_pdo_inter(self) -> Optional[PdoInter]:
         if self.__read_pdo_inter is False:
