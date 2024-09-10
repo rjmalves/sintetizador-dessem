@@ -12,6 +12,7 @@ from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.log_matriz import LogMatriz
 from idessem.dessem.pdo_oper_term import PdoOperTerm
 from idessem.dessem.pdo_eolica import PdoEolica
+from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 
 from sintetizador.utils.log import Log
 from sintetizador.utils.fs import find_file_case_insensitive
@@ -30,6 +31,7 @@ if platform.system() == "Windows":
     DesLogRelato.ENCODING = "iso-8859-1"
     LogMatriz.ENCODING = "iso-8859-1"
     PdoOperTerm.ENCODING = "iso-8859-1"
+    PdoOperTviagCalha.ENCODING = "iso-8859-1"
 
 
 class AbstractFilesRepository(ABC):
@@ -81,6 +83,10 @@ class AbstractFilesRepository(ABC):
     def get_pdo_oper_term(self) -> Optional[PdoOperTerm]:
         raise NotImplementedError
 
+    @abstractmethod
+    def get_pdo_oper_tviag_calha(self) -> Optional[PdoOperTviagCalha]:
+        raise NotImplementedError
+
 
 class RawFilesRepository(AbstractFilesRepository):
     def __init__(self, tmppath: str):
@@ -112,6 +118,8 @@ class RawFilesRepository(AbstractFilesRepository):
         self.__read_pdo_oper_term = False
         self.__pdo_eolica: Optional[PdoEolica] = None
         self.__read_pdo_eolica = False
+        self.__pdo_oper_tviag_calha: Optional[PdoOperTviagCalha] = None
+        self.__read_pdo_oper_tviag_calha = False
 
     @property
     def dessemarq(self) -> DessemArq:
@@ -367,6 +375,35 @@ class RawFilesRepository(AbstractFilesRepository):
                     logger.error(f"Erro na leitura do PDO_OPER_TERM: {e}")
                 raise e
         return self.__pdo_oper_term
+
+    def get_pdo_oper_tviag_calha(self) -> Optional[PdoOperTviagCalha]:
+        if self.__read_pdo_oper_tviag_calha is False:
+            self.__read_pdo_oper_tviag_calha = True
+            logger = Log.log()
+            try:
+                reg_caso = self.__dessemarq.caso
+                if reg_caso is None:
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
+                extensao = (
+                    reg_caso.valor if reg_caso.valor is not None else "DAT"
+                )
+                nome_arquivo = f"PDO_OPER_TVIAG_CALHA.{extensao}"
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
+                )
+                self.__converte_utf8(caminho)
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {nome_arquivo}")
+                self.__pdo_oper_tviag_calha = PdoOperTviagCalha.read(caminho)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(
+                        f"Erro na leitura do PDO_OPER_TVIAG_CALHA: {e}"
+                    )
+                raise e
+        return self.__pdo_oper_tviag_calha
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractFilesRepository:
