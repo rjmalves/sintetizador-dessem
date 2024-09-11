@@ -50,6 +50,7 @@ class OperationSynthetizer:
         "COP_SIN_EST",
         "CFU_SIN_EST",
         "INT_SBP_EST",
+        "VCALHA_UHE_EST",
     ]
 
     def __init__(self) -> None:
@@ -204,6 +205,13 @@ class OperationSynthetizer:
                 SpatialResolution.SISTEMA_INTERLIGADO,
                 TemporalResolution.ESTAGIO,
             ): lambda: self.__processa_pdo_hidr_sin("vazao_defluente_m3s"),
+            (
+                Variable.VOLUME_CALHA,
+                SpatialResolution.USINA_HIDROELETRICA,
+                TemporalResolution.ESTAGIO,
+            ): lambda: self.__processa_pdo_oper_tviag_calha_uhe(
+                "volume_calha_hm3"
+            ),
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.USINA_TERMELETRICA,
@@ -412,6 +420,33 @@ class OperationSynthetizer:
             )
             df["dataFim"] = np.repeat(
                 df_datas["data_final"].tolist(), num_unidades
+            )
+            return df
+
+    def _get_pdo_oper_tviag_calha(self) -> pd.DataFrame:
+        with self.uow:
+            pdo = self.uow.files.get_pdo_oper_tviag_calha()
+            if pdo is None:
+                logger = Log.log()
+                if logger is not None:
+                    logger.error(
+                        "Erro no processamento do PDO_OPER_TVIAG_CALHA para"
+                        + " síntese da operação"
+                    )
+                raise RuntimeError()
+
+            df = pdo.tabela
+            # Acrescenta datas iniciais e finais
+            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
+            num_entidades = len(df.loc[df["estagio"] == 1])
+            df_datas = self.__resolve_stages_durations()[
+                ["data_inicial", "data_final"]
+            ]
+            df["dataInicio"] = np.repeat(
+                df_datas["data_inicial"].tolist(), num_entidades
+            )
+            df["dataFim"] = np.repeat(
+                df_datas["data_final"].tolist(), num_entidades
             )
             return df
 
@@ -696,6 +731,26 @@ class OperationSynthetizer:
                 "nome_submercado_para": "submercadoPara",
                 col: "valor",
             }
+        )
+
+    def __processa_pdo_oper_tviag_calha_uhe(self, col: str) -> pd.DataFrame:
+        df = self._get_pdo_oper_tviag_calha().copy()
+        if df is None:
+            logger = Log.log()
+            if logger is not None:
+                logger.error(
+                    "Erro no processamento do PDO_OPER_TVIAG_CALHA para"
+                    + " síntese da operação"
+                )
+            raise RuntimeError()
+
+        df = df.loc[df["tipo_elemento_jusante"] == "USIH"]
+        df = df[
+            ["nome_elemento_jusante", "estagio", "dataInicio", "dataFim", col]
+        ]
+        df.reset_index(inplace=True)
+        return df.rename(
+            columns={col: "valor", "nome_elemento_jusante": "usina"}
         )
 
     def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):

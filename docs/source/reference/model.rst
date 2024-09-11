@@ -121,6 +121,12 @@ A variável informa a grandeza que é modelada e fornecida como saída da opera�
      - `GTER`
    * - Geração Eólica (MWmes)
      - `GEOL`
+   * - Geração de Usinas Não Simuladas (MWmes)
+     - `GUNS`
+   * - Geração Disponível de Usinas Não Simuladas (MWmes)
+     - `GUNSD`
+   * - Corte de Geração de Usinas Não Simuladas (MWmes)
+     - `CUNS`    
    * - Intercâmbio (MWmes)
      - `INT`
    * - Mercado de Energia (MWmes)
@@ -183,6 +189,8 @@ A variável informa a grandeza que é modelada e fornecida como saída da opera�
      - `VTUR`
    * - Volume Vertido (hm3)
      - `VVER`
+   * - Volume Armazenado na calha (hm3)
+     - `VCALHA`
 
 Agregação Espacial
 ===================
@@ -311,6 +319,15 @@ que estão disponíveis no modelo.
    * - `GEOL`
      -
      -
+   * - `GUNS`
+     - `SIN`, `SBM`
+     - `EST` 
+   * - `GUNSD`
+     - `SIN`, `SBM`
+     - `EST` 
+   * - `CUNS`
+     - `SIN`, `SBM`
+     - `EST` 
    * - `INT`
      - `SBP`
      - `EST`
@@ -401,6 +418,9 @@ que estão disponíveis no modelo.
    * - `VVER`
      -
      -
+   * - `VCALHA`
+     - `UHE`
+     - `EST`
 
 
 São exemplos de elementos de dados válidos para as sínteses da operação  `GTER_UTE_EST`, `CMO_SBM_EST`, dentre outras.

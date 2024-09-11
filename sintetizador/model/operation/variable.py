@@ -22,6 +22,7 @@ class Variable(Enum):
     VAZAO_AFLUENTE = "QAFL"
     VAZAO_DEFLUENTE = "QDEF"
     INTERCAMBIO = "INT"
+    VOLUME_CALHA = "VCALHA"
 
     @classmethod
     def factory(cls, val: str) -> "Variable":
