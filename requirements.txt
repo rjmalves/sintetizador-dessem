@@ -1,3 +1,0 @@
-click
-pyarrow
-idessem>=0.0.22
