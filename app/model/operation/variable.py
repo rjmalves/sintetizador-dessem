@@ -5,24 +5,24 @@ class Variable(Enum):
     CUSTO_MARGINAL_OPERACAO = "CMO"
     CUSTO_OPERACAO = "COP"
     CUSTO_FUTURO = "CFU"
-    MERCADO = "MER"
-    MERCADO_LIQUIDO = "MERL"
     ENERGIA_ARMAZENADA_ABSOLUTA_FINAL = "EARMF"
     GERACAO_HIDRAULICA = "GHID"
-    GERACAO_TERMICA = "GTER"
     GERACAO_USINAS_NAO_SIMULADAS = "GUNS"
     GERACAO_USINAS_NAO_SIMULADAS_DISPONIVEL = "GUNSD"
     CORTE_GERACAO_USINAS_NAO_SIMULADAS = "CUNS"
-    VOLUME_ARMAZENADO_PERCENTUAL_FINAL = "VARPF"
-    VOLUME_ARMAZENADO_ABSOLUTO_FINAL = "VARMF"
+    GERACAO_TERMICA = "GTER"
     VALOR_AGUA = "VAGUA"
-    VAZAO_TURBINADA = "QTUR"
-    VAZAO_VERTIDA = "QVER"
-    VAZAO_INCREMENTAL = "QINC"
     VAZAO_AFLUENTE = "QAFL"
     VAZAO_DEFLUENTE = "QDEF"
-    INTERCAMBIO = "INT"
+    VAZAO_INCREMENTAL = "QINC"
+    VAZAO_VERTIDA = "QVER"
+    VAZAO_TURBINADA = "QTUR"
+    VOLUME_ARMAZENADO_ABSOLUTO_FINAL = "VARMF"
+    VOLUME_ARMAZENADO_PERCENTUAL_FINAL = "VARPF"
     VOLUME_CALHA = "VCALHA"
+    INTERCAMBIO = "INT"
+    MERCADO = "MER"
+    MERCADO_LIQUIDO = "MERL"
 
     @classmethod
     def factory(cls, val: str) -> "Variable":
@@ -33,3 +33,53 @@ class Variable(Enum):
 
     def __repr__(self) -> str:
         return self.value
+
+    @property
+    def short_name(self) -> str | None:
+        SHORT_NAMES = dict[str, str] = {
+            "CMO": "CMO",
+            "COP": "COPER",
+            "CFU": "CFU",
+            "EARMF": "EAR Final",
+            "GHID": "GH",
+            "GUNS": "Geração Não Simuladas",
+            "GUNSD": "Geração Não Simuladas Disponível",
+            "CUNS": "Corte de Não Simuladas",
+            "GTER": "GT",
+            "QAFL": "Vazão AFL",
+            "QINC": "Vazão INC",
+            "QDEF": "Vazão DEF",
+            "QTUR": "Vazão TUR",
+            "QVER": "Vazão VER",
+            "VARMF": "VAR Final",
+            "VARPF": "VAR Percentual Final",
+            "INT": "Intercâmbio",
+            "MER": "Mercado",
+            "MERL": "Mercado Líq.",
+        }
+        return SHORT_NAMES.get(self.value)
+
+    @property
+    def long_name(self) -> str | None:
+        LONG_NAMES: dict[str, str] = {
+            "CMO": "Custo Marginal de Operação",
+            "COP": "Custo de Operação",
+            "CFU": "Custo Futuro",
+            "EARMF": "Energia Armazenada Absoluta Final",
+            "GHID": "Geração Hidráulica",
+            "GUNS": "Geração de Usinas Não Simuladas",
+            "GUNSD": "Geração de Usinas Não Simuladas Disponível",
+            "CUNS": "Corte da Geração de Usinas Não Simuladas",
+            "GTER": "Geração Térmica",
+            "QAFL": "Vazão Afluente",
+            "QINC": "Vazão Incremental",
+            "QDEF": "Vazão Defluente",
+            "QTUR": "Vazão Turbinada",
+            "QVER": "Vazão Vertida",
+            "VARMF": "Volume Armazenado Absoluto Final",
+            "VARPF": "Volume Armazenado Percentual Final",
+            "INT": "Intercâmbio de Energia",
+            "MER": "Mercado de Energia",
+            "MERL": "Mercado de Energia Líquido",
+        }
+        return LONG_NAMES.get(self.value)

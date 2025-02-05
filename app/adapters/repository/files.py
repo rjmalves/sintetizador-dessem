@@ -2,10 +2,11 @@ import asyncio
 import pathlib
 import platform
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Type, TypeVar
+from typing import Type, TypeVar
 
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.dessemarq import DessemArq
+from idessem.dessem.entdados import Entdados
 from idessem.dessem.log_matriz import LogMatriz
 from idessem.dessem.pdo_eolica import PdoEolica
 from idessem.dessem.pdo_hidr import PdoHidr
@@ -47,43 +48,47 @@ class AbstractFilesRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_pdo_operacao(self) -> Optional[PdoOperacao]:
+    def get_entdados(self) -> Entdados | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_pdo_sist(self) -> Optional[PdoSist]:
+    def get_pdo_operacao(self) -> PdoOperacao | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_pdo_inter(self) -> Optional[PdoInter]:
+    def get_pdo_sist(self) -> PdoSist | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_pdo_hidr(self) -> Optional[PdoHidr]:
+    def get_pdo_inter(self) -> PdoInter | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_pdo_eolica(self) -> Optional[PdoEolica]:
+    def get_pdo_hidr(self) -> PdoHidr | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_pdo_oper_uct(self) -> Optional[PdoOperUct]:
+    def get_pdo_eolica(self) -> PdoEolica | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_des_log_relato(self) -> Optional[DesLogRelato]:
+    def get_pdo_oper_uct(self) -> PdoOperUct | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_log_matriz(self) -> Optional[LogMatriz]:
+    def get_des_log_relato(self) -> DesLogRelato | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_pdo_oper_term(self) -> Optional[PdoOperTerm]:
+    def get_log_matriz(self) -> LogMatriz | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_pdo_oper_tviag_calha(self) -> Optional[PdoOperTviagCalha]:
+    def get_pdo_oper_term(self) -> PdoOperTerm | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_pdo_oper_tviag_calha(self) -> PdoOperTviagCalha | None:
         raise NotImplementedError
 
 
@@ -92,6 +97,7 @@ class RawFilesRepository(AbstractFilesRepository):
         self.__tmppath = tmppath
         try:
             caminho = str(pathlib.Path(self.__tmppath).joinpath("dessem.arq"))
+            # TODO - realmente precisa desse converte?
             self.__converte_utf8(caminho)
             self.__dessemarq = DessemArq.read(caminho)
         except FileNotFoundError as e:
@@ -99,25 +105,27 @@ class RawFilesRepository(AbstractFilesRepository):
             if logger is not None:
                 logger.error("Não foi encontrado o arquivo dessem.arq")
             raise e
-        self.__pdo_sist: Optional[PdoSist] = None
+        self.__entdados: Entdados | None = None
+        self.__read_entdados = False
+        self.__pdo_sist: PdoSist | None = None
         self.__read_pdo_sist = False
-        self.__pdo_inter: Optional[PdoInter] = None
+        self.__pdo_inter: PdoInter | None = None
         self.__read_pdo_inter = False
-        self.__pdo_operacao: Optional[PdoOperacao] = None
+        self.__pdo_operacao: PdoOperacao | None = None
         self.__read_pdo_operacao = False
-        self.__pdo_hidr: Optional[PdoHidr] = None
+        self.__pdo_hidr: PdoHidr | None = None
         self.__read_pdo_hidr = False
-        self.__pdo_oper_uct: Optional[PdoOperUct] = None
+        self.__pdo_oper_uct: PdoOperUct | None = None
         self.__read_pdo_oper_uct = False
-        self.__des_log_relato: Optional[DesLogRelato] = None
+        self.__des_log_relato: DesLogRelato | None = None
         self.__read_des_log_relato = False
-        self.__log_matriz: Optional[LogMatriz] = None
+        self.__log_matriz: LogMatriz | None = None
         self.__read_log_matriz = False
-        self.__pdo_oper_term: Optional[PdoOperTerm] = None
+        self.__pdo_oper_term: PdoOperTerm | None = None
         self.__read_pdo_oper_term = False
-        self.__pdo_eolica: Optional[PdoEolica] = None
+        self.__pdo_eolica: PdoEolica | None = None
         self.__read_pdo_eolica = False
-        self.__pdo_oper_tviag_calha: Optional[PdoOperTviagCalha] = None
+        self.__pdo_oper_tviag_calha: PdoOperTviagCalha | None = None
         self.__read_pdo_oper_tviag_calha = False
 
     @property
@@ -132,7 +140,34 @@ class RawFilesRepository(AbstractFilesRepository):
         )
         asyncio.run(converte_codificacao(caminho, script))
 
-    def get_pdo_operacao(self) -> Optional[PdoOperacao]:
+    def get_entdados(self) -> Entdados | None:
+        if self.__read_entdados is False:
+            self.__read_entdados = True
+            logger = Log.log()
+            try:
+                reg_caso = self.__dessemarq.caso
+                if reg_caso is None:
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
+                extensao = (
+                    reg_caso.valor if reg_caso.valor is not None else "DAT"
+                )
+                nome_arquivo = f"ENTDADOS.{extensao}"
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
+                )
+                self.__converte_utf8(caminho)
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {nome_arquivo}")
+                self.__entdados = Entdados.read(caminho)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(f"Erro na leitura do ENTDADOS: {e}")
+                raise e
+        return self.__entdados
+
+    def get_pdo_operacao(self) -> PdoOperacao | None:
         if self.__read_pdo_operacao is False:
             self.__read_pdo_operacao = True
             logger = Log.log()
@@ -159,7 +194,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_operacao
 
-    def get_pdo_sist(self) -> Optional[PdoSist]:
+    def get_pdo_sist(self) -> PdoSist | None:
         if self.__read_pdo_sist is False:
             self.__read_pdo_sist = True
             logger = Log.log()
@@ -186,7 +221,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_sist
 
-    def get_pdo_eolica(self) -> Optional[PdoEolica]:
+    def get_pdo_eolica(self) -> PdoEolica | None:
         if self.__read_pdo_eolica is False:
             self.__read_pdo_eolica = True
             logger = Log.log()
@@ -213,7 +248,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_eolica
 
-    def get_pdo_inter(self) -> Optional[PdoInter]:
+    def get_pdo_inter(self) -> PdoInter | None:
         if self.__read_pdo_inter is False:
             self.__read_pdo_inter = True
             logger = Log.log()
@@ -240,7 +275,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_inter
 
-    def get_pdo_hidr(self) -> Optional[PdoHidr]:
+    def get_pdo_hidr(self) -> PdoHidr | None:
         if self.__read_pdo_hidr is False:
             self.__read_pdo_hidr = True
             logger = Log.log()
@@ -267,7 +302,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_hidr
 
-    def get_pdo_oper_uct(self) -> Optional[PdoOperUct]:
+    def get_pdo_oper_uct(self) -> PdoOperUct | None:
         if self.__read_pdo_oper_uct is False:
             self.__read_pdo_oper_uct = True
             logger = Log.log()
@@ -294,7 +329,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_oper_uct
 
-    def get_des_log_relato(self) -> Optional[DesLogRelato]:
+    def get_des_log_relato(self) -> DesLogRelato | None:
         if self.__read_des_log_relato is False:
             self.__read_des_log_relato = True
             logger = Log.log()
@@ -321,7 +356,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__des_log_relato
 
-    def get_log_matriz(self) -> Optional[LogMatriz]:
+    def get_log_matriz(self) -> LogMatriz | None:
         if self.__read_log_matriz is False:
             self.__read_log_matriz = True
             logger = Log.log()
@@ -348,7 +383,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__log_matriz
 
-    def get_pdo_oper_term(self) -> Optional[PdoOperTerm]:
+    def get_pdo_oper_term(self) -> PdoOperTerm | None:
         if self.__read_pdo_oper_term is False:
             self.__read_pdo_oper_term = True
             logger = Log.log()
@@ -375,7 +410,7 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_oper_term
 
-    def get_pdo_oper_tviag_calha(self) -> Optional[PdoOperTviagCalha]:
+    def get_pdo_oper_tviag_calha(self) -> PdoOperTviagCalha | None:
         if self.__read_pdo_oper_tviag_calha is False:
             self.__read_pdo_oper_tviag_calha = True
             logger = Log.log()
@@ -406,7 +441,7 @@ class RawFilesRepository(AbstractFilesRepository):
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractFilesRepository:
-    mapping: Dict[str, Type[AbstractFilesRepository]] = {
+    mapping: dict[str, Type[AbstractFilesRepository]] = {
         "FS": RawFilesRepository
     }
     return mapping.get(kind, RawFilesRepository)(*args, **kwargs)

@@ -1,244 +1,208 @@
+import logging
+from logging import INFO, WARNING
 from traceback import print_exc
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, List, TypeVar
 
-import numpy as np
 import pandas as pd  # type: ignore
-from idessem.dessem.pdo_inter import PdoInter
-from idessem.dessem.pdo_operacao import PdoOperacao
-from idessem.dessem.pdo_sist import PdoSist
 
-from app.model.operation.operationsynthesis import OperationSynthesis
+from app.internal.constants import (
+    IDENTIFICATION_COLUMNS,
+    VALUE_COL,
+)
+from app.model.operation.operationsynthesis import (
+    SUPPORTED_SYNTHESIS,
+    SYNTHESIS_DEPENDENCIES,
+    OperationSynthesis,
+)
 from app.model.operation.spatialresolution import SpatialResolution
-from app.model.operation.temporalresolution import TemporalResolution
 from app.model.operation.variable import Variable
+from app.services.deck.deck import Deck
 from app.services.unitofwork import AbstractUnitOfWork
 from app.utils.log import Log
+from app.utils.timing import time_and_log
 
 
 class OperationSynthetizer:
-    DEFAULT_OPERATION_SYNTHESIS_ARGS: List[str] = [
-        "CMO_SBM_EST",
-        "MER_SBM_EST",
-        "MER_SIN_EST",
-        "MERL_SBM_EST",
-        "MERL_SIN_EST",
-        "GHID_UHE_EST",
-        "GHID_SBM_EST",
-        "GHID_SIN_EST",
-        "GTER_UTE_EST",
-        "GTER_SBM_EST",
-        "GTER_SIN_EST",
-        "GUNS_SBM_EST",
-        "GUNS_SIN_EST",
-        "GUNSD_SBM_EST",
-        "GUNSD_SIN_EST",
-        "CUNS_SBM_EST",
-        "CUNS_SIN_EST",
-        "EARMF_SBM_EST",
-        "EARMF_SIN_EST",
-        "VARPF_UHE_EST",
-        "VARMF_UHE_EST",
-        "VAGUA_UHE_EST",
-        "QTUR_UHE_EST",
-        "QTUR_SIN_EST",
-        "QVER_UHE_EST",
-        "QVER_SIN_EST",
-        "QINC_UHE_EST",
-        "QAFL_UHE_EST",
-        "QDEF_UHE_EST",
-        "QDEF_SIN_EST",
-        "COP_SIN_EST",
-        "CFU_SIN_EST",
-        "INT_SBP_EST",
-        "VCALHA_UHE_EST",
-    ]
+    T = TypeVar("T")
+    logger: logging.Logger | None = None
 
-    def __init__(self) -> None:
-        self.__uow: Optional[AbstractUnitOfWork] = None
-        self.__stages_durations = None
-        self.__rules: Dict[
-            Tuple[Variable, SpatialResolution, TemporalResolution],
-            pd.DataFrame,
+    DEFAULT_OPERATION_SYNTHESIS_ARGS = SUPPORTED_SYNTHESIS
+
+    # Todas as sínteses que forem dependências de outras sínteses
+    # devem ser armazenadas em cache
+    SYNTHESIS_TO_CACHE: list[OperationSynthesis] = list(
+        set([p for pr in SYNTHESIS_DEPENDENCIES.values() for p in pr])
+    )
+
+    # Estratégias de cache para reduzir tempo total de síntese
+    CACHED_SYNTHESIS: dict[OperationSynthesis, pd.DataFrame] = {}
+    ORDERED_SYNTHESIS_ENTITIES: dict[OperationSynthesis, dict[str, list]] = {}
+
+    # Estatísticas das sínteses são armazenadas separadamente
+    SYNTHESIS_STATS: dict[SpatialResolution, list[pd.DataFrame]] = {}
+
+    @classmethod
+    def clear_cache(cls):
+        """
+        Limpa o cache de síntese de operação.
+        """
+        cls.CACHED_SYNTHESIS.clear()
+        cls.ORDERED_SYNTHESIS_ENTITIES.clear()
+        cls.SYNTHESIS_STATS.clear()
+
+    @classmethod
+    def _log(cls, msg: str, level: int = INFO):
+        if cls.logger is not None:
+            cls.logger.log(level, msg)
+
+    @classmethod
+    def _resolve(
+        cls, synthesis: tuple[Variable, SpatialResolution]
+    ) -> Callable:
+        _rules: dict[
+            tuple[Variable, SpatialResolution],
+            Callable,
         ] = {
             (
                 Variable.CUSTO_MARGINAL_OPERACAO,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sbm("cmo"),
+            ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "cmo"),
             (
                 Variable.MERCADO,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sbm("demanda"),
+            ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "demanda"),
             (
                 Variable.MERCADO,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sin("demanda"),
+            ): lambda uow: cls._resolve_pdo_sist_sin(uow, "demanda"),
             (
                 Variable.MERCADO_LIQUIDO,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sbm("demanda_liquida"),
+            ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "demanda_liquida"),
             (
                 Variable.MERCADO_LIQUIDO,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sin("demanda_liquida"),
+            ): lambda uow: cls._resolve_pdo_sist_sin(uow, "demanda_liquida"),
             (
                 Variable.GERACAO_HIDRAULICA,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sbm("geracao_hidraulica"),
+            ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "geracao_hidraulica"),
             (
                 Variable.GERACAO_HIDRAULICA,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sin("geracao_hidraulica"),
+            ): lambda uow: cls._resolve_pdo_sist_sin(uow, "geracao_hidraulica"),
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sbm("geracao_termica"),
+            ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "geracao_termica"),
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sin("geracao_termica"),
+            ): lambda uow: cls._resolve_pdo_sist_sin(uow, "geracao_termica"),
             (
                 Variable.GERACAO_USINAS_NAO_SIMULADAS,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_eolica_sbm("geracao"),
+            ): lambda uow: cls._resolve_pdo_eolica_sbm(uow, "geracao"),
             (
                 Variable.GERACAO_USINAS_NAO_SIMULADAS,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_eolica_sin("geracao"),
+            ): lambda uow: cls._resolve_pdo_eolica_sin(uow, "geracao"),
             (
                 Variable.GERACAO_USINAS_NAO_SIMULADAS_DISPONIVEL,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_eolica_sbm("geracao_pre_definida"),
+            ): lambda uow: cls._resolve_pdo_eolica_sbm(
+                uow, "geracao_pre_definida"
+            ),
             (
                 Variable.GERACAO_USINAS_NAO_SIMULADAS_DISPONIVEL,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_eolica_sin("geracao_pre_definida"),
+            ): lambda uow: cls._resolve_pdo_eolica_sin(
+                uow, "geracao_pre_definida"
+            ),
             (
                 Variable.CORTE_GERACAO_USINAS_NAO_SIMULADAS,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_eolica_sbm("corte_geracao"),
+            ): lambda uow: cls._resolve_pdo_eolica_sbm(uow, "corte_geracao"),
             (
                 Variable.CORTE_GERACAO_USINAS_NAO_SIMULADAS,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_eolica_sin("corte_geracao"),
+            ): lambda uow: cls._resolve_pdo_eolica_sin(uow, "corte_geracao"),
             (
                 Variable.ENERGIA_ARMAZENADA_ABSOLUTA_FINAL,
                 SpatialResolution.SUBMERCADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sbm("energia_armazenada"),
+            ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "energia_armazenada"),
             (
                 Variable.ENERGIA_ARMAZENADA_ABSOLUTA_FINAL,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_sist_sin("energia_armazenada"),
+            ): lambda uow: cls._resolve_pdo_sist_sin(uow, "energia_armazenada"),
             (
                 Variable.VOLUME_ARMAZENADO_PERCENTUAL_FINAL,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("volume_final_percentual"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(
+                uow, "volume_final_percentual"
+            ),
             (
                 Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("volume_final_hm3"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(uow, "volume_final_hm3"),
             (
                 Variable.VALOR_AGUA,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("valor_agua"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(uow, "valor_agua"),
             (
                 Variable.GERACAO_HIDRAULICA,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("geracao"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(uow, "geracao"),
             (
                 Variable.VAZAO_TURBINADA,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("vazao_turbinada_m3s"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(
+                uow, "vazao_turbinada_m3s"
+            ),
             (
                 Variable.VAZAO_TURBINADA,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_sin("vazao_turbinada_m3s"),
+            ): lambda uow: cls._resolve_pdo_hidr_sin(
+                uow, "vazao_turbinada_m3s"
+            ),
             (
                 Variable.VAZAO_VERTIDA,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("vazao_vertida_m3s"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(uow, "vazao_vertida_m3s"),
             (
                 Variable.VAZAO_VERTIDA,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_sin("vazao_vertida_m3s"),
+            ): lambda uow: cls._resolve_pdo_hidr_sin(uow, "vazao_vertida_m3s"),
             (
                 Variable.VAZAO_INCREMENTAL,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("vazao_incremental_m3s"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(
+                uow, "vazao_incremental_m3s"
+            ),
             (
                 Variable.VAZAO_AFLUENTE,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("vazao_afluente_m3s"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(uow, "vazao_afluente_m3s"),
             (
                 Variable.VAZAO_DEFLUENTE,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_uhe("vazao_defluente_m3s"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(
+                uow, "vazao_defluente_m3s"
+            ),
             (
                 Variable.VAZAO_DEFLUENTE,
                 SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_hidr_sin("vazao_defluente_m3s"),
+            ): lambda uow: cls._resolve_pdo_hidr_sin(
+                uow, "vazao_defluente_m3s"
+            ),
             (
                 Variable.VOLUME_CALHA,
                 SpatialResolution.USINA_HIDROELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_oper_tviag_calha_uhe(
-                "volume_calha_hm3"
+            ): lambda uow: cls._resolve_pdo_oper_tviag_calha_uhe(
+                uow, "volume_calha_hm3"
             ),
-            (
-                Variable.GERACAO_TERMICA,
-                SpatialResolution.USINA_TERMELETRICA,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_oper_term_ute("geracao"),
-            (
-                Variable.CUSTO_OPERACAO,
-                SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_operacao_custos("custo_presente"),
-            (
-                Variable.CUSTO_FUTURO,
-                SpatialResolution.SISTEMA_INTERLIGADO,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_operacao_custos("custo_futuro"),
-            (
-                Variable.INTERCAMBIO,
-                SpatialResolution.PAR_SUBMERCADOS,
-                TemporalResolution.ESTAGIO,
-            ): lambda: self.__processa_pdo_inter_sbm("intercambio"),
         }
-
-    @property
-    def uow(self) -> AbstractUnitOfWork:
-        if self.__uow is None:
-            raise RuntimeError()
-        return self.__uow
+        return _rules[synthesis]
 
     def _default_args(self) -> List[str]:
         return self.__class__.DEFAULT_OPERATION_SYNTHESIS_ARGS
@@ -265,491 +229,155 @@ class OperationSynthetizer:
         # TODO - validar se os argumentos são suportados
         return variables
 
-    def _get_pdo_sist(self) -> PdoSist:
-        with self.uow:
-            pdo = self.uow.files.get_pdo_sist()
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_SIST para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
-            return pdo
-
-    def _get_pdo_inter(self) -> PdoInter:
-        with self.uow:
-            pdo = self.uow.files.get_pdo_inter()
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_INTER para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
-            return pdo
-
-    def _get_pdo_hidr(self) -> pd.DataFrame:
-        with self.uow:
-            pdo = self.uow.files.get_pdo_hidr()
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_SIST para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
-
-            df = pdo.tabela
-            # Acrescenta datas iniciais e finais
-            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
-            num_unidades = len(df.loc[df["estagio"] == 1])
-            df_datas = self.__resolve_stages_durations()[
-                ["data_inicial", "data_final"]
-            ]
-            df["dataInicio"] = np.repeat(
-                df_datas["data_inicial"].tolist(), num_unidades
-            )
-            df["dataFim"] = np.repeat(
-                df_datas["data_final"].tolist(), num_unidades
-            )
-            # Acrescenta novas variáveis a partir de operação de colunas já existentes
-            df["vazao_defluente_m3s"] = (
-                df["vazao_turbinada_m3s"] + df["vazao_vertida_m3s"]
-            )
-            df["vazao_afluente_m3s"] = (
-                df["vazao_incremental_m3s"]
-                + df["vazao_montante_m3s"]
-                + df["vazao_montante_tempo_viagem_m3s"]
-            )
-            return df
-
-    def _get_pdo_eolica(self) -> pd.DataFrame:
-        with self.uow:
-            pdo = self.uow.files.get_pdo_eolica()
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_EOLICA para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
-
-            df = pdo.tabela
-            # Acrescenta datas iniciais e finais
-            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
-            num_usinas = len(df.loc[df["estagio"] == 1])
-            df_datas = self.__resolve_stages_durations()[
-                ["data_inicial", "data_final"]
-            ]
-            df["dataInicio"] = np.repeat(
-                df_datas["data_inicial"].tolist(), num_usinas
-            )
-            df["dataFim"] = np.repeat(
-                df_datas["data_final"].tolist(), num_usinas
-            )
-            # Acrescenta novas variáveis a partir de operação de colunas já existentes
-            df["corte_geracao"] = df["geracao_pre_definida"] - df["geracao"]
-            return df
-
-    def _get_pdo_operacao(self) -> PdoOperacao:
-        with self.uow:
-            pdo = self.uow.files.get_pdo_operacao()
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_OPERACAO para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
-            return pdo
-
-    def _get_pdo_oper_uct(self) -> pd.DataFrame:
-        with self.uow:
-            pdo = self.uow.files.get_pdo_oper_uct()
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_OPER_UCT para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
-
-            df = pdo.tabela
-            # Acrescenta datas iniciais e finais
-            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
-            num_unidades = len(df.loc[df["estagio"] == 1])
-            df_datas = self.__resolve_stages_durations()[
-                ["data_inicial", "data_final"]
-            ]
-            df["dataInicio"] = np.repeat(
-                df_datas["data_inicial"].tolist(), num_unidades
-            )
-            df["dataFim"] = np.repeat(
-                df_datas["data_final"].tolist(), num_unidades
-            )
-            return df
-
-    def _get_pdo_oper_term(self) -> pd.DataFrame:
-        with self.uow:
-            pdo = self.uow.files.get_pdo_oper_term()
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_OPER_TERM para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
-
-            df = pdo.tabela
-            # Acrescenta datas iniciais e finais
-            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
-            num_unidades = len(df.loc[df["estagio"] == 1])
-            df_datas = self.__resolve_stages_durations()[
-                ["data_inicial", "data_final"]
-            ]
-            df["dataInicio"] = np.repeat(
-                df_datas["data_inicial"].tolist(), num_unidades
-            )
-            df["dataFim"] = np.repeat(
-                df_datas["data_final"].tolist(), num_unidades
-            )
-            return df
-
-    def _get_pdo_oper_tviag_calha(self) -> pd.DataFrame:
-        with self.uow:
-            pdo = self.uow.files.get_pdo_oper_tviag_calha()
-            if pdo is None:
-                logger = Log.log()
-                if logger is not None:
-                    logger.error(
-                        "Erro no processamento do PDO_OPER_TVIAG_CALHA para"
-                        + " síntese da operação"
-                    )
-                raise RuntimeError()
-
-            df = pdo.tabela
-            # Acrescenta datas iniciais e finais
-            # Faz uma atribuicao nao posicional. A maneira mais pythonica é lenta.
-            num_entidades = len(df.loc[df["estagio"] == 1])
-            df_datas = self.__resolve_stages_durations()[
-                ["data_inicial", "data_final"]
-            ]
-            df["dataInicio"] = np.repeat(
-                df_datas["data_inicial"].tolist(), num_entidades
-            )
-            df["dataFim"] = np.repeat(
-                df_datas["data_final"].tolist(), num_entidades
-            )
-            return df
-
-    @property
-    def stages_durations(self) -> pd.DataFrame:
-        if self.__stages_durations is None:
-            self.__stages_durations = self.__resolve_stages_durations()
-        return self.__stages_durations
-
-    def __resolve_stages_durations(self) -> pd.DataFrame:
-        logger = Log.log()
-        # if logger is not None:
-        #     logger.info("Obtendo início dos estágios")
-        arq_pdo = self._get_pdo_operacao()
-        df = arq_pdo.discretizacao
-        if df is None:
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_OPERACAO para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-        return df
-
-    def __extrai_datas(self, linha: pd.Series) -> np.ndarray:
-        return (
-            self.stages_durations.loc[
-                self.stages_durations["estagio"] == linha["estagio"],
-                ["data_inicial", "data_final"],
-            ]
-            .to_numpy()
-            .flatten()
-        )
-
-    def __processa_pdo_sist_sbm(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_sist().tabela.copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_SIST para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df[["dataInicio", "dataFim"]] = df.apply(
-            self.__extrai_datas, axis=1, result_type="expand"
-        )
-        df["demanda_liquida"] = (
-            df["demanda"]
-            - df["geracao_pequenas_usinas"]
-            - df["geracao_fixa_barra"]
-            - df["geracao_renovavel"]
-        )
-        df["nome_submercado"] = pd.Categorical(
-            df["nome_submercado"],
-            categories=["SE", "S", "NE", "N", "FC"],
-            ordered=True,
-        )
-        df.sort_values(["nome_submercado", "estagio"], inplace=True)
-        df = df.astype({"nome_submercado": str})
-        return df[
-            ["nome_submercado", "estagio", "dataInicio", "dataFim", col]
-        ].rename(columns={col: "valor", "nome_submercado": "submercado"})
-
-    def __processa_pdo_sist_sin(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_sist().tabela.copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_SIST para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df = df.groupby("estagio", as_index=False).sum()
-        df.sort_values(["estagio"], inplace=True)
-        df[["dataInicio", "dataFim"]] = df.apply(
-            self.__extrai_datas, axis=1, result_type="expand"
-        )
-        df["demanda_liquida"] = (
-            df["demanda"]
-            - df["geracao_pequenas_usinas"]
-            - df["geracao_fixa_barra"]
-            - df["geracao_renovavel"]
-        )
-        return df[["estagio", "dataInicio", "dataFim", col]].rename(
-            columns={col: "valor"}
-        )
-
-    def __processa_pdo_hidr_uhe(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_hidr().copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_HIDR para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df = df.loc[
-            df["conjunto"] == 99,
-            ["nome_usina", "estagio", "dataInicio", "dataFim", col],
-        ]
-        df.reset_index(inplace=True)
-        return df.rename(columns={col: "valor", "nome_usina": "usina"})
-
-    def __processa_pdo_hidr_sin(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_hidr().copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_HIDR para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df = df.loc[
-            df["conjunto"] == 99,
-            ["nome_usina", "estagio", "dataInicio", "dataFim", col],
-        ]
-
-        df = df.groupby(["estagio", "dataInicio", "dataFim"], as_index=False)[
-            col
-        ].sum(numeric_only=True)
-        df.sort_values(["estagio"], inplace=True)
-        df.reset_index(inplace=True)
-
-        return df.rename(columns={col: "valor"})
-
-    def __processa_pdo_eolica_sbm(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_eolica().copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_EOLICA para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df = df.groupby(
-            ["estagio", "nome_submercado", "dataInicio", "dataFim"],
-            as_index=False,
-        )[col].sum(numeric_only=True)
-
-        df["nome_submercado"] = pd.Categorical(
-            df["nome_submercado"],
-            categories=["SE", "S", "NE", "N", "FC"],
-            ordered=True,
-        )
-        df.sort_values(["nome_submercado", "estagio"], inplace=True)
-        df = df.astype({"nome_submercado": str})
-        df.reset_index(inplace=True)
-        return df[
-            ["nome_submercado", "estagio", "dataInicio", "dataFim", col]
-        ].rename(columns={col: "valor", "nome_submercado": "submercado"})
-
-    def __processa_pdo_eolica_sin(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_eolica().copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_EOLICA para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df = df.groupby(["estagio", "dataInicio", "dataFim"], as_index=False)[
-            col
-        ].sum(numeric_only=True)
-        df.sort_values(["estagio"], inplace=True)
-        df.reset_index(inplace=True)
-
-        return df.rename(columns={col: "valor"})
-
-    def __processa_pdo_oper_uct_ute(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_oper_uct().copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_OPER_UCT para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df = df.groupby(
-            ["nome_usina", "estagio", "dataInicio", "dataFim"], as_index=False
-        )[col].sum(numeric_only=True)
-
-        df.sort_values(["estagio", "nome_usina"], inplace=True)
-        df.reset_index(inplace=True)
-        return df.rename(columns={col: "valor", "nome_usina": "usina"})
-
-    def __processa_pdo_oper_term_ute(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_oper_term().copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_OPER_TERM para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df = df.groupby(
-            ["nome_usina", "estagio", "dataInicio", "dataFim"], as_index=False
-        )[col].sum(numeric_only=True)
-
-        df.sort_values(["estagio", "nome_usina"], inplace=True)
-        df.reset_index(inplace=True)
-        return df.rename(columns={col: "valor", "nome_usina": "usina"})
-
-    def __processa_pdo_operacao_custos(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_operacao().custos_operacao
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_HIDR para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df[["dataInicio", "dataFim"]] = df.apply(
-            self.__extrai_datas, axis=1, result_type="expand"
-        )
-        df.sort_values(["estagio"], inplace=True)
-
-        return df[["estagio", "dataInicio", "dataFim", col]].rename(
-            columns={col: "valor"}
-        )
-
-    def __processa_pdo_inter_sbm(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_inter().tabela.copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_INTER para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
-
-        df[["dataInicio", "dataFim"]] = df.apply(
-            self.__extrai_datas, axis=1, result_type="expand"
-        )
-        df["nome_submercado_de"] = pd.Categorical(
-            df["nome_submercado_de"],
-            categories=df["nome_submercado_de"].unique().tolist(),
-            ordered=True,
-        )
-        df["nome_submercado_para"] = pd.Categorical(
-            df["nome_submercado_para"],
-            categories=df["nome_submercado_para"].unique().tolist(),
-            ordered=True,
-        )
-        df.sort_values(
-            ["nome_submercado_de", "nome_submercado_para", "estagio"],
-            inplace=True,
-        )
-        df = df.astype({"nome_submercado_de": str, "nome_submercado_para": str})
-        return df[
-            [
-                "nome_submercado_de",
-                "nome_submercado_para",
-                "estagio",
-                "dataInicio",
-                "dataFim",
-                col,
-            ]
-        ].rename(
+    @classmethod
+    def _post_resolve_file(
+        cls,
+        df: pd.DataFrame,
+        col: str,
+    ) -> pd.DataFrame:
+        if col not in df.columns:
+            cls._log(f"Coluna {col} não encontrada no arquivo", WARNING)
+            df[col] = 0.0
+        df = df.rename(
             columns={
-                "nome_submercado_de": "submercadoDe",
-                "nome_submercado_para": "submercadoPara",
-                col: "valor",
+                col: VALUE_COL,
             }
         )
+        cols = [c for c in df.columns if c in IDENTIFICATION_COLUMNS]
+        df = df[cols + [VALUE_COL]]
+        return df
 
-    def __processa_pdo_oper_tviag_calha_uhe(self, col: str) -> pd.DataFrame:
-        df = self._get_pdo_oper_tviag_calha().copy()
-        if df is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Erro no processamento do PDO_OPER_TVIAG_CALHA para"
-                    + " síntese da operação"
-                )
-            raise RuntimeError()
+    @classmethod
+    def _resolve_pdo_sist_sbm(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_sist para SBM",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_sist_sbm(col, uow)
+            return cls._post_resolve_file(df, col)
 
-        df = df.loc[df["tipo_elemento_jusante"] == "USIH"]
-        df = df[
-            ["nome_elemento_jusante", "estagio", "dataInicio", "dataFim", col]
-        ]
-        df.reset_index(inplace=True)
-        return df.rename(
-            columns={col: "valor", "nome_elemento_jusante": "usina"}
-        )
+    @classmethod
+    def _resolve_pdo_sist_sin(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_sist para SIN",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_sist_sin(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_hidr_uhe(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_hidr para UHE",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_hidr_hydro(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_hidr_eer(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_hidr para REE",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_hidr_eer(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_hidr_sbm(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_hidr para SBM",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_hidr_sbm(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_hidr_sin(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_hidr para SIN",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_hidr_sin(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_eolica_sbm(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_eolica para SBM",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_eolica_sbm(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_eolica_sin(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_eolica para SIN",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_eolica_sin(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_oper_term_ute(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_oper_term para UTE",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_oper_term_ute(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_operacao_costs(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_operacao para SIN",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_operacao_costs(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_inter_sbp(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_inter para SBP",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_inter_sbp(col, uow)
+            return cls._post_resolve_file(df, col)
+
+    @classmethod
+    def _resolve_pdo_oper_tviag_calha_uhe(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        with time_and_log(
+            message_root="Tempo para obtenção dos dados do pdo_oper_tviag_calha para UHE",
+            logger=cls.logger,
+        ):
+            df = Deck.pdo_oper_tviag_calha_hydro(col, uow)
+            return cls._post_resolve_file(df, col)
 
     def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):
         self.__uow = uow

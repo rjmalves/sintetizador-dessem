@@ -1,9 +1,11 @@
 import os
 import pathlib
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Type
+from typing import Type
 
 import pandas as pd  # type: ignore
+import pyarrow as pa  # type: ignore
+import pyarrow.parquet as pq  # type: ignore
 
 from app.utils.log import Log
 
@@ -13,7 +15,7 @@ class AbstractExportRepository(ABC):
         super().__init__()
 
     @abstractmethod
-    def read_df(self, filename: str) -> Optional[pd.DataFrame]:
+    def read_df(self, filename: str) -> pd.DataFrame | None:
         pass
 
     @abstractmethod
@@ -29,7 +31,7 @@ class ParquetExportRepository(AbstractExportRepository):
     def path(self) -> pathlib.Path:
         return pathlib.Path(self.__path)
 
-    def read_df(self, filename: str) -> Optional[pd.DataFrame]:
+    def read_df(self, filename: str) -> pd.DataFrame | None:
         arq = self.path.joinpath(filename + ".parquet.gzip")
         if os.path.isfile(arq):
             return pd.read_parquet(arq)
@@ -37,9 +39,15 @@ class ParquetExportRepository(AbstractExportRepository):
             return None
 
     def synthetize_df(self, df: pd.DataFrame, filename: str):
-        df.to_parquet(
-            self.path.joinpath(filename + ".parquet.gzip"), compression="gzip"
+        pq.write_table(
+            pa.Table.from_pandas(df),
+            self.path.joinpath(filename + ".parquet"),
+            write_statistics=False,
+            flavor="spark",
+            coerce_timestamps="ms",
+            allow_truncated_timestamps=True,
         )
+        return True
 
 
 class CSVExportRepository(AbstractExportRepository):
@@ -50,7 +58,7 @@ class CSVExportRepository(AbstractExportRepository):
     def path(self) -> pathlib.Path:
         return pathlib.Path(self.__path)
 
-    def read_df(self, filename: str) -> Optional[pd.DataFrame]:
+    def read_df(self, filename: str) -> pd.DataFrame | None:
         arq = self.path.joinpath(filename + ".csv")
         if os.path.isfile(arq):
             return pd.read_csv(arq)
@@ -61,10 +69,26 @@ class CSVExportRepository(AbstractExportRepository):
         df.to_csv(self.path.joinpath(filename + ".csv"), index=False)
 
 
+class TestExportRepository(AbstractExportRepository):
+    def __init__(self, path: str):
+        self.__path = path
+
+    @property
+    def path(self) -> pathlib.Path:
+        return pathlib.Path(self.__path)
+
+    def read_df(self, filename: str) -> pd.DataFrame | None:
+        return None
+
+    def synthetize_df(self, df: pd.DataFrame, filename: str) -> bool:
+        return df
+
+
 def factory(kind: str, *args, **kwargs) -> AbstractExportRepository:
-    mapping: Dict[str, Type[AbstractExportRepository]] = {
+    mapping: dict[str, Type[AbstractExportRepository]] = {
         "PARQUET": ParquetExportRepository,
         "CSV": CSVExportRepository,
+        "TEST": TestExportRepository,
     }
     kind = kind.upper()
     if kind not in mapping.keys():
