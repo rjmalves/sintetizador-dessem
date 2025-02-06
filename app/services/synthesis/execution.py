@@ -1,122 +1,192 @@
+import logging
+from logging import ERROR, INFO
 from traceback import print_exc
-from typing import Callable, Dict, List, Optional
+from typing import Callable, List, Optional
 
 import pandas as pd  # type: ignore
 
-from app.model.execution.executionsynthesis import ExecutionSynthesis
+from app.internal.constants import (
+    EXECUTION_SYNTHESIS_METADATA_OUTPUT,
+    EXECUTION_SYNTHESIS_SUBDIR,
+)
+from app.model.execution.executionsynthesis import (
+    SUPPORTED_SYNTHESIS,
+    ExecutionSynthesis,
+)
 from app.model.execution.variable import Variable
+from app.services.deck.deck import Deck
 from app.services.unitofwork import AbstractUnitOfWork
-from app.utils.log import Log
+from app.utils.regex import match_variables_with_wildcards
+from app.utils.timing import time_and_log
 
 
 class ExecutionSynthetizer:
-    DEFAULT_EXECUTION_SYNTHESIS_ARGS: List[str] = [
-        "PROGRAMA",
-        "TEMPO",
-        "CUSTOS",
-    ]
+    DEFAULT_EXECUTION_SYNTHESIS_ARGS: List[str] = SUPPORTED_SYNTHESIS
 
-    def __init__(self) -> None:
-        self.__uow: Optional[AbstractUnitOfWork] = None
-        self.__rules: Dict[Variable, Callable] = {
-            Variable.PROGRAMA: self._resolve_program,
-            Variable.TEMPO_EXECUCAO: self._resolve_tempo,
-            Variable.CUSTOS: self._resolve_costs,
-        }
+    logger: Optional[logging.Logger] = None
 
-    @property
-    def uow(self) -> AbstractUnitOfWork:
-        if self.__uow is None:
-            raise RuntimeError()
-        return self.__uow
+    @classmethod
+    def _log(cls, msg: str, level: int = INFO):
+        if cls.logger is not None:
+            cls.logger.log(level, msg)
 
-    def _default_args(self) -> List[str]:
-        return self.__class__.DEFAULT_EXECUTION_SYNTHESIS_ARGS
+    @classmethod
+    def _default_args(cls) -> List[str]:
+        return cls.DEFAULT_EXECUTION_SYNTHESIS_ARGS
 
+    @classmethod
+    def _match_wildcards(cls, variables: List[str]) -> List[str]:
+        return match_variables_with_wildcards(
+            variables, cls.DEFAULT_EXECUTION_SYNTHESIS_ARGS
+        )
+
+    @classmethod
     def _process_variable_arguments(
-        self,
+        cls,
         args: List[str],
     ) -> List[ExecutionSynthesis]:
         args_data = [ExecutionSynthesis.factory(c) for c in args]
         valid_args = [arg for arg in args_data if arg is not None]
-        logger = Log.log()
         for i, a in enumerate(args_data):
             if a is None:
-                if logger is not None:
-                    logger.info(f"Erro no argumento fornecido: {args[i]}")
+                cls._log(f"Erro no argumento fornecido: {args[i]}", ERROR)
                 return []
         return valid_args
 
-    def filter_valid_variables(
-        self, variables: List[ExecutionSynthesis]
+    @classmethod
+    def _preprocess_synthesis_variables(
+        cls, variables: List[str], uow: AbstractUnitOfWork
     ) -> List[ExecutionSynthesis]:
-        logger = Log.log()
-        if logger is not None:
-            logger.info(f"Variáveis: {variables}")
-        return variables
+        """
+        Realiza o pré-processamento das variáveis de síntese fornecidas,
+        filtrando as válidas para o caso em questão.
+        """
+        try:
+            if len(variables) == 0:
+                all_variables = cls._default_args()
+            else:
+                all_variables = cls._match_wildcards(variables)
+            synthesis_variables = cls._process_variable_arguments(all_variables)
+        except Exception as e:
+            print_exc()
+            cls._log(str(e), ERROR)
+            cls._log("Erro no pré-processamento das variáveis", ERROR)
+            synthesis_variables = []
+        return synthesis_variables
 
-    def _resolve_program(self) -> pd.DataFrame:
+    @classmethod
+    def _resolve(
+        cls, synthesis: ExecutionSynthesis, uow: AbstractUnitOfWork
+    ) -> pd.DataFrame:
+        RULES: dict[Variable, Callable] = {
+            Variable.PROGRAMA: cls._resolve_program,
+            Variable.TEMPO_EXECUCAO: cls._resolve_runtime,
+            Variable.CUSTOS: cls._resolve_costs,
+        }
+        return RULES[synthesis.variable](uow)
+
+    @classmethod
+    def _resolve_program(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         return pd.DataFrame(data={"programa": ["DESSEM"]})
 
-    def _resolve_tempo(self) -> pd.DataFrame:
-        with self.uow:
-            logmatriz = self.uow.files.get_log_matriz()
+    @classmethod
+    def __append_execution(
+        cls, df: pd.DataFrame, variable: str, uow: AbstractUnitOfWork
+    ) -> pd.DataFrame:
+        existing_data = uow.export.read_df(variable)
+        df = df.copy()
+        if existing_data is None:
+            df.loc[:, "execucao"] = 0
+            return df
+        else:
+            df.loc[:, "execucao"] = existing_data["execucao"].max() + 1
+            return pd.concat([existing_data, df], ignore_index=True)
 
-        if logmatriz is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error("Dados de tempo do LOG_MATRIZ não encontrados")
+    @classmethod
+    def _resolve_costs(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = Deck.costs(uow)
+        if df is None:
+            cls._log(
+                "Bloco de custos da operação do relato não encontrado", ERROR
+            )
+            raise RuntimeError()
+        return df
+
+    @classmethod
+    def _resolve_runtime(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = Deck.runtimes(uow)
+        if df is None:
+            cls._log("Dados de tempo do decomp.tim não encontrados", ERROR)
             raise RuntimeError()
 
-        df = logmatriz.tabela
-        df = df.rename(columns={"tipo": "etapa", "tempo_min": "tempo"})
-        df["tempo"] = df["tempo"] * 60
+        return cls.__append_execution(df, Variable.TEMPO_EXECUCAO.value, uow)
 
-        return df[["etapa", "tempo"]]
+    @classmethod
+    def _export_metadata(
+        cls,
+        success_synthesis: List[ExecutionSynthesis],
+        uow: AbstractUnitOfWork,
+    ):
+        metadata_df = pd.DataFrame(
+            columns=[
+                "chave",
+                "nome_curto",
+                "nome_longo",
+            ]
+        )
+        for s in success_synthesis:
+            metadata_df.loc[metadata_df.shape[0]] = [
+                str(s),
+                s.variable.short_name,
+                s.variable.long_name,
+            ]
+        with uow:
+            uow.export.synthetize_df(
+                metadata_df, EXECUTION_SYNTHESIS_METADATA_OUTPUT
+            )
 
-    def _resolve_costs(self) -> pd.DataFrame:
-        with self.uow:
-            deslogrelato = self.uow.files.get_des_log_relato()
-
-        if deslogrelato is None:
-            logger = Log.log()
-            if logger is not None:
-                logger.error(
-                    "Bloco de variáveis da operação do DES_LOG_RELATO não encontrado"
-                )
-            raise RuntimeError()
-
-        df = deslogrelato.variaveis_otimizacao
-        variaveis = {
-            "Parcela de custo presente": "PRESENTE",
-            "Parcela de custo Futuro": "FUTURO",
-            "Custo de violacao de restricoes": "VIOLACOES",
-            "Custo de pequenas penalidades": "PEQUENAS PENALIDADES",
-        }
-        df = df.replace(variaveis)
-        df = df.loc[df["variavel"].isin(list(variaveis.values()))]
-        df = df.rename(columns={"variavel": "parcela", "valor": "mean"})
-        df["std"] = 0
-
-        df = df.reset_index()
-        return df[["parcela", "mean", "std"]]
-
-    def synthetize(self, variables: List[str], uow: AbstractUnitOfWork):
-        self.__uow = uow
-        logger = Log.log()
-        if len(variables) == 0:
-            variables = self._default_args()
-        synthesis_variables = self._process_variable_arguments(variables)
-        valid_synthesis = self.filter_valid_variables(synthesis_variables)
-        for s in valid_synthesis:
-            filename = str(s)
-            if logger is not None:
-                logger.info(f"Realizando síntese de {filename}")
+    @classmethod
+    def _synthetize_single_variable(
+        cls, s: ExecutionSynthesis, uow: AbstractUnitOfWork
+    ) -> Optional[ExecutionSynthesis]:
+        """
+        Realiza a síntese de execução para uma variável
+        fornecida.
+        """
+        filename = str(s)
+        with time_and_log(
+            message_root=f"Tempo para sintese de {filename}",
+            logger=cls.logger,
+        ):
             try:
-                df = self.__rules[s.variable]()
-            except Exception:
+                cls._log(f"Realizando síntese de {filename}")
+                df = cls._resolve(s, uow)
+                if df is not None:
+                    with uow:
+                        uow.export.synthetize_df(df, filename)
+                        return s
+                return None
+            except Exception as e:
                 print_exc()
-                continue
-            if df is not None:
-                with self.uow:
-                    self.uow.export.synthetize_df(df, filename)
+                cls._log(str(e), ERROR)
+                return None
+
+    @classmethod
+    def synthetize(cls, variables: List[str], uow: AbstractUnitOfWork):
+        cls.logger = logging.getLogger("main")
+        uow.subdir = EXECUTION_SYNTHESIS_SUBDIR
+
+        with time_and_log(
+            message_root="Tempo para sintese da execucao", logger=cls.logger
+        ):
+            synthesis_variables = cls._preprocess_synthesis_variables(
+                variables, uow
+            )
+
+            success_synthesis: List[ExecutionSynthesis] = []
+            for s in synthesis_variables:
+                r = cls._synthetize_single_variable(s, uow)
+                if r:
+                    success_synthesis.append(r)
+
+            cls._export_metadata(success_synthesis, uow)

@@ -4,7 +4,9 @@ from typing import Any, Dict, Optional, Type, TypeVar
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.entdados import Entdados
+from idessem.dessem.log_matriz import LogMatriz
 from idessem.dessem.pdo_eolica import PdoEolica
 from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_inter import PdoInter
@@ -24,6 +26,7 @@ from app.internal.constants import (
     EXCHANGE_TARGET_CODE_COL,
     HYDRO_CODE_COL,
     IV_SUBMARKET_CODE,
+    RUNTIME_COL,
     SCENARIO_COL,
     STAGE_COL,
     START_DATE_COL,
@@ -45,6 +48,20 @@ class Deck:
     def _get_entdados(self, uow: AbstractUnitOfWork) -> Entdados | None:
         with uow:
             pdo = uow.files.get_entdados()
+            return pdo
+
+    @classmethod
+    def _get_log_matriz(self, uow: AbstractUnitOfWork) -> LogMatriz | None:
+        with uow:
+            pdo = uow.files.get_log_matriz()
+            return pdo
+
+    @classmethod
+    def _get_des_log_relato(
+        self, uow: AbstractUnitOfWork
+    ) -> DesLogRelato | None:
+        with uow:
+            pdo = uow.files.get_des_log_relato()
             return pdo
 
     @classmethod
@@ -116,6 +133,72 @@ class Deck:
             )
             cls.DECK_DATA_CACHING["entdados"] = entdados
         return entdados
+
+    @classmethod
+    def log_matriz(cls, uow: AbstractUnitOfWork) -> LogMatriz:
+        log_matriz = cls.DECK_DATA_CACHING.get("log_matriz")
+        if log_matriz is None:
+            log_matriz = cls._validate_data(
+                cls._get_log_matriz(uow),
+                LogMatriz,
+                "log_matriz",
+            )
+            cls.DECK_DATA_CACHING["log_matriz"] = log_matriz
+        return log_matriz
+
+    @classmethod
+    def runtimes(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = cls.DECK_DATA_CACHING.get("runtime")
+        if df is None:
+            log_matriz = cls.log_matriz(uow)
+            df = cls._validate_data(
+                log_matriz.tabela,
+                pd.DataFrame,
+                "log_matriz",
+            )
+            df = df.rename(columns={"tipo": "etapa", "tempo_min": RUNTIME_COL})
+            df[RUNTIME_COL] = df[RUNTIME_COL] * 60
+
+            df = df[["etapa", RUNTIME_COL]].copy()
+            cls.DECK_DATA_CACHING["runtime"] = df
+        return df
+
+    @classmethod
+    def des_log_relato(cls, uow: AbstractUnitOfWork) -> DesLogRelato:
+        des_log_relato = cls.DECK_DATA_CACHING.get("des_log_relato")
+        if des_log_relato is None:
+            des_log_relato = cls._validate_data(
+                cls._get_des_log_relato(uow),
+                DesLogRelato,
+                "des_log_relato",
+            )
+            cls.DECK_DATA_CACHING["des_log_relato"] = des_log_relato
+        return des_log_relato
+
+    @classmethod
+    def costs(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = cls.DECK_DATA_CACHING.get("costs")
+        if df is None:
+            des_log_relato = cls.des_log_relato(uow)
+            df = cls._validate_data(
+                des_log_relato.variaveis_otimizacao,
+                pd.DataFrame,
+                "des_log_relato",
+            )
+            variaveis = {
+                "Parcela de custo presente": "PRESENTE",
+                "Parcela de custo Futuro": "FUTURO",
+                "Custo de violacao de restricoes": "VIOLACOES",
+                "Custo de pequenas penalidades": "PEQUENAS PENALIDADES",
+            }
+            df = df.replace(variaveis)
+            df = df.loc[df["variavel"].isin(list(variaveis.values()))]
+            df = df.rename(columns={"variavel": "parcela", "valor": "mean"})
+            df["std"] = 0
+
+            df = df[["parcela", "mean", "std"]].reset_index(drop=True)
+            cls.DECK_DATA_CACHING["costs"] = df
+        return df
 
     @classmethod
     def _add_single_scenario(cls, df: pd.DataFrame) -> pd.DataFrame:
@@ -512,8 +595,7 @@ class Deck:
     def stages_durations(cls, uow) -> pd.DataFrame:
         df = cls.DECK_DATA_CACHING.get("stages_durations")
         if df is None:
-            arq_pdo = cls._get_pdo_operacao(uow)
-            df = arq_pdo.discretizacao
+            arq_pdo = cls.pdo_operacao(uow)
             df = cls._validate_data(
                 arq_pdo.discretizacao,
                 pd.DataFrame,
@@ -549,7 +631,11 @@ class Deck:
         map_dict = cls.DECK_DATA_CACHING.get("block_map")
         if map_dict is None:
             entdados = cls.entdados(uow)
-            tm_df = entdados.tm(df=True)
+            tm_df = cls._validate_data(
+                entdados.tm(df=True),
+                pd.DataFrame,
+                "TM",
+            )
             blocks: list = tm_df["nome_patamar"].unique().tolist()
             blocks.sort(reverse=True)
             map_dict = {b: i for i, b in enumerate(blocks)}
@@ -562,7 +648,11 @@ class Deck:
         if map_dict is None:
             block_map = cls.block_map(uow)
             entdados = cls.entdados(uow)
-            tm_df = entdados.tm(df=True)
+            tm_df = cls._validate_data(
+                entdados.tm(df=True),
+                pd.DataFrame,
+                "TM",
+            )
             blocks: list = tm_df["nome_patamar"]
             map_dict = {i + 1: block_map[b] for i, b in enumerate(blocks)}
             cls.DECK_DATA_CACHING["stage_block_map"] = map_dict
@@ -573,7 +663,11 @@ class Deck:
         df = cls.DECK_DATA_CACHING.get("eer_submarket_map")
         if df is None:
             entdados = cls.entdados(uow)
-            sist_df = entdados.sist(df=True)
+            sist_df = cls._validate_data(
+                entdados.sist(df=True),
+                pd.DataFrame,
+                "SIST",
+            )
             sist_df = sist_df.rename(
                 columns={
                     "codigo_submercado": SUBMARKET_CODE_COL,
@@ -581,7 +675,11 @@ class Deck:
                 }
             )
             sist_df = sist_df.set_index(SUBMARKET_CODE_COL, drop=True)
-            df = entdados.ree(df=True)
+            df = cls._validate_data(
+                entdados.ree(df=True),
+                pd.DataFrame,
+                "REE",
+            )
             df = df.rename(
                 columns={
                     "codigo_ree": EER_CODE_COL,
@@ -600,7 +698,11 @@ class Deck:
         df = cls.DECK_DATA_CACHING.get("hydro_eer_map")
         if df is None:
             entdados = cls.entdados(uow)
-            df = entdados.uh(df=True)
+            df = cls._validate_data(
+                entdados.uh(df=True),
+                pd.DataFrame,
+                "UH",
+            )
             df = df.rename(
                 columns={
                     "codigo_usina": HYDRO_CODE_COL,
@@ -616,7 +718,11 @@ class Deck:
         df = cls.DECK_DATA_CACHING.get("submarkets")
         if df is None:
             entdados = cls.entdados(uow)
-            df = entdados.sist(df=True)
+            df = cls._validate_data(
+                entdados.sist(df=True),
+                pd.DataFrame,
+                "SIST",
+            )
             df = df.rename(
                 columns={
                     "codigo_submercado": SUBMARKET_CODE_COL,

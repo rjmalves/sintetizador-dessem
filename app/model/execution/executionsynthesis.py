@@ -16,3 +16,10 @@ class ExecutionSynthesis:
         return cls(
             Variable.factory(synthesis),
         )
+
+
+SUPPORTED_SYNTHESIS: list[str] = [
+    "PROGRAMA",
+    "TEMPO",
+    "CUSTOS",
+]
