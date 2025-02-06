@@ -23,6 +23,7 @@ from app.internal.constants import (
     EXCHANGE_SOURCE_CODE_COL,
     EXCHANGE_TARGET_CODE_COL,
     HYDRO_CODE_COL,
+    IV_SUBMARKET_CODE,
     SCENARIO_COL,
     STAGE_COL,
     START_DATE_COL,
@@ -380,20 +381,9 @@ class Deck:
                 columns={
                     "estagio": STAGE_COL,
                     "duracao": BLOCK_DURATION_COL,
-                    "codigo_elemento_jusante ": HYDRO_CODE_COL,
+                    "codigo_elemento_jusante": HYDRO_CODE_COL,
                 }
             )
-            submarket_map_df = cls.eer_submarket_map(uow)
-            submarket_map_df = submarket_map_df.drop_duplicates(
-                subset=[SUBMARKET_CODE_COL]
-            )
-            submarket_map = {
-                name: code
-                for name, code in zip(
-                    submarket_map_df[SUBMARKET_NAME_COL],
-                    submarket_map_df[SUBMARKET_CODE_COL],
-                )
-            }
             eer_map_df = cls.hydro_eer_map(uow)
             eer_map = {
                 hydro_code: eer_code
@@ -402,10 +392,18 @@ class Deck:
                     eer_map_df[EER_CODE_COL],
                 )
             }
+            submarket_map_df = cls.eer_submarket_map(uow)
+            submarket_map = {
+                eer_code: submarket_code
+                for eer_code, submarket_code in zip(
+                    submarket_map_df[EER_CODE_COL],
+                    submarket_map_df[SUBMARKET_CODE_COL],
+                )
+            }
             block_map = cls.stage_block_map(uow)
             df[BLOCK_COL] = df[STAGE_COL].map(block_map)
-            df[SUBMARKET_CODE_COL] = df[SUBMARKET_CODE_COL].map(submarket_map)
             df[EER_CODE_COL] = df[HYDRO_CODE_COL].map(eer_map)
+            df[SUBMARKET_CODE_COL] = df[EER_CODE_COL].map(submarket_map)
             # Acrescenta datas iniciais e finais
             # Faz uma atribuicao nao posicional.
             # A maneira mais pythonica é lenta.
@@ -625,6 +623,11 @@ class Deck:
                     "mnemonico_submercado": SUBMARKET_NAME_COL,
                 }
             )
+            df.loc[df.shape[0], [SUBMARKET_CODE_COL, SUBMARKET_NAME_COL]] = (
+                IV_SUBMARKET_CODE,
+                "IV",
+            )
+
             cls.DECK_DATA_CACHING["submarkets"] = df
         return df.copy()
 

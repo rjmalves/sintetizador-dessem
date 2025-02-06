@@ -72,6 +72,16 @@ class OperationSynthetizer:
             Callable,
         ] = {
             (
+                Variable.CUSTO_OPERACAO,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+            ): lambda uow: cls._resolve_pdo_operacao_costs(
+                uow, "custo_presente"
+            ),
+            (
+                Variable.CUSTO_FUTURO,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+            ): lambda uow: cls._resolve_pdo_operacao_costs(uow, "custo_futuro"),
+            (
                 Variable.CUSTO_MARGINAL_OPERACAO,
                 SpatialResolution.SUBMERCADO,
             ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "cmo"),
@@ -209,6 +219,14 @@ class OperationSynthetizer:
             ): lambda uow: cls._resolve_pdo_oper_tviag_calha_uhe(
                 uow, "volume_calha_hm3"
             ),
+            (
+                Variable.GERACAO_TERMICA,
+                SpatialResolution.USINA_TERMELETRICA,
+            ): lambda uow: cls._resolve_pdo_oper_term_ute(uow, "geracao"),
+            (
+                Variable.INTERCAMBIO,
+                SpatialResolution.PAR_SUBMERCADOS,
+            ): lambda uow: cls._resolve_pdo_inter_sbp(uow, "intercambio"),
         }
         return _rules[synthesis]
 
