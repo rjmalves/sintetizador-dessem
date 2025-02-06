@@ -36,7 +36,7 @@ class Variable(Enum):
 
     @property
     def short_name(self) -> str | None:
-        SHORT_NAMES = dict[str, str] = {
+        SHORT_NAMES: dict[str, str] = {
             "CMO": "CMO",
             "COP": "COPER",
             "CFU": "CFU",

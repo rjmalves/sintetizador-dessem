@@ -1,574 +1,146 @@
-from datetime import datetime
+from os.path import join
 from unittest.mock import MagicMock, patch
 
+import numpy as np
+import pandas as pd
+from idessem.dessem.pdo_sist import PdoSist
+
+from app.internal.constants import (
+    LOWER_BOUND_COL,
+    OPERATION_SYNTHESIS_METADATA_OUTPUT,
+    UPPER_BOUND_COL,
+    VALUE_COL,
+)
+from app.model.operation.operationsynthesis import UNITS, OperationSynthesis
+from app.services.deck.bounds import OperationVariableBounds
 from app.services.synthesis.operation import OperationSynthetizer
 from app.services.unitofwork import factory
 from tests.conftest import DECK_TEST_DIR
 
 uow = factory("FS", DECK_TEST_DIR)
+pd.options.display.max_columns = None
 
 
-def test_sintese_cmo_sbm_est_pdo_sist(test_settings):
+def __compara_sintese_pdo_oper(
+    df_sintese: pd.DataFrame,
+    df_pdo_oper: pd.DataFrame,
+    col_pdo_oper: str,
+    *args,
+    **kwargs,
+):
+    estagio = kwargs.get("estagio", 1)
+    cenario = kwargs.get("cenario", 1)
+    filtros_sintese = (df_sintese["estagio"] == estagio) & (
+        df_sintese["cenario"] == cenario
+    )
+    filtros_pdo_oper = df_pdo_oper["estagio"] == estagio
+    # Processa argumentos adicionais
+    for col, val in kwargs.items():
+        if col not in ["estagio", "cenario"]:
+            if col in df_sintese.columns:
+                filtros_sintese = filtros_sintese & (df_sintese[col].isin(val))
+            if col in df_pdo_oper.columns:
+                filtros_pdo_oper = filtros_pdo_oper & (
+                    df_pdo_oper[col].isin(val)
+                )
+
+    dados_sintese = df_sintese.loc[filtros_sintese, "valor"].to_numpy()
+    dados_pdo_oper = df_pdo_oper.loc[filtros_pdo_oper, col_pdo_oper].to_numpy()
+
+    assert len(dados_sintese) > 0
+    assert len(dados_pdo_oper) > 0
+
+    try:
+        assert np.allclose(dados_sintese, dados_pdo_oper, rtol=1e-2)
+    except AssertionError:
+        print("Síntese:")
+        print(df_sintese.loc[filtros_sintese])
+        print("PDO_OPER:")
+        print(df_pdo_oper.loc[filtros_pdo_oper])
+        raise
+
+
+def __valida_limites(
+    df: pd.DataFrame, tol: float = 0.2, lower=True, upper=True
+):
+    num_amostras = df.shape[0]
+    if upper:
+        try:
+            assert (
+                df[VALUE_COL] <= (df[UPPER_BOUND_COL] + tol)
+            ).sum() == num_amostras
+        except AssertionError:
+            print("\n", df.loc[df[VALUE_COL] > (df[UPPER_BOUND_COL] + tol)])
+            raise
+    if lower:
+        try:
+            assert (
+                df[VALUE_COL] >= (df[LOWER_BOUND_COL] - tol)
+            ).sum() == num_amostras
+        except AssertionError:
+            print("\n", df.loc[df[VALUE_COL] < (df[LOWER_BOUND_COL] - tol)])
+            raise
+
+
+def __valida_metadata(chave: str, df_metadata: pd.DataFrame, calculated: bool):
+    s = OperationSynthesis.factory(chave)
+    assert s is not None
+    assert str(s) in df_metadata["chave"].tolist()
+    assert s.variable.short_name in df_metadata["nome_curto_variavel"].tolist()
+    assert s.variable.long_name in df_metadata["nome_longo_variavel"].tolist()
+    assert (
+        s.spatial_resolution.value
+        in df_metadata["nome_curto_agregacao"].tolist()
+    )
+    assert (
+        s.spatial_resolution.long_name
+        in df_metadata["nome_longo_agregacao"].tolist()
+    )
+    unit_str = UNITS[s].value if s in UNITS else ""
+    assert unit_str in df_metadata["unidade"].tolist()
+    assert calculated in df_metadata["calculado"].tolist()
+    assert (
+        OperationVariableBounds.is_bounded(s)
+        in df_metadata["limitado"].tolist()
+    )
+
+
+def __sintetiza_com_mock(synthesis_str) -> tuple[pd.DataFrame, pd.DataFrame]:
     m = MagicMock(lambda df, filename: df)
     with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
+        "app.adapters.repository.export.TestExportRepository.synthetize_df",
         new=m,
     ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["CMO_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 35.52
-
-
-def test_sintese_mer_sbm_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["MER_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 36160.35
-
-
-def test_sintese_mer_sin_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["MER_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 65233.07
-
-
-def test_sintese_merl_sbm_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["MERL_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 31325.35
-
-
-def test_sintese_merl_sin_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["MERL_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 42182.07
-
-
-def test_sintese_ghid_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GHID_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "usina"] == "CAMARGOS"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 7.54
-
-
-def test_sintese_ghid_sbm_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GHID_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 22206.06
-
-
-def test_sintese_ghid_sin_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GHID_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 40413.97
-
-
-def test_sintese_guns_sin_est_pdo_eolica(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GUNS_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 23051
-
-
-def test_sintese_guns_sbm_est_pdo_eolica(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GUNS_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 4835
-
-
-def test_sintese_gunsd_sbm_est_pdo_eolica(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GUNSD_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 4835
-
-
-def test_sintese_gunsd_sin_est_pdo_eolica(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GUNSD_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 23051
-
-
-def test_sintese_cuns_sbm_est_pdo_eolica(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["CUNS_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 0
-
-
-def test_sintese_cuns_sin_est_pdo_eolica(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["CUNS_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 0
-
-
-def test_sintese_gter_ute_est_pdo_oper_term(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GTER_UTE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[1, "usina"] == "ANGRA 2"
-    assert df.at[1, "estagio"] == 1
-    assert df.at[1, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[1, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[1, "valor"] == 1350.00
-
-
-def test_sintese_gter_sbm_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GTER_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 1917.95
-
-
-def test_sintese_gter_sin_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["GTER_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 3367.95
-
-
-def test_sintese_earmf_sbm_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["EARMF_SBM_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "submercado"] == "SE"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 114637.76
-
-
-def test_sintese_earmf_sin_est_pdo_sist(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["EARMF_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 182945.72999999998
-
-
-def test_sintese_varpf_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["VARPF_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "usina"] == "CAMARGOS"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 78.87
-
-
-def test_sintese_varmf_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["VARMF_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "usina"] == "CAMARGOS"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 530.02
-
-
-def test_sintese_vagua_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["VAGUA_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "usina"] == "CAMARGOS"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 35.46
-
-
-def test_sintese_qtur_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["QTUR_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "usina"] == "CAMARGOS"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 34.02
-
-
-def test_sintese_qtur_sin_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["QTUR_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 79983.76
-
-
-def test_sintese_qver_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["QVER_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "usina"] == "CAMARGOS"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 0.00
-
-
-def test_sintese_qver_sin_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["QVER_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 9239.699999999999
-
-
-def test_sintese_qinc_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["QINC_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "usina"] == "CAMARGOS"
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 41.00
-
-
-def test_sintese_qafl_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["QAFL_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[2, "usina"] == "FUNIL-GRANDE"
-    assert df.at[2, "estagio"] == 1
-    assert df.at[2, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[2, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[2, "valor"] == 129.0
-
-
-def test_sintese_qdef_uhe_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["QDEF_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[2, "usina"] == "FUNIL-GRANDE"
-    assert df.at[2, "estagio"] == 1
-    assert df.at[2, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[2, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[2, "valor"] == 124.82
-
-
-def test_sintese_qdef_sin_est_pdo_hidr(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["QDEF_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 89223.46
-
-
-def test_sintese_cop_sin_est_pdo_operacao(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["COP_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 444.809509
-
-
-def test_sintese_cfu_sin_est_pdo_operacao(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["CFU_SIN_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 0
-
-
-def test_sintese_int_sbm_est_pdo_inter(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["INT_SBP_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[1, "estagio"] == 1
-    assert df.at[1, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[1, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[1, "submercadoDe"] == "S"
-    assert df.at[1, "submercadoPara"] == "IV"
-    assert df.at[1, "valor"] == 3877.24
-
-
-def test_sintese_vcalha_uhe_est_pdo_oper_tviag_calha(test_settings):
-    m = MagicMock(lambda df, filename: df)
-    with patch(
-        "app.adapters.repository.export.ParquetExportRepository.synthetize_df",
-        new=m,
-    ):
-        synthetizer = OperationSynthetizer()
-        synthetizer.synthetize(["VCALHA_UHE_EST"], uow)
-    m.assert_called_once()
-    df = m.mock_calls[0].args[0]
-    assert df.at[0, "estagio"] == 1
-    assert df.at[0, "usina"] == "FUNIL-GRANDE"
-    assert df.at[0, "dataInicio"] == datetime(2022, 9, 3, 0, 0, 0)
-    assert df.at[0, "dataFim"] == datetime(2022, 9, 3, 0, 30, 0)
-    assert df.at[0, "valor"] == 0
+        OperationSynthetizer.synthetize([synthesis_str], uow)
+        OperationSynthetizer.clear_cache()
+    m.assert_called()
+    df = __obtem_dados_sintese_mock(synthesis_str, m)
+    df_meta = __obtem_dados_sintese_mock(OPERATION_SYNTHESIS_METADATA_OUTPUT, m)
+    assert df is not None
+    assert df_meta is not None
+    return df, df_meta
+
+
+def __obtem_dados_sintese_mock(
+    chave: str, mock: MagicMock
+) -> pd.DataFrame | None:
+    for c in mock.mock_calls:
+        if c.args[1] == chave:
+            return c.args[0]
+    return None
+
+
+def test_sintese_cmo_sbm(test_settings):
+    synthesis_str = "CMO_SBM"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    df_dec_oper = PdoSist.read(join(DECK_TEST_DIR, "PDO_SIST.DAT")).tabela
+    __compara_sintese_pdo_oper(
+        df,
+        df_dec_oper,
+        "cmo",
+        estagio=1,
+        cenario=1,
+        codigo_submercado=[1],
+        nome_submercado=["SE"],
+    )
+    __valida_metadata(synthesis_str, df_meta, False)
