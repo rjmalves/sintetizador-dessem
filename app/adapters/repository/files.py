@@ -4,6 +4,7 @@ import platform
 from abc import ABC, abstractmethod
 from typing import Type, TypeVar
 
+from idessem.dessem.dadvaz import Dadvaz
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.entdados import Entdados
@@ -24,6 +25,7 @@ from app.utils.log import Log
 
 if platform.system() == "Windows":
     DessemArq.ENCODING = "iso-8859-1"
+    Dadvaz.ENCODING = "iso-8859-1"
     PdoSist.ENCODING = "iso-8859-1"
     PdoHidr.ENCODING = "iso-8859-1"
     PdoOperacao.ENCODING = "iso-8859-1"
@@ -49,6 +51,10 @@ class AbstractFilesRepository(ABC):
 
     @abstractmethod
     def get_entdados(self) -> Entdados | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_dadvaz(self) -> Dadvaz | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -107,6 +113,8 @@ class RawFilesRepository(AbstractFilesRepository):
             raise e
         self.__entdados: Entdados | None = None
         self.__read_entdados = False
+        self.__dadvaz: Dadvaz | None = None
+        self.__read_dadvaz = False
         self.__pdo_sist: PdoSist | None = None
         self.__read_pdo_sist = False
         self.__pdo_inter: PdoInter | None = None
@@ -166,6 +174,33 @@ class RawFilesRepository(AbstractFilesRepository):
                     logger.error(f"Erro na leitura do ENTDADOS: {e}")
                 raise e
         return self.__entdados
+
+    def get_dadvaz(self) -> Dadvaz | None:
+        if self.__read_dadvaz is False:
+            self.__read_dadvaz = True
+            logger = Log.log()
+            try:
+                reg_caso = self.__dessemarq.caso
+                if reg_caso is None:
+                    if logger is not None:
+                        logger.error("Extensão não encontrada")
+                    raise RuntimeError()
+                extensao = (
+                    reg_caso.valor if reg_caso.valor is not None else "DAT"
+                )
+                nome_arquivo = f"DADVAZ.{extensao}"
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
+                )
+                self.__converte_utf8(caminho)
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {nome_arquivo}")
+                self.__dadvaz = Dadvaz.read(caminho)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(f"Erro na leitura do DADVAZ: {e}")
+                raise e
+        return self.__dadvaz
 
     def get_pdo_operacao(self) -> PdoOperacao | None:
         if self.__read_pdo_operacao is False:

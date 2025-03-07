@@ -234,7 +234,6 @@ class OperationSynthetizer:
     def _post_resolve_file(
         cls,
         df: pd.DataFrame,
-        col: str,
     ) -> pd.DataFrame:
         cols = [c for c in df.columns if c in IDENTIFICATION_COLUMNS]
         df = df[cols + [VALUE_COL]]
@@ -249,7 +248,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_sist_sbm(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_sist_sin(
@@ -260,7 +259,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_sist_sin(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_hidr_uhe(
@@ -271,7 +270,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_hidr_hydro(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_hidr_eer(
@@ -282,7 +281,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_hidr_eer(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_hidr_sbm(
@@ -293,7 +292,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_hidr_sbm(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_hidr_sin(
@@ -304,7 +303,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_hidr_sin(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_eolica_sbm(
@@ -315,7 +314,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_eolica_sbm(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_eolica_sin(
@@ -326,7 +325,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_eolica_sin(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_oper_term_ute(
@@ -337,7 +336,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_oper_term_ute(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_operacao_costs(
@@ -348,7 +347,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_operacao_costs(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_inter_sbp(
@@ -359,7 +358,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_inter_sbp(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _resolve_pdo_oper_tviag_calha_uhe(
@@ -370,7 +369,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_oper_tviag_calha_hydro(col, uow)
-            return cls._post_resolve_file(df, col)
+            return cls._post_resolve_file(df)
 
     @classmethod
     def _default_args(cls) -> List[str]:

@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Type, TypeVar
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+from idessem.dessem.dadvaz import Dadvaz
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.entdados import Entdados
 from idessem.dessem.log_matriz import LogMatriz
@@ -25,6 +26,7 @@ from app.internal.constants import (
     EXCHANGE_SOURCE_CODE_COL,
     EXCHANGE_TARGET_CODE_COL,
     HYDRO_CODE_COL,
+    HYDRO_NAME_COL,
     IV_SUBMARKET_CODE,
     RUNTIME_COL,
     SCENARIO_COL,
@@ -33,6 +35,7 @@ from app.internal.constants import (
     SUBMARKET_CODE_COL,
     SUBMARKET_NAME_COL,
     THERMAL_CODE_COL,
+    THERMAL_NAME_COL,
     VALUE_COL,
 )
 from app.services.unitofwork import AbstractUnitOfWork
@@ -48,6 +51,12 @@ class Deck:
     def _get_entdados(self, uow: AbstractUnitOfWork) -> Entdados | None:
         with uow:
             pdo = uow.files.get_entdados()
+            return pdo
+
+    @classmethod
+    def _get_dadvaz(self, uow: AbstractUnitOfWork) -> Dadvaz | None:
+        with uow:
+            pdo = uow.files.get_dadvaz()
             return pdo
 
     @classmethod
@@ -133,6 +142,18 @@ class Deck:
             )
             cls.DECK_DATA_CACHING["entdados"] = entdados
         return entdados
+
+    @classmethod
+    def dadvaz(cls, uow: AbstractUnitOfWork) -> Dadvaz:
+        dadvaz = cls.DECK_DATA_CACHING.get("dadvaz")
+        if dadvaz is None:
+            dadvaz = cls._validate_data(
+                cls._get_dadvaz(uow),
+                Dadvaz,
+                "dadvaz",
+            )
+            cls.DECK_DATA_CACHING["dadvaz"] = dadvaz
+        return dadvaz
 
     @classmethod
     def log_matriz(cls, uow: AbstractUnitOfWork) -> LogMatriz:
@@ -378,7 +399,7 @@ class Deck:
             # já existentes
             df["corte_geracao"] = df["geracao_pre_definida"] - df["geracao"]
             cls.DECK_DATA_CACHING["pdo_eolica"] = df
-        return df
+        return df.copy()
 
     @classmethod
     def pdo_inter(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -432,7 +453,7 @@ class Deck:
                 inplace=True,
             )
             cls.DECK_DATA_CACHING["pdo_inter"] = df
-        return df
+        return df.copy()
 
     @classmethod
     def pdo_oper_tviag_calha(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -499,7 +520,7 @@ class Deck:
                 stage_df[END_DATE_COL].tolist(), num_entities
             )
             cls.DECK_DATA_CACHING["pdo_oper_tviag_calha"] = df
-        return df
+        return df.copy()
 
     @classmethod
     def pdo_oper_uct(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -523,7 +544,7 @@ class Deck:
                 stage_df[END_DATE_COL].tolist(), num_entities
             )
             cls.DECK_DATA_CACHING["pdo_oper_uct"] = df
-        return df
+        return df.copy()
 
     @classmethod
     def pdo_oper_term(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -577,7 +598,7 @@ class Deck:
                 df[END_DATE_COL] - df[START_DATE_COL]
             ) / pd.Timedelta(hours=1)
             cls.DECK_DATA_CACHING["pdo_oper_term"] = df
-        return df
+        return df.copy()
 
     @classmethod
     def pdo_operacao(cls, uow: AbstractUnitOfWork) -> PdoOperacao:
@@ -610,7 +631,7 @@ class Deck:
                 }
             )
             cls.DECK_DATA_CACHING["stages_durations"] = df
-        return df
+        return df.copy()
 
     @classmethod
     def date_arrays(
@@ -625,6 +646,25 @@ class Deck:
             .to_numpy()
             .flatten()
         )
+
+    @classmethod
+    def hydro_inflows(cls, uow) -> pd.DataFrame:
+        df = cls.DECK_DATA_CACHING.get("hydro_inflows")
+        if df is None:
+            arq_dadvaz = cls.dadvaz(uow)
+            df = cls._validate_data(
+                arq_dadvaz.vazoes,
+                pd.DataFrame,
+                "vazões das usinas",
+            )
+            df = df.rename(
+                columns={
+                    "codigo_usina": HYDRO_CODE_COL,
+                    "nome_usina": HYDRO_NAME_COL,
+                }
+            )
+            cls.DECK_DATA_CACHING["hydro_inflows"] = df
+        return df.copy()
 
     @classmethod
     def block_map(cls, uow: AbstractUnitOfWork) -> dict:
@@ -657,6 +697,16 @@ class Deck:
             map_dict = {i + 1: block_map[b] for i, b in enumerate(blocks)}
             cls.DECK_DATA_CACHING["stage_block_map"] = map_dict
         return map_dict
+
+    @classmethod
+    def blocks_durations(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = cls.DECK_DATA_CACHING.get("blocks_durations")
+        if df is None:
+            df = cls.stages_durations(uow)
+            block_map = cls.stage_block_map(uow)
+            df[BLOCK_COL] = df[STAGE_COL].map(block_map)
+            cls.DECK_DATA_CACHING["blocks_durations"] = df
+        return df
 
     @classmethod
     def eer_submarket_map(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -711,6 +761,50 @@ class Deck:
             )
             df = df[[HYDRO_CODE_COL, EER_CODE_COL]]
             cls.DECK_DATA_CACHING["hydro_eer_map"] = df
+        return df.copy()
+
+    @classmethod
+    def hydro_eer_submarket_map(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = cls.DECK_DATA_CACHING.get("hydro_eer_submarket_map")
+        if df is None:
+            hydro_eer_df = cls.hydro_eer_map(uow)
+            submarket_eer_df = cls.eer_submarket_map(uow)
+            inflow_df = cls.hydro_inflows(uow)[
+                [HYDRO_CODE_COL, HYDRO_NAME_COL]
+            ].drop_duplicates()
+            df = hydro_eer_df.merge(
+                submarket_eer_df, how="left", on=EER_CODE_COL
+            )
+            df = df.merge(inflow_df, how="left", on=HYDRO_CODE_COL)
+            cls.DECK_DATA_CACHING["hydro_eer_submarket_map"] = df
+        return df.copy()
+
+    @classmethod
+    def thermals(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = cls.DECK_DATA_CACHING.get("thermals")
+        if df is None:
+            pdo_oper_term = cls._validate_data(
+                cls._get_pdo_oper_term(uow),
+                PdoOperTerm,
+                "pdo_oper_term",
+            )
+            df = cls._validate_data(
+                pdo_oper_term.tabela,
+                pd.DataFrame,
+                "pdo_oper_term",
+            )
+            df = df.rename(
+                columns={
+                    "codigo_usina": THERMAL_CODE_COL,
+                    "nome_usina": THERMAL_NAME_COL,
+                }
+            )
+            df = (
+                df[[THERMAL_CODE_COL, THERMAL_NAME_COL]]
+                .drop_duplicates()
+                .reset_index(drop=True)
+            )
+            cls.DECK_DATA_CACHING["thermals"] = df
         return df.copy()
 
     @classmethod
