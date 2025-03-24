@@ -51,6 +51,23 @@ def test_sintese_programa(test_settings):
     __valida_metadata(synthesis_str, df_meta)
 
 
+def test_sintese_versao(test_settings):
+    synthesis_str = "VERSAO"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    assert df.at[0, "versao"] == "19.4.5"
+    __valida_metadata(synthesis_str, df_meta)
+
+
+def test_sintese_titulo(test_settings):
+    synthesis_str = "TITULO"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    assert (
+        df.at[0, "titulo"]
+        == "TE  PMO - SETEMBRO/22 - OUTUBRO/22 - REV 1 - FCF COM CVAR - 12 REE - VALOR ESPE"
+    )
+    __valida_metadata(synthesis_str, df_meta)
+
+
 def test_sintese_tempo(test_settings):
     synthesis_str = "TEMPO"
     df, df_meta = __sintetiza_com_mock(synthesis_str)

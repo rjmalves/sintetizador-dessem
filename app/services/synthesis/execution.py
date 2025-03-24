@@ -80,6 +80,8 @@ class ExecutionSynthetizer:
     ) -> pd.DataFrame:
         RULES: dict[Variable, Callable] = {
             Variable.PROGRAMA: cls._resolve_program,
+            Variable.VERSAO: cls._resolve_version,
+            Variable.TITULO: cls._resolve_title,
             Variable.TEMPO_EXECUCAO: cls._resolve_runtime,
             Variable.CUSTOS: cls._resolve_costs,
         }
@@ -88,6 +90,14 @@ class ExecutionSynthetizer:
     @classmethod
     def _resolve_program(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         return pd.DataFrame(data={"programa": ["DESSEM"]})
+    
+    @classmethod
+    def _resolve_version(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        return pd.DataFrame(data={"versao": [Deck.version(uow)]})
+    
+    @classmethod
+    def _resolve_title(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        return pd.DataFrame(data={"titulo": [Deck.title(uow)]})
 
     @classmethod
     def __append_execution(

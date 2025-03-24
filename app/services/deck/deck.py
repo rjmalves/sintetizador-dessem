@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Type, TypeVar
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.dadvaz import Dadvaz
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.entdados import Entdados
@@ -16,6 +17,7 @@ from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
+from idessem.dessem.modelos.dessemarq import RegistroTitulo
 
 from app.internal.constants import (
     BLOCK_COL,
@@ -52,6 +54,12 @@ class Deck:
         with uow:
             pdo = uow.files.get_entdados()
             return pdo
+
+    @classmethod
+    def _get_dessemarq(self, uow: AbstractUnitOfWork) -> DessemArq | None:
+        with uow:
+            arq = uow.files.dessemarq
+            return arq
 
     @classmethod
     def _get_dadvaz(self, uow: AbstractUnitOfWork) -> Dadvaz | None:
@@ -646,6 +654,36 @@ class Deck:
             .to_numpy()
             .flatten()
         )
+
+    @classmethod
+    def version(cls, uow: AbstractUnitOfWork) -> str:
+        name = "version"
+        version = cls.DECK_DATA_CACHING.get(name)
+        if version is None:
+            version = cls._validate_data(
+                cls._get_pdo_sist(uow).versao,
+                str,
+                name,
+            )
+            cls.DECK_DATA_CACHING[name] = version
+        return version
+
+    @classmethod
+    def title(cls, uow: AbstractUnitOfWork) -> str:
+        name = "title"
+        title = cls.DECK_DATA_CACHING.get(name)
+        if title is None:
+            dessemarq = cls._get_dessemarq(uow)
+            title_register = cls._validate_data(
+                dessemarq.titulo, RegistroTitulo, "registro TE do dessemarq"
+            )
+            title = cls._validate_data(
+                title_register.valor,
+                str,
+                "titulo do estudo",
+            )
+            cls.DECK_DATA_CACHING[name] = title
+        return title
 
     @classmethod
     def hydro_inflows(cls, uow) -> pd.DataFrame:

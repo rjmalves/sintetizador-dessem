@@ -3,6 +3,8 @@ from enum import Enum
 
 class Variable(Enum):
     PROGRAMA = "PROGRAMA"
+    VERSAO = "VERSAO"
+    TITULO = "TITULO"
     TEMPO_EXECUCAO = "TEMPO"
     CUSTOS = "CUSTOS"
 
@@ -20,6 +22,8 @@ class Variable(Enum):
     def short_name(self) -> str | None:
         SHORT_NAMES: dict[str, str] = {
             "PROGRAMA": "PROGRAMA",
+            "VERSAO": "VERSAO",
+            "TITULO": "TITULO",
             "TEMPO": "TEMPO",
             "CUSTOS": "CUSTOS",
         }
@@ -29,6 +33,8 @@ class Variable(Enum):
     def long_name(self) -> str | None:
         LONG_NAMES: dict[str, str] = {
             "PROGRAMA": "Modelo de Otimização",
+            "VERSAO": "Versão do Modelo",
+            "TITULO": "Título do Estudo",
             "TEMPO": "Tempo de Execução",
             "CUSTOS": "Composição de Custos da Solução",
         }
