@@ -18,7 +18,7 @@ from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
 from idessem.dessem.modelos.dessemarq import RegistroTitulo
-
+from app.utils.operations import fast_group_df
 from app.internal.constants import (
     BLOCK_COL,
     BLOCK_DURATION_COL,
@@ -39,6 +39,9 @@ from app.internal.constants import (
     THERMAL_CODE_COL,
     THERMAL_NAME_COL,
     VALUE_COL,
+    LOWER_BOUND_COL,
+    UPPER_BOUND_COL,
+    IDENTIFICATION_COLUMNS,
 )
 from app.services.unitofwork import AbstractUnitOfWork
 
@@ -235,6 +238,25 @@ class Deck:
         return df
 
     @classmethod
+    def _add_submarket_code(
+        cls,
+        uow: AbstractUnitOfWork,
+        df: pd.DataFrame,
+        submarket_name_col: str,
+        submarket_code_col_new: str = SUBMARKET_CODE_COL,
+    ) -> pd.DataFrame:
+        submarket_map_df = cls.submarkets(uow)
+        submarket_map = {
+            name: code
+            for name, code in zip(
+                submarket_map_df[SUBMARKET_NAME_COL],
+                submarket_map_df[SUBMARKET_CODE_COL],
+            )
+        }
+        df[submarket_code_col_new] = df[submarket_name_col].map(submarket_map)
+        return df
+
+    @classmethod
     def pdo_sist(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         df = cls.DECK_DATA_CACHING.get("pdo_sist")
         if df is None:
@@ -250,17 +272,9 @@ class Deck:
             )
             df = cls._add_single_scenario(df)
             df = df.rename(columns={"estagio": STAGE_COL})
-            submarket_map_df = cls.submarkets(uow)
-            submarket_map = {
-                name: code
-                for name, code in zip(
-                    submarket_map_df[SUBMARKET_NAME_COL],
-                    submarket_map_df[SUBMARKET_CODE_COL],
-                )
-            }
             block_map = cls.block_map(uow)
             df[BLOCK_COL] = df["nome_patamar"].map(block_map)
-            df[SUBMARKET_CODE_COL] = df["nome_submercado"].map(submarket_map)
+            df = cls._add_submarket_code(uow, df, "nome_submercado")
             df[[START_DATE_COL, END_DATE_COL]] = df.apply(
                 partial(cls.date_arrays, uow=uow), axis=1, result_type="expand"
             )
@@ -378,17 +392,9 @@ class Deck:
             df = df.groupby(
                 [STAGE_COL, SCENARIO_COL, SUBMARKET_CODE_COL], as_index=False
             ).sum(numeric_only=True)
-            submarket_map_df = cls.submarkets(uow)
-            submarket_map = {
-                name: code
-                for name, code in zip(
-                    submarket_map_df[SUBMARKET_NAME_COL],
-                    submarket_map_df[SUBMARKET_CODE_COL],
-                )
-            }
             block_map = cls.stage_block_map(uow)
             df[BLOCK_COL] = df[STAGE_COL].map(block_map)
-            df[SUBMARKET_CODE_COL] = df[SUBMARKET_CODE_COL].map(submarket_map)
+            df = cls._add_submarket_code(uow, df, SUBMARKET_CODE_COL)
             # Acrescenta datas iniciais e finais
             # Faz uma atribuicao nao posicional.
             # A maneira mais pythonica é lenta.
@@ -433,21 +439,13 @@ class Deck:
                     "nome_submercado_para": EXCHANGE_TARGET_CODE_COL,
                 }
             )
-            submarket_map_df = cls.submarkets(uow)
-            submarket_map = {
-                name: code
-                for name, code in zip(
-                    submarket_map_df[SUBMARKET_NAME_COL],
-                    submarket_map_df[SUBMARKET_CODE_COL],
-                )
-            }
             block_map = cls.block_map(uow)
             df[BLOCK_COL] = df[BLOCK_COL].map(block_map)
-            df[EXCHANGE_SOURCE_CODE_COL] = df[EXCHANGE_SOURCE_CODE_COL].map(
-                submarket_map
+            df = cls._add_submarket_code(
+                uow, df, EXCHANGE_SOURCE_CODE_COL, EXCHANGE_SOURCE_CODE_COL
             )
-            df[EXCHANGE_TARGET_CODE_COL] = df[EXCHANGE_TARGET_CODE_COL].map(
-                submarket_map
+            df = cls._add_submarket_code(
+                uow, df, EXCHANGE_TARGET_CODE_COL, EXCHANGE_TARGET_CODE_COL
             )
             df[[START_DATE_COL, END_DATE_COL]] = df.apply(
                 partial(cls.date_arrays, uow=uow), axis=1, result_type="expand"
@@ -580,17 +578,9 @@ class Deck:
                 [STAGE_COL, SCENARIO_COL, THERMAL_CODE_COL, SUBMARKET_CODE_COL],
                 as_index=False,
             ).sum(numeric_only=True)
-            submarket_map_df = cls.submarkets(uow)
-            submarket_map = {
-                name: code
-                for name, code in zip(
-                    submarket_map_df[SUBMARKET_NAME_COL],
-                    submarket_map_df[SUBMARKET_CODE_COL],
-                )
-            }
             block_map = cls.stage_block_map(uow)
             df[BLOCK_COL] = df[STAGE_COL].map(block_map)
-            df[SUBMARKET_CODE_COL] = df[SUBMARKET_CODE_COL].map(submarket_map)
+            df = cls._add_submarket_code(uow, df, SUBMARKET_CODE_COL)
             # Acrescenta datas iniciais e finais
             # Faz uma atribuicao nao posicional.
             # A maneira mais pythonica é lenta.
@@ -1212,3 +1202,80 @@ class Deck:
                 VALUE_COL,
             ]
         ].copy()
+
+    @classmethod
+    def _group_thermal_bounds_df(
+        cls,
+        df: pd.DataFrame,
+        grouping_column: Optional[str] = None,
+        extract_columns: list[str] = [VALUE_COL],
+    ) -> pd.DataFrame:
+        """
+        Realiza a agregação de variáveis fornecidas a nível de usina
+        para uma síntese de SBMs ou para o SIN. A agregação
+        tem como requisito que as variáveis fornecidas sejam em unidades
+        cuja agregação seja possível apenas pela soma.
+        """
+        valid_grouping_columns = [
+            THERMAL_CODE_COL,
+            SUBMARKET_CODE_COL,
+        ]
+        grouping_column_map: Dict[str, list[str]] = {
+            THERMAL_CODE_COL: [
+                THERMAL_CODE_COL,
+                SUBMARKET_CODE_COL,
+            ],
+            SUBMARKET_CODE_COL: [SUBMARKET_CODE_COL],
+        }
+        mapped_columns = (
+            grouping_column_map[grouping_column] if grouping_column else []
+        )
+        grouping_columns = mapped_columns + [
+            c
+            for c in df.columns
+            if c in IDENTIFICATION_COLUMNS and c not in valid_grouping_columns
+        ]
+        grouped_df = fast_group_df(
+            df,
+            grouping_columns,
+            extract_columns,
+            operation="sum",
+        )
+        return grouped_df
+
+    @classmethod
+    def thermal_generation_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        name = "thermal_generation_bounds"
+        thermal_generation_bounds = cls.DECK_DATA_CACHING.get(name)
+        if thermal_generation_bounds is None:
+            df = cls._validate_data(
+                cls.pdo_oper_uct(uow),
+                pd.DataFrame,
+                "pdo_oper_uct",
+            )
+            df = df.groupby(
+                by=[STAGE_COL, THERMAL_CODE_COL],
+                as_index=False,
+            ).max()
+            df = df.rename(
+                columns={
+                    "geracao_minima": LOWER_BOUND_COL,
+                    "geracao_maxima": UPPER_BOUND_COL,
+                    "nome_submercado": SUBMARKET_NAME_COL,
+                },
+            )
+            df = cls._add_submarket_code(
+                uow, df, SUBMARKET_NAME_COL, SUBMARKET_CODE_COL
+            )
+            df = df[
+                [
+                    STAGE_COL,
+                    THERMAL_CODE_COL,
+                    SUBMARKET_CODE_COL,
+                    LOWER_BOUND_COL,
+                    UPPER_BOUND_COL,
+                ]
+            ]
+            cls.DECK_DATA_CACHING[name] = df
+
+        return cls.DECK_DATA_CACHING[name]

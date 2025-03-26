@@ -1,10 +1,40 @@
 import pandas as pd  # type: ignore
-
+from typing import Callable, Dict
 from app.internal.constants import (
     PROBABILITY_COL,
     SCENARIO_COL,
     VALUE_COL,
+    PANDAS_GROUPING_ENGINE,
 )
+
+
+def fast_group_df(
+    df: pd.DataFrame,
+    grouping_columns: list,
+    extract_columns: list,
+    operation: str,
+    reset_index: bool = True,
+) -> pd.DataFrame:
+    """
+    Agrupa um DataFrame aplicando uma operação, tentando utilizar a engine mais
+    adequada para o agrupamento.
+    """
+    grouped_df = df.groupby(grouping_columns, sort=False)[extract_columns]
+
+    operation_map: Dict[str, Callable[..., pd.DataFrame]] = {
+        "mean": grouped_df.mean,
+        "std": grouped_df.std,
+        "sum": grouped_df.sum,
+    }
+
+    try:
+        grouped_df = operation_map[operation](engine=PANDAS_GROUPING_ENGINE)
+    except ZeroDivisionError:
+        grouped_df = operation_map[operation](engine="cython")
+
+    if reset_index:
+        grouped_df = grouped_df.reset_index()
+    return grouped_df
 
 
 def _calc_mean(df: pd.DataFrame) -> pd.DataFrame:
