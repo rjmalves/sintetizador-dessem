@@ -363,7 +363,7 @@ class Deck:
                 + df["vazao_montante_tempo_viagem_m3s"]
             )
             df.sort_values([HYDRO_CODE_COL, STAGE_COL], inplace=True)
-            cls.DECK_DATA_CACHING["pdo_hidr"] = df
+            cls.DECK_DATA_CACHING["pdo_hidr"] = df.reset_index(drop=True)
         return df.copy()
 
     @classmethod
@@ -1276,6 +1276,34 @@ class Deck:
                     UPPER_BOUND_COL,
                 ]
             ]
+            cls.DECK_DATA_CACHING[name] = df
+
+        return cls.DECK_DATA_CACHING[name]
+
+    @classmethod
+    def hydro_generation_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        name = "hydro_generation_bounds"
+        hydro_generation_bounds = cls.DECK_DATA_CACHING.get(name)
+        if hydro_generation_bounds is None:
+            df = cls._validate_data(
+                cls.pdo_hidr(uow),
+                pd.DataFrame,
+                "pdo_hidr",
+            )
+            df = df.rename(
+                columns={
+                    "geracao_maxima": UPPER_BOUND_COL,
+                },
+            )
+            df = df[
+                [
+                    STAGE_COL,
+                    HYDRO_CODE_COL,
+                    SUBMARKET_CODE_COL,
+                    UPPER_BOUND_COL,
+                ]
+            ]
+            df[LOWER_BOUND_COL] = float(0.0)
             cls.DECK_DATA_CACHING[name] = df
 
         return cls.DECK_DATA_CACHING[name]

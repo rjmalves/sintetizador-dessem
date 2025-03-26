@@ -12,6 +12,7 @@ from app.internal.constants import (
     STAGE_COL,
     SUBMARKET_CODE_COL,
     IDENTIFICATION_COLUMNS,
+    HYDRO_CODE_COL,
 )
 from app.services.deck.deck import Deck
 from app.model.operation.operationsynthesis import OperationSynthesis
@@ -56,6 +57,30 @@ class OperationVariableBounds:
         _: OperationVariableBounds._thermal_generation_bounds(
             df, uow, entity_column=None
         ),
+        OperationSynthesis(
+            Variable.GERACAO_HIDRAULICA,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df, uow, _: OperationVariableBounds._hydro_generation_bounds(
+            df, uow, entity_column=HYDRO_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.GERACAO_HIDRAULICA,
+            SpatialResolution.SUBMERCADO,
+        ): lambda df, uow, _: OperationVariableBounds._hydro_generation_bounds(
+            df, uow, entity_column=SUBMARKET_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.GERACAO_HIDRAULICA,
+            SpatialResolution.SISTEMA_INTERLIGADO,
+        ): lambda df, uow, _: OperationVariableBounds._hydro_generation_bounds(
+            df, uow, entity_column=None
+        ),
+        OperationSynthesis(
+            Variable.VAZAO_AFLUENTE,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df, uow, _: OperationVariableBounds._lower_bounded_bounds(
+            df, uow
+        ),
     }
 
     @classmethod
@@ -95,7 +120,7 @@ class OperationVariableBounds:
         return df
 
     @classmethod
-    def _group_thermal_bounds_df(
+    def _group_bounds_df(
         cls,
         df: pd.DataFrame,
         grouping_column: Optional[str] = None,
@@ -109,11 +134,16 @@ class OperationVariableBounds:
         """
         valid_grouping_columns = [
             THERMAL_CODE_COL,
+            HYDRO_CODE_COL,
             SUBMARKET_CODE_COL,
         ]
         grouping_column_map: Dict[str, list[str]] = {
             THERMAL_CODE_COL: [
                 THERMAL_CODE_COL,
+                SUBMARKET_CODE_COL,
+            ],
+            HYDRO_CODE_COL: [
+                HYDRO_CODE_COL,
                 SUBMARKET_CODE_COL,
             ],
             SUBMARKET_CODE_COL: [SUBMARKET_CODE_COL],
@@ -147,7 +177,38 @@ class OperationVariableBounds:
         """
         df_bounds = Deck.thermal_generation_bounds(uow)
         if entity_column != THERMAL_CODE_COL:
-            df_bounds = cls._group_thermal_bounds_df(
+            df_bounds = cls._group_bounds_df(
+                df_bounds,
+                entity_column,
+                extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
+            )
+        entity_column_list = [] if entity_column is None else [entity_column]
+        df = pd.merge(
+            df,
+            df_bounds,
+            how="left",
+            on=[STAGE_COL] + entity_column_list,
+            suffixes=[None, "_bounds"],
+        )
+        for col in [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL]:
+            df[col] = np.round(df[col], 2)
+        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        return df
+
+    @classmethod
+    def _hydro_generation_bounds(
+        cls,
+        df: pd.DataFrame,
+        uow: AbstractUnitOfWork,
+        entity_column: Optional[str],
+    ) -> pd.DataFrame:
+        """
+        Adiciona ao DataFrame da síntese os limites inferior e superior
+        para a variável de Geração Hidráulica (GHID) para cada UHE, submercado e SIN.
+        """
+        df_bounds = Deck.hydro_generation_bounds(uow)
+        if entity_column != HYDRO_CODE_COL:
+            df_bounds = cls._group_bounds_df(
                 df_bounds,
                 entity_column,
                 extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
