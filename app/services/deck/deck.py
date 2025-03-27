@@ -17,6 +17,7 @@ from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
+from idessem.dessem.pdo_eco_usih import PdoEcoUsih
 from idessem.dessem.modelos.dessemarq import RegistroTitulo
 from app.utils.operations import fast_group_df
 from app.internal.constants import (
@@ -132,6 +133,12 @@ class Deck:
     ) -> PdoOperTviagCalha | None:
         with uow:
             pdo = uow.files.get_pdo_oper_tviag_calha()
+            return pdo
+
+    @classmethod
+    def _get_pdo_eco_usih(self, uow: AbstractUnitOfWork) -> PdoEcoUsih | None:
+        with uow:
+            pdo = uow.files.get_pdo_eco_usih()
             return pdo
 
     @classmethod
@@ -293,6 +300,18 @@ class Deck:
 
     @classmethod
     def pdo_hidr(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        def _cast_volumes_to_absolute(df: pd.DataFrame) -> pd.DataFrame:
+            col_min_vol = "volume_armazenado_minimo_hm3"
+            df_eco = cls.pdo_eco_usih(uow)[[HYDRO_CODE_COL, col_min_vol]]
+            num_stages = len(cls.stages_durations(uow))
+            df[col_min_vol] = np.tile(
+                df_eco[col_min_vol].to_numpy(), num_stages
+            )
+            df["volume_final_absoluto_hm3"] = (
+                df["volume_final_hm3"] + df[col_min_vol]
+            )
+            return df
+
         df = cls.DECK_DATA_CACHING.get("pdo_hidr")
         if df is None:
             pdo_hidr = cls._validate_data(
@@ -307,6 +326,7 @@ class Deck:
             )
             df = df.loc[df["conjunto"] == 99].reset_index(drop=True)
             df = df.drop(columns=["nome_usina", "conjunto", "unidade"])
+            df = _cast_volumes_to_absolute(df)
             df = cls._add_single_scenario(df)
             df = df.rename(
                 columns={
@@ -609,6 +629,23 @@ class Deck:
             )
             cls.DECK_DATA_CACHING["pdo_operacao"] = pdo_operacao
         return pdo_operacao
+
+    @classmethod
+    def pdo_eco_usih(cls, uow: AbstractUnitOfWork) -> PdoEcoUsih:
+        pdo_eco_usih = cls.DECK_DATA_CACHING.get("pdo_eco_usih")
+        if pdo_eco_usih is None:
+            file = cls._validate_data(
+                cls._get_pdo_eco_usih(uow),
+                PdoEcoUsih,
+                "pdo_eco_usih",
+            )
+            df = cls._validate_data(
+                file.tabela,
+                pd.DataFrame,
+                "pdo_eco_usih",
+            )
+            cls.DECK_DATA_CACHING["pdo_eco_usih"] = df
+        return cls.DECK_DATA_CACHING["pdo_eco_usih"]
 
     @classmethod
     def stages_durations(cls, uow) -> pd.DataFrame:
@@ -1307,3 +1344,26 @@ class Deck:
             cls.DECK_DATA_CACHING[name] = df
 
         return cls.DECK_DATA_CACHING[name]
+
+    @classmethod
+    def stored_volume_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        name = "stored_volume_bounds"
+        if name not in cls.DECK_DATA_CACHING:
+            df = cls.pdo_eco_usih(uow)
+            df = df.rename(
+                columns={
+                    "codigo_usina": HYDRO_CODE_COL,
+                    "volume_armazenado_maximo_hm3": UPPER_BOUND_COL,
+                    "volume_armazenado_minimo_hm3": LOWER_BOUND_COL,
+                }
+            )
+            df = df[
+                [
+                    HYDRO_CODE_COL,
+                    LOWER_BOUND_COL,
+                    UPPER_BOUND_COL,
+                ]
+            ]
+
+            cls.DECK_DATA_CACHING[name] = df
+        return cls.DECK_DATA_CACHING[name].copy()

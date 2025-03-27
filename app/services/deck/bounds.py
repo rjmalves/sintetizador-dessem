@@ -81,6 +81,13 @@ class OperationVariableBounds:
         ): lambda df, uow, _: OperationVariableBounds._lower_bounded_bounds(
             df, uow
         ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df, uow, _: OperationVariableBounds._stored_volume_bounds(
+            df,
+            uow,
+        ),
     }
 
     @classmethod
@@ -224,6 +231,25 @@ class OperationVariableBounds:
         for col in [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL]:
             df[col] = np.round(df[col], 2)
         df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        return df
+
+    @classmethod
+    def _stored_volume_bounds(
+        cls,
+        df: pd.DataFrame,
+        uow: AbstractUnitOfWork,
+    ) -> pd.DataFrame:
+        """
+        Adiciona ao DataFrame da síntese os limites inferior e superior
+        para as variáveis de Volume Armazenado Absoluto (VARM) e Volume
+        Armazenado Percentual (VARP) para cada UHE.
+        """
+
+        df_bounds = Deck.stored_volume_bounds(uow)
+        df = df.merge(df_bounds, how="left", on=HYDRO_CODE_COL)
+        for col in [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL]:
+            df[col] = np.round(df[col], 2)
+
         return df
 
     @classmethod

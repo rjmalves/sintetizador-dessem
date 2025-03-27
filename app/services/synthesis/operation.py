@@ -162,7 +162,9 @@ class OperationSynthetizer:
             (
                 Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
                 SpatialResolution.USINA_HIDROELETRICA,
-            ): lambda uow: cls._resolve_pdo_hidr_uhe(uow, "volume_final_hm3"),
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(
+                uow, "volume_final_absoluto_hm3"
+            ),
             (
                 Variable.VALOR_AGUA,
                 SpatialResolution.USINA_HIDROELETRICA,
@@ -270,6 +272,7 @@ class OperationSynthetizer:
             logger=cls.logger,
         ):
             df = Deck.pdo_hidr_hydro(col, uow)
+            df = df.loc[(~df[VALUE_COL].isna())].reset_index(drop=True)
             return cls._post_resolve_file(df)
 
     @classmethod

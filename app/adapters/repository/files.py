@@ -17,6 +17,7 @@ from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
+from idessem.dessem.pdo_eco_usih import PdoEcoUsih
 
 from app.model.settings import Settings
 from app.utils.encoding import converte_codificacao
@@ -97,6 +98,10 @@ class AbstractFilesRepository(ABC):
     def get_pdo_oper_tviag_calha(self) -> PdoOperTviagCalha | None:
         raise NotImplementedError
 
+    @abstractmethod
+    def get_pdo_eco_usih(self) -> PdoEcoUsih | None:
+        raise NotImplementedError
+
 
 class RawFilesRepository(AbstractFilesRepository):
     def __init__(self, tmppath: str):
@@ -135,6 +140,8 @@ class RawFilesRepository(AbstractFilesRepository):
         self.__read_pdo_eolica = False
         self.__pdo_oper_tviag_calha: PdoOperTviagCalha | None = None
         self.__read_pdo_oper_tviag_calha = False
+        self.__pdo_eco_usih: PdoEcoUsih | None = None
+        self.__read_pdo_eco_usih = False
 
     @property
     def dessemarq(self) -> DessemArq:
@@ -473,6 +480,42 @@ class RawFilesRepository(AbstractFilesRepository):
                     )
                 raise e
         return self.__pdo_oper_tviag_calha
+
+    def __find_file_extension(self) -> str | None:
+        logger = Log.log()
+        reg_caso = self.__dessemarq.caso
+        extensao = None
+        if reg_caso is None:
+            if logger is not None:
+                logger.error("Extensão não encontrada")
+            raise RuntimeError()
+        extensao = reg_caso.valor if reg_caso.valor is not None else "DAT"
+        return extensao
+
+    def get_pdo_eco_usih(self) -> PdoEcoUsih | None:
+        if self.__read_pdo_eco_usih is False:
+            self.__read_pdo_eco_usih = True
+            logger = Log.log()
+            try:
+                extensao = self.__find_file_extension()
+                nome_arquivo = f"PDO_ECO_USIH.{extensao}"
+                caminho = find_file_case_insensitive(
+                    self.__tmppath, nome_arquivo
+                )
+                self.__converte_utf8(caminho)
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {nome_arquivo}")
+                self.__pdo_eco_usih = PdoEcoUsih.read(caminho)
+                version = self.__pdo_eco_usih.versao
+                if version is None:
+                    raise FileNotFoundError()
+                PdoEcoUsih.set_version(version)
+                self.__pdo_eco_usih = PdoEcoUsih.read(caminho)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(f"Erro na leitura do {nome_arquivo}: {e}")
+                raise e
+        return self.__pdo_eco_usih
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractFilesRepository:
