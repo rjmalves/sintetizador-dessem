@@ -506,10 +506,11 @@ class RawFilesRepository(AbstractFilesRepository):
                 if logger is not None:
                     logger.info(f"Lendo arquivo {nome_arquivo}")
                 self.__pdo_eco_usih = PdoEcoUsih.read(caminho)
-                version = self.__pdo_eco_usih.versao
-                if version is None:
-                    raise FileNotFoundError()
-                PdoEcoUsih.set_version(version)
+                if self.__pdo_eco_usih is not None:
+                    version = self.__pdo_eco_usih.versao
+                    if version is None:
+                        raise FileNotFoundError()
+                    PdoEcoUsih.set_version(version)
                 self.__pdo_eco_usih = PdoEcoUsih.read(caminho)
             except Exception as e:
                 if logger is not None:
