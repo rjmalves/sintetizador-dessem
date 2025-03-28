@@ -143,6 +143,7 @@ def test_sintese_cop_sin(test_settings):
     df_pdo_operacao = PdoOperacao.read(
         join(DECK_TEST_DIR, "PDO_OPERACAO.DAT")
     ).custos_operacao
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_operacao,
@@ -159,6 +160,7 @@ def test_sintese_cfu_sin(test_settings):
     df_pdo_operacao = PdoOperacao.read(
         join(DECK_TEST_DIR, "PDO_OPERACAO.DAT")
     ).custos_operacao
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_operacao,
@@ -173,6 +175,7 @@ def test_sintese_cmo_sbm(test_settings):
     synthesis_str = "CMO_SBM"
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_sist = PdoSist.read(join(DECK_TEST_DIR, "PDO_SIST.DAT")).tabela
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -189,6 +192,7 @@ def test_sintese_mer_sbm(test_settings):
     synthesis_str = "MER_SBM"
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_sist = PdoSist.read(join(DECK_TEST_DIR, "PDO_SIST.DAT")).tabela
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -211,6 +215,7 @@ def test_sintese_merl_sbm(test_settings):
         - df_pdo_sist["geracao_fixa_barra"]
         - df_pdo_sist["geracao_renovavel"]
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -236,6 +241,7 @@ def test_sintese_merl_sin(test_settings):
         - df_pdo_sist["geracao_fixa_barra"]
         - df_pdo_sist["geracao_renovavel"]
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -250,6 +256,7 @@ def test_sintese_ghid_sbm(test_settings):
     synthesis_str = "GHID_SBM"
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_sist = PdoSist.read(join(DECK_TEST_DIR, "PDO_SIST.DAT")).tabela
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -269,6 +276,7 @@ def test_sintese_ghid_sin(test_settings):
     df_pdo_sist = df_pdo_sist.groupby(["estagio"], as_index=False).sum(
         numeric_only=True
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -283,6 +291,7 @@ def test_sintese_gter_sbm(test_settings):
     synthesis_str = "GTER_SBM"
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_sist = PdoSist.read(join(DECK_TEST_DIR, "PDO_SIST.DAT")).tabela
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -302,6 +311,7 @@ def test_sintese_gter_sin(test_settings):
     df_pdo_sist = df_pdo_sist.groupby(["estagio"], as_index=False).sum(
         numeric_only=True
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -319,6 +329,7 @@ def test_sintese_guns_sbm(test_settings):
     df_pdo_eolica = df_pdo_eolica.groupby(
         ["estagio", "nome_submercado"], as_index=False
     ).sum(numeric_only=True)
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_eolica,
@@ -338,6 +349,7 @@ def test_sintese_guns_sin(test_settings):
     df_pdo_eolica = df_pdo_eolica.groupby(["estagio"], as_index=False).sum(
         numeric_only=True
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_eolica,
@@ -355,6 +367,7 @@ def test_sintese_gunsd_sbm(test_settings):
     df_pdo_eolica = df_pdo_eolica.groupby(
         ["estagio", "nome_submercado"], as_index=False
     ).sum(numeric_only=True)
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_eolica,
@@ -374,6 +387,7 @@ def test_sintese_gunsd_sin(test_settings):
     df_pdo_eolica = df_pdo_eolica.groupby(["estagio"], as_index=False).sum(
         numeric_only=True
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_eolica,
@@ -394,6 +408,7 @@ def test_sintese_cuns_sbm(test_settings):
     df_pdo_eolica["corte_geracao"] = (
         df_pdo_eolica["geracao_pre_definida"] - df_pdo_eolica["geracao"]
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_eolica,
@@ -416,6 +431,7 @@ def test_sintese_cuns_sin(test_settings):
     df_pdo_eolica["corte_geracao"] = (
         df_pdo_eolica["geracao_pre_definida"] - df_pdo_eolica["geracao"]
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_eolica,
@@ -430,6 +446,7 @@ def test_sintese_earmf_sbm(test_settings):
     synthesis_str = "EARMF_SBM"
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_sist = PdoSist.read(join(DECK_TEST_DIR, "PDO_SIST.DAT")).tabela
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -449,6 +466,7 @@ def test_sintese_earmf_sin(test_settings):
     df_pdo_sist = df_pdo_sist.groupby(["estagio"], as_index=False).sum(
         numeric_only=True
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_sist,
@@ -464,6 +482,8 @@ def test_sintese_varmf_uhe(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    __valida_limites(df)
+    df[VALUE_COL] -= df[LOWER_BOUND_COL]
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -480,6 +500,7 @@ def test_sintese_varpf_uhe(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -496,6 +517,7 @@ def test_sintese_vagua_uhe(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -512,6 +534,7 @@ def test_sintese_ghid_uhe(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -528,6 +551,7 @@ def test_sintese_qtur_uhe(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -547,6 +571,7 @@ def test_sintese_qtur_sin(test_settings):
     df_pdo_hidr = df_pdo_hidr.groupby(["estagio"], as_index=False).sum(
         numeric_only=True
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -562,6 +587,7 @@ def test_sintese_qver_uhe(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -581,6 +607,7 @@ def test_sintese_qver_sin(test_settings):
     df_pdo_hidr = df_pdo_hidr.groupby(["estagio"], as_index=False).sum(
         numeric_only=True
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -596,6 +623,7 @@ def test_sintese_qinc_uhe(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -617,6 +645,7 @@ def test_sintese_qafl_uhe(test_settings):
         + df_pdo_hidr["vazao_montante_m3s"]
         + df_pdo_hidr["vazao_montante_tempo_viagem_m3s"]
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -636,6 +665,7 @@ def test_sintese_qdef_uhe(test_settings):
     df_pdo_hidr["vazao_defluente_m3s"] = (
         df_pdo_hidr["vazao_turbinada_m3s"] + df_pdo_hidr["vazao_vertida_m3s"]
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -658,6 +688,7 @@ def test_sintese_qdef_sin(test_settings):
     df_pdo_hidr["vazao_defluente_m3s"] = (
         df_pdo_hidr["vazao_turbinada_m3s"] + df_pdo_hidr["vazao_vertida_m3s"]
     )
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_hidr,
@@ -677,6 +708,7 @@ def test_sintese_vcalha_uhe(test_settings):
     df_pdo_oper_tviag_calha = df_pdo_oper_tviag_calha.loc[
         df_pdo_oper_tviag_calha["tipo_elemento_jusante"] == "USIH"
     ]
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_oper_tviag_calha,
@@ -698,6 +730,7 @@ def test_sintese_gter_ute(test_settings):
     df_pdo_oper_term = df_pdo_oper_term.groupby(
         ["estagio", "codigo_usina"], as_index=False
     ).sum(numeric_only=True)
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_oper_term,
@@ -713,6 +746,7 @@ def test_sintese_int_sbp(test_settings):
     synthesis_str = "INT_SBP"
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_inter = PdoInter.read(join(DECK_TEST_DIR, "PDO_INTER.DAT")).tabela
+    __valida_limites(df)
     __compara_sintese_pdo_oper(
         df,
         df_pdo_inter,

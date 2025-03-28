@@ -28,7 +28,7 @@ def test_pdo_sist_sin(test_settings):
 
 def test_pdo_hidr(test_settings):
     val = deck.pdo_hidr(uow)
-    assert val.shape == (11410, 42)
+    assert val.shape == (11410, 44)
 
 
 def test_pdo_hidr_hydro(test_settings):
