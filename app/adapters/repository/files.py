@@ -107,10 +107,10 @@ class RawFilesRepository(AbstractFilesRepository):
     def __init__(self, tmppath: str):
         self.__tmppath = tmppath
         try:
-            caminho = str(pathlib.Path(self.__tmppath).joinpath("dessem.arq"))
+            path = str(pathlib.Path(self.__tmppath).joinpath("dessem.arq"))
             # TODO - realmente precisa desse converte?
-            self.__converte_utf8(caminho)
-            self.__dessemarq = DessemArq.read(caminho)
+            self.__convert_utf8(path)
+            self.__dessemarq = DessemArq.read(path)
         except FileNotFoundError as e:
             logger = Log.log()
             if logger is not None:
@@ -149,13 +149,13 @@ class RawFilesRepository(AbstractFilesRepository):
     def dessemarq(self) -> DessemArq:
         return self.__dessemarq
 
-    def __converte_utf8(self, caminho: str):
+    def __convert_utf8(self, path: str):
         script = str(
             pathlib.Path(Settings().installdir).joinpath(
                 Settings().encoding_script
             )
         )
-        asyncio.run(converte_codificacao(caminho, script))
+        asyncio.run(converte_codificacao(path, script))
 
     def get_extension(self) -> str | None:
         if self.__read_dessemarq_extension is False:
@@ -176,15 +176,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_entdados = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"ENTDADOS.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"ENTDADOS.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__entdados = Entdados.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__entdados = Entdados.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do ENTDADOS: {e}")
@@ -196,15 +194,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_dadvaz = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"DADVAZ.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"DADVAZ.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__dadvaz = Dadvaz.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__dadvaz = Dadvaz.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do DADVAZ: {e}")
@@ -216,15 +212,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_operacao = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_OPERACAO.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_OPERACAO.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_operacao = PdoOperacao.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_operacao = PdoOperacao.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do PDO_OPERACAO: {e}")
@@ -236,15 +230,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_sist = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_SIST.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_SIST.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_sist = PdoSist.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_sist = PdoSist.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do PDO_SIST: {e}")
@@ -256,15 +248,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_eolica = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_EOLICA.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_EOLICA.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_eolica = PdoEolica.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_eolica = PdoEolica.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do PDO_EOLICA: {e}")
@@ -276,15 +266,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_inter = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_INTER.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_INTER.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_inter = PdoInter.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_inter = PdoInter.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do PDO_INTER: {e}")
@@ -296,15 +284,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_hidr = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_HIDR.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_HIDR.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_hidr = PdoHidr.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_hidr = PdoHidr.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do PDO_HIDR: {e}")
@@ -316,15 +302,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_oper_uct = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_OPER_UCT.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_OPER_UCT.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_oper_uct = PdoOperUct.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_oper_uct = PdoOperUct.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do PDO_OPER_UCT: {e}")
@@ -336,15 +320,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_des_log_relato = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"DES_LOG_RELATO.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"DES_LOG_RELATO.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__des_log_relato = DesLogRelato.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__des_log_relato = DesLogRelato.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do DES_LOG_RELATO: {e}")
@@ -356,15 +338,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_log_matriz = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"LOG_MATRIZ.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"LOG_MATRIZ.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__log_matriz = LogMatriz.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__log_matriz = LogMatriz.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do LOG_MATRIZ: {e}")
@@ -376,15 +356,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_oper_term = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_OPER_TERM.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_OPER_TERM.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_oper_term = PdoOperTerm.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_oper_term = PdoOperTerm.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do PDO_OPER_TERM: {e}")
@@ -396,15 +374,13 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_oper_tviag_calha = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_OPER_TVIAG_CALHA.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_OPER_TVIAG_CALHA.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_oper_tviag_calha = PdoOperTviagCalha.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_oper_tviag_calha = PdoOperTviagCalha.read(path)
             except Exception as e:
                 if logger is not None:
                     logger.error(
@@ -418,24 +394,22 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_eco_usih = True
             logger = Log.log()
             try:
-                extensao = self.get_extension()
-                nome_arquivo = f"PDO_ECO_USIH.{extensao}"
-                caminho = find_file_case_insensitive(
-                    self.__tmppath, nome_arquivo
-                )
-                self.__converte_utf8(caminho)
+                extension = self.get_extension()
+                filename = f"PDO_ECO_USIH.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
                 if logger is not None:
-                    logger.info(f"Lendo arquivo {nome_arquivo}")
-                self.__pdo_eco_usih = PdoEcoUsih.read(caminho)
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__pdo_eco_usih = PdoEcoUsih.read(path)
                 if self.__pdo_eco_usih is not None:
                     version = self.__pdo_eco_usih.versao
                     if version is None:
                         raise FileNotFoundError()
                     PdoEcoUsih.set_version(version)
-                self.__pdo_eco_usih = PdoEcoUsih.read(caminho)
+                self.__pdo_eco_usih = PdoEcoUsih.read(path)
             except Exception as e:
                 if logger is not None:
-                    logger.error(f"Erro na leitura do {nome_arquivo}: {e}")
+                    logger.error(f"Erro na leitura do {filename}: {e}")
                 raise e
         return self.__pdo_eco_usih
 
