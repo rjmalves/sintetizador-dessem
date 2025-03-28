@@ -1385,3 +1385,32 @@ class Deck:
 
             cls.DECK_DATA_CACHING[name] = df
         return cls.DECK_DATA_CACHING[name].copy()
+
+    @classmethod
+    def hydro_turbined_flow_bounds(
+        cls, uow: AbstractUnitOfWork
+    ) -> pd.DataFrame:
+        name = "hydro_turbined_bounds"
+        hydro_turbined_bounds = cls.DECK_DATA_CACHING.get(name)
+        if hydro_turbined_bounds is None:
+            df = cls._validate_data(
+                cls.pdo_hidr(uow),
+                pd.DataFrame,
+                "pdo_hidr",
+            )
+            # TODO
+            df[LOWER_BOUND_COL] = df["vazao_turbinada_minima_m3s"]
+            df[UPPER_BOUND_COL] = df[
+                ["vazao_turbinada_maxima_m3s", "engolimento_maximo_m3s"]
+            ].min(axis=1)
+            df = df[
+                [
+                    STAGE_COL,
+                    HYDRO_CODE_COL,
+                    SUBMARKET_CODE_COL,
+                    LOWER_BOUND_COL,
+                    UPPER_BOUND_COL,
+                ]
+            ]
+            cls.DECK_DATA_CACHING[name] = df
+        return cls.DECK_DATA_CACHING[name]

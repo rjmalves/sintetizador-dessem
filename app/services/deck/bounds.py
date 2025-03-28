@@ -88,6 +88,18 @@ class OperationVariableBounds:
             df,
             uow,
         ),
+        OperationSynthesis(
+            Variable.VAZAO_TURBINADA,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df, uow, _: OperationVariableBounds._turbined_flow_bounds(
+            df, uow, entity_column=HYDRO_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.VAZAO_TURBINADA,
+            SpatialResolution.SISTEMA_INTERLIGADO,
+        ): lambda df, uow, _: OperationVariableBounds._turbined_flow_bounds(
+            df, uow, entity_column=None
+        ),
     }
 
     @classmethod
@@ -214,6 +226,37 @@ class OperationVariableBounds:
         para a variável de Geração Hidráulica (GHID) para cada UHE, submercado e SIN.
         """
         df_bounds = Deck.hydro_generation_bounds(uow)
+        if entity_column != HYDRO_CODE_COL:
+            df_bounds = cls._group_bounds_df(
+                df_bounds,
+                entity_column,
+                extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
+            )
+        entity_column_list = [] if entity_column is None else [entity_column]
+        df = pd.merge(
+            df,
+            df_bounds,
+            how="left",
+            on=[STAGE_COL] + entity_column_list,
+            suffixes=[None, "_bounds"],
+        )
+        for col in [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL]:
+            df[col] = np.round(df[col], 2)
+        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        return df
+
+    @classmethod
+    def _turbined_flow_bounds(
+        cls,
+        df: pd.DataFrame,
+        uow: AbstractUnitOfWork,
+        entity_column: Optional[str],
+    ) -> pd.DataFrame:
+        """
+        Adiciona ao DataFrame da síntese os limites inferior e superior
+        para a variável de Vazão Turbinada (QTUR) para cada UHE, submercado e SIN.
+        """
+        df_bounds = Deck.hydro_turbined_flow_bounds(uow)
         if entity_column != HYDRO_CODE_COL:
             df_bounds = cls._group_bounds_df(
                 df_bounds,

@@ -105,7 +105,7 @@ class OperationSynthetizer:
             (
                 Variable.GERACAO_HIDRAULICA,
                 SpatialResolution.SUBMERCADO,
-            ): lambda uow: cls.__stub_hydro_submarkets_pdo_sist_sbm(
+            ): lambda uow: cls._resolve_hydro_submarkets_pdo_sist_sbm(
                 uow, "geracao_hidraulica"
             ),
             (
@@ -115,7 +115,7 @@ class OperationSynthetizer:
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.SUBMERCADO,
-            ): lambda uow: cls.__stub_thermal_submarkets_pdo_sist_sbm(
+            ): lambda uow: cls._resolve_thermal_submarkets_pdo_sist_sbm(
                 uow, "geracao_termica"
             ),
             (
@@ -380,7 +380,7 @@ class OperationSynthetizer:
             return cls._post_resolve_file(df)
 
     @classmethod
-    def __stub_thermal_submarkets_pdo_sist_sbm(
+    def _resolve_thermal_submarkets_pdo_sist_sbm(
         cls, uow: AbstractUnitOfWork, col: str
     ) -> pd.DataFrame:
         df = cls._resolve_pdo_sist_sbm(uow, col)
@@ -392,7 +392,7 @@ class OperationSynthetizer:
         return df
 
     @classmethod
-    def __stub_hydro_submarkets_pdo_sist_sbm(
+    def _resolve_hydro_submarkets_pdo_sist_sbm(
         cls, uow: AbstractUnitOfWork, col: str
     ) -> pd.DataFrame:
         df = cls._resolve_pdo_sist_sbm(uow, col)
