@@ -116,6 +116,8 @@ class RawFilesRepository(AbstractFilesRepository):
             if logger is not None:
                 logger.error("Não foi encontrado o arquivo dessem.arq")
             raise e
+        self.__extension: str | None = None
+        self.__read_dessemarq_extension = False
         self.__entdados: Entdados | None = None
         self.__read_entdados = False
         self.__dadvaz: Dadvaz | None = None
@@ -155,19 +157,26 @@ class RawFilesRepository(AbstractFilesRepository):
         )
         asyncio.run(converte_codificacao(caminho, script))
 
+    def get_extension(self) -> str | None:
+        if self.__read_dessemarq_extension is False:
+            self.__read_dessemarq_extension = True
+            logger = Log.log()
+            reg_caso = self.__dessemarq.caso
+            if reg_caso is None:
+                if logger is not None:
+                    logger.error("Extensão não encontrada")
+                raise RuntimeError()
+            self.__extension = (
+                reg_caso.valor if reg_caso.valor is not None else "DAT"
+            )
+        return self.__extension
+
     def get_entdados(self) -> Entdados | None:
         if self.__read_entdados is False:
             self.__read_entdados = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"ENTDADOS.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -187,14 +196,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_dadvaz = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"DADVAZ.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -214,14 +216,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_operacao = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_OPERACAO.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -241,14 +236,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_sist = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_SIST.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -268,14 +256,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_eolica = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_EOLICA.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -295,14 +276,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_inter = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_INTER.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -322,14 +296,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_hidr = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_HIDR.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -349,14 +316,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_oper_uct = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_OPER_UCT.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -376,14 +336,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_des_log_relato = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"DES_LOG_RELATO.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -403,14 +356,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_log_matriz = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"LOG_MATRIZ.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -430,14 +376,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_oper_term = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_OPER_TERM.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -457,14 +396,7 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__read_pdo_oper_tviag_calha = True
             logger = Log.log()
             try:
-                reg_caso = self.__dessemarq.caso
-                if reg_caso is None:
-                    if logger is not None:
-                        logger.error("Extensão não encontrada")
-                    raise RuntimeError()
-                extensao = (
-                    reg_caso.valor if reg_caso.valor is not None else "DAT"
-                )
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_OPER_TVIAG_CALHA.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
@@ -481,23 +413,12 @@ class RawFilesRepository(AbstractFilesRepository):
                 raise e
         return self.__pdo_oper_tviag_calha
 
-    def __find_file_extension(self) -> str | None:
-        logger = Log.log()
-        reg_caso = self.__dessemarq.caso
-        extensao = None
-        if reg_caso is None:
-            if logger is not None:
-                logger.error("Extensão não encontrada")
-            raise RuntimeError()
-        extensao = reg_caso.valor if reg_caso.valor is not None else "DAT"
-        return extensao
-
     def get_pdo_eco_usih(self) -> PdoEcoUsih | None:
         if self.__read_pdo_eco_usih is False:
             self.__read_pdo_eco_usih = True
             logger = Log.log()
             try:
-                extensao = self.__find_file_extension()
+                extensao = self.get_extension()
                 nome_arquivo = f"PDO_ECO_USIH.{extensao}"
                 caminho = find_file_case_insensitive(
                     self.__tmppath, nome_arquivo
