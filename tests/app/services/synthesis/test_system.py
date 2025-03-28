@@ -102,6 +102,8 @@ def test_synthesis_ute(test_settings):
     df, df_meta = __synthetize_with_mock(synthesis_str)
     assert df.at[0, THERMAL_CODE_COL] == 1
     assert df.at[0, THERMAL_NAME_COL] == "ANGRA 1"
+    assert df.at[0, SUBMARKET_CODE_COL] == 1
+    assert df.at[0, SUBMARKET_NAME_COL] == "SE"
     __validate_metadata(synthesis_str, df_meta)
 
 

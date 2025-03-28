@@ -631,7 +631,7 @@ class Deck:
         return pdo_operacao
 
     @classmethod
-    def pdo_eco_usih(cls, uow: AbstractUnitOfWork) -> PdoEcoUsih:
+    def pdo_eco_usih(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         pdo_eco_usih = cls.DECK_DATA_CACHING.get("pdo_eco_usih")
         if pdo_eco_usih is None:
             file = cls._validate_data(
@@ -687,8 +687,13 @@ class Deck:
         name = "version"
         version = cls.DECK_DATA_CACHING.get(name)
         if version is None:
+            pdo = cls._validate_data(
+                cls._get_pdo_sist(uow),
+                PdoSist,
+                "pdo_sist",
+            )
             version = cls._validate_data(
-                cls._get_pdo_sist(uow).versao,
+                pdo.versao,
                 str,
                 name,
             )
@@ -700,7 +705,9 @@ class Deck:
         name = "title"
         title = cls.DECK_DATA_CACHING.get(name)
         if title is None:
-            dessemarq = cls._get_dessemarq(uow)
+            dessemarq = cls._validate_data(
+                cls._get_dessemarq(uow), DessemArq, "dessemarq"
+            )
             title_register = cls._validate_data(
                 dessemarq.titulo, RegistroTitulo, "registro TE do dessemarq"
             )
@@ -862,10 +869,21 @@ class Deck:
                 columns={
                     "codigo_usina": THERMAL_CODE_COL,
                     "nome_usina": THERMAL_NAME_COL,
+                    "nome_submercado": SUBMARKET_NAME_COL,
                 }
             )
+            df = cls._add_submarket_code(
+                uow, df, SUBMARKET_NAME_COL, SUBMARKET_CODE_COL
+            )
             df = (
-                df[[THERMAL_CODE_COL, THERMAL_NAME_COL]]
+                df[
+                    [
+                        THERMAL_CODE_COL,
+                        THERMAL_NAME_COL,
+                        SUBMARKET_CODE_COL,
+                        SUBMARKET_NAME_COL,
+                    ]
+                ]
                 .drop_duplicates()
                 .reset_index(drop=True)
             )

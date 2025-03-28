@@ -13,6 +13,7 @@ from app.internal.constants import (
     STRING_DF_TYPE,
     VALUE_COL,
     VARIABLE_COL,
+    SUBMARKET_CODE_COL,
 )
 from app.model.operation.operationsynthesis import (
     SUPPORTED_SYNTHESIS,
@@ -104,7 +105,9 @@ class OperationSynthetizer:
             (
                 Variable.GERACAO_HIDRAULICA,
                 SpatialResolution.SUBMERCADO,
-            ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "geracao_hidraulica"),
+            ): lambda uow: cls.__stub_hydro_submarkets_pdo_sist_sbm(
+                uow, "geracao_hidraulica"
+            ),
             (
                 Variable.GERACAO_HIDRAULICA,
                 SpatialResolution.SISTEMA_INTERLIGADO,
@@ -112,7 +115,9 @@ class OperationSynthetizer:
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.SUBMERCADO,
-            ): lambda uow: cls._resolve_pdo_sist_sbm(uow, "geracao_termica"),
+            ): lambda uow: cls.__stub_thermal_submarkets_pdo_sist_sbm(
+                uow, "geracao_termica"
+            ),
             (
                 Variable.GERACAO_TERMICA,
                 SpatialResolution.SISTEMA_INTERLIGADO,
@@ -373,6 +378,30 @@ class OperationSynthetizer:
         ):
             df = Deck.pdo_oper_tviag_calha_hydro(col, uow)
             return cls._post_resolve_file(df)
+
+    @classmethod
+    def __stub_thermal_submarkets_pdo_sist_sbm(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        df = cls._resolve_pdo_sist_sbm(uow, col)
+        thermals = Deck.thermals(uow)
+        submarkets = thermals[SUBMARKET_CODE_COL].unique().tolist()
+        df = df.loc[df[SUBMARKET_CODE_COL].isin(submarkets)].reset_index(
+            drop=True
+        )
+        return df
+
+    @classmethod
+    def __stub_hydro_submarkets_pdo_sist_sbm(
+        cls, uow: AbstractUnitOfWork, col: str
+    ) -> pd.DataFrame:
+        df = cls._resolve_pdo_sist_sbm(uow, col)
+        hydros = Deck.hydro_eer_submarket_map(uow)
+        submarkets = hydros[SUBMARKET_CODE_COL].unique().tolist()
+        df = df.loc[df[SUBMARKET_CODE_COL].isin(submarkets)].reset_index(
+            drop=True
+        )
+        return df
 
     @classmethod
     def _default_args(cls) -> List[str]:
