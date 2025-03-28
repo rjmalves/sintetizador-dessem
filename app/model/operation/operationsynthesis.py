@@ -12,10 +12,12 @@ class OperationSynthesis:
     spatial_resolution: SpatialResolution
 
     def __repr__(self) -> str:
-        return "_".join([
-            self.variable.value,
-            self.spatial_resolution.value,
-        ])
+        return "_".join(
+            [
+                self.variable.value,
+                self.spatial_resolution.value,
+            ]
+        )
 
     def __hash__(self) -> int:
         return hash(
@@ -26,10 +28,12 @@ class OperationSynthesis:
         if not isinstance(o, OperationSynthesis):
             return False
         else:
-            return all([
-                self.variable == o.variable,
-                self.spatial_resolution == o.spatial_resolution,
-            ])
+            return all(
+                [
+                    self.variable == o.variable,
+                    self.spatial_resolution == o.spatial_resolution,
+                ]
+            )
 
     @classmethod
     def factory(cls, synthesis: str) -> Optional["OperationSynthesis"]:
@@ -81,4 +85,110 @@ SUPPORTED_SYNTHESIS: list[str] = [
 
 SYNTHESIS_DEPENDENCIES: dict[OperationSynthesis, list[OperationSynthesis]] = {}
 
-UNITS: dict[OperationSynthesis, Unit] = {}
+UNITS: dict[OperationSynthesis, Unit] = {
+    OperationSynthesis(
+        Variable.CUSTO_MARGINAL_OPERACAO, SpatialResolution.SUBMERCADO
+    ): Unit.RS_MWh,
+    OperationSynthesis(Variable.MERCADO, SpatialResolution.SUBMERCADO): Unit.MW,
+    OperationSynthesis(
+        Variable.MERCADO, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.MERCADO_LIQUIDO, SpatialResolution.SUBMERCADO
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.MERCADO_LIQUIDO, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_HIDRAULICA, SpatialResolution.USINA_HIDROELETRICA
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_HIDRAULICA, SpatialResolution.SUBMERCADO
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_HIDRAULICA, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_TERMICA, SpatialResolution.USINA_TERMELETRICA
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_TERMICA, SpatialResolution.SUBMERCADO
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_TERMICA, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_USINAS_NAO_SIMULADAS, SpatialResolution.SUBMERCADO
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_USINAS_NAO_SIMULADAS,
+        SpatialResolution.SISTEMA_INTERLIGADO,
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_USINAS_NAO_SIMULADAS_DISPONIVEL,
+        SpatialResolution.SUBMERCADO,
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.GERACAO_USINAS_NAO_SIMULADAS_DISPONIVEL,
+        SpatialResolution.SISTEMA_INTERLIGADO,
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.CORTE_GERACAO_USINAS_NAO_SIMULADAS,
+        SpatialResolution.SUBMERCADO,
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.CORTE_GERACAO_USINAS_NAO_SIMULADAS,
+        SpatialResolution.SISTEMA_INTERLIGADO,
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.ENERGIA_ARMAZENADA_ABSOLUTA_FINAL, SpatialResolution.SUBMERCADO
+    ): Unit.MWh,
+    OperationSynthesis(
+        Variable.ENERGIA_ARMAZENADA_ABSOLUTA_FINAL,
+        SpatialResolution.SISTEMA_INTERLIGADO,
+    ): Unit.MWh,
+    OperationSynthesis(
+        Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+        SpatialResolution.USINA_HIDROELETRICA,
+    ): Unit.hm3,
+    OperationSynthesis(
+        Variable.VOLUME_ARMAZENADO_PERCENTUAL_FINAL,
+        SpatialResolution.USINA_HIDROELETRICA,
+    ): Unit.perc,
+    OperationSynthesis(
+        Variable.VAZAO_TURBINADA, SpatialResolution.USINA_HIDROELETRICA
+    ): Unit.m3s,
+    OperationSynthesis(
+        Variable.VAZAO_TURBINADA, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.m3s,
+    OperationSynthesis(
+        Variable.VAZAO_VERTIDA, SpatialResolution.USINA_HIDROELETRICA
+    ): Unit.m3s,
+    OperationSynthesis(
+        Variable.VAZAO_VERTIDA, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.m3s,
+    OperationSynthesis(
+        Variable.VAZAO_DEFLUENTE, SpatialResolution.USINA_HIDROELETRICA
+    ): Unit.m3s,
+    OperationSynthesis(
+        Variable.VAZAO_DEFLUENTE, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.m3s,
+    OperationSynthesis(
+        Variable.VAZAO_INCREMENTAL, SpatialResolution.USINA_HIDROELETRICA
+    ): Unit.m3s,
+    OperationSynthesis(
+        Variable.VAZAO_AFLUENTE, SpatialResolution.USINA_HIDROELETRICA
+    ): Unit.m3s,
+    OperationSynthesis(
+        Variable.CUSTO_OPERACAO, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.kRS,
+    OperationSynthesis(
+        Variable.CUSTO_FUTURO, SpatialResolution.SISTEMA_INTERLIGADO
+    ): Unit.MiRS,
+    OperationSynthesis(
+        Variable.INTERCAMBIO, SpatialResolution.PAR_SUBMERCADOS
+    ): Unit.MW,
+    OperationSynthesis(
+        Variable.VOLUME_CALHA, SpatialResolution.USINA_HIDROELETRICA
+    ): Unit.hm3,
+}
