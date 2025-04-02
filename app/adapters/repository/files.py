@@ -18,6 +18,7 @@ from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
 from idessem.dessem.pdo_eco_usih import PdoEcoUsih
+from idessem.dessem.operuh import Operuh
 
 from app.model.settings import Settings
 from app.utils.encoding import converte_codificacao
@@ -29,12 +30,16 @@ if platform.system() == "Windows":
     Dadvaz.ENCODING = "iso-8859-1"
     PdoSist.ENCODING = "iso-8859-1"
     PdoHidr.ENCODING = "iso-8859-1"
+    PdoEolica.ENCODING = "iso-8859-1"
+    PdoInter.ENCODING = "iso-8859-1"
     PdoOperacao.ENCODING = "iso-8859-1"
     PdoOperUct.ENCODING = "iso-8859-1"
     DesLogRelato.ENCODING = "iso-8859-1"
     LogMatriz.ENCODING = "iso-8859-1"
     PdoOperTerm.ENCODING = "iso-8859-1"
     PdoOperTviagCalha.ENCODING = "iso-8859-1"
+    PdoEcoUsih.ENCODING = "iso-8859-1"
+    Operuh.ENCODING = "iso-8859-1"
 
 
 class AbstractFilesRepository(ABC):
@@ -102,6 +107,10 @@ class AbstractFilesRepository(ABC):
     def get_pdo_eco_usih(self) -> PdoEcoUsih | None:
         raise NotImplementedError
 
+    @abstractmethod
+    def get_operuh(self) -> Operuh | None:
+        raise NotImplementedError
+
 
 class RawFilesRepository(AbstractFilesRepository):
     def __init__(self, tmppath: str):
@@ -144,6 +153,8 @@ class RawFilesRepository(AbstractFilesRepository):
         self.__read_pdo_oper_tviag_calha = False
         self.__pdo_eco_usih: PdoEcoUsih | None = None
         self.__read_pdo_eco_usih = False
+        self.__operuh: Operuh | None = None
+        self.__read_operuh = False
 
     @property
     def dessemarq(self) -> DessemArq:
@@ -412,6 +423,24 @@ class RawFilesRepository(AbstractFilesRepository):
                     logger.error(f"Erro na leitura do {filename}: {e}")
                 raise e
         return self.__pdo_eco_usih
+
+    def get_operuh(self) -> Operuh | None:
+        if self.__read_operuh is False:
+            self.__read_operuh = True
+            logger = Log.log()
+            try:
+                extension = self.get_extension()
+                filename = f"OPERUH.{extension}"
+                path = find_file_case_insensitive(self.__tmppath, filename)
+                self.__convert_utf8(path)
+                if logger is not None:
+                    logger.info(f"Lendo arquivo {filename}")
+                self.__operuh = Operuh.read(path)
+            except Exception as e:
+                if logger is not None:
+                    logger.error(f"Erro na leitura do OPERUH: {e}")
+                raise e
+        return self.__operuh
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractFilesRepository:

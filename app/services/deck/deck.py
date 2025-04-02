@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 from typing import Any, Dict, Optional, Type, TypeVar
-
+from datetime import datetime
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 from idessem.dessem.dessemarq import DessemArq
@@ -18,7 +18,9 @@ from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
 from idessem.dessem.pdo_eco_usih import PdoEcoUsih
+from idessem.dessem.operuh import Operuh
 from idessem.dessem.modelos.dessemarq import RegistroTitulo
+
 from app.utils.operations import fast_group_df
 from app.internal.constants import (
     BLOCK_COL,
@@ -139,6 +141,12 @@ class Deck:
     def _get_pdo_eco_usih(self, uow: AbstractUnitOfWork) -> PdoEcoUsih | None:
         with uow:
             pdo = uow.files.get_pdo_eco_usih()
+            return pdo
+
+    @classmethod
+    def _get_operuh(self, uow: AbstractUnitOfWork) -> Operuh | None:
+        with uow:
+            pdo = uow.files.get_operuh()
             return pdo
 
     @classmethod
@@ -1359,6 +1367,14 @@ class Deck:
                 ]
             ]
             df[LOWER_BOUND_COL] = float(0.0)
+
+            df_constraints = cls._get_hydro_flow_operative_constraints(
+                uow, constraint_type=7
+            )
+            df = cls.__overwrite_hydro_bounds_with_operative_constraints(
+                df, df_constraints
+            )
+
             cls.DECK_DATA_CACHING[name] = df
 
         return cls.DECK_DATA_CACHING[name]
@@ -1387,6 +1403,257 @@ class Deck:
         return cls.DECK_DATA_CACHING[name].copy()
 
     @classmethod
+    def __hydro_operative_constraints_id(
+        cls,
+        uow: AbstractUnitOfWork,
+    ) -> pd.DataFrame:
+        name = "hydro_operative_constraints_id"
+        hydro_operative_constraints_id = cls.DECK_DATA_CACHING.get(name)
+        if hydro_operative_constraints_id is None:
+            operuh = cls._validate_data(cls._get_operuh(uow), Operuh, "operuh")
+            df = cls._validate_data(
+                operuh.rest(df=True),
+                pd.DataFrame,
+                "registros REST do operuh",
+            )
+            # Filter to limits contraints
+            df = df.loc[df["tipo_restricao"] == "L"]
+            cls.DECK_DATA_CACHING[name] = df
+        return cls.DECK_DATA_CACHING[name]
+
+    @classmethod
+    def __hydro_operative_constraints_coefficients(
+        cls,
+        uow: AbstractUnitOfWork,
+    ) -> pd.DataFrame:
+        name = "hydro_operative_constraints_coefficients"
+        hydro_operative_constraints_coefficients = cls.DECK_DATA_CACHING.get(
+            name
+        )
+        if hydro_operative_constraints_coefficients is None:
+            operuh = cls._validate_data(cls._get_operuh(uow), Operuh, "operuh")
+            df = cls._validate_data(
+                operuh.elem(df=True),
+                pd.DataFrame,
+                "registros ELEM do operuh",
+            )
+            # Elimina restricoes HQ com mais de um componente
+            df_count = df.groupby(
+                by=["codigo_restricao"], as_index=False
+            ).count()[["codigo_restricao", "tipo"]]
+            constraints_remove = df_count.loc[df_count["tipo"] > 1][
+                "codigo_restricao"
+            ].unique()
+            df = df.loc[~df["codigo_restricao"].isin(constraints_remove)]
+            cls.DECK_DATA_CACHING[name] = df
+        return cls.DECK_DATA_CACHING[name]
+
+    @classmethod
+    def __hydro_operative_constraints_bounds(
+        cls,
+        uow: AbstractUnitOfWork,
+    ) -> pd.DataFrame:
+        name = "hydro_operative_constraints_bounds"
+        hydro_operative_constraints_bounds = cls.DECK_DATA_CACHING.get(name)
+        if hydro_operative_constraints_bounds is None:
+            operuh = cls._validate_data(cls._get_operuh(uow), Operuh, "operuh")
+            df = cls._validate_data(
+                operuh.lim(df=True),
+                pd.DataFrame,
+                "registros LIM do operuh",
+            )
+            cls.DECK_DATA_CACHING[name] = df
+        return cls.DECK_DATA_CACHING[name]
+
+    @classmethod
+    def _get_hydro_flow_operative_constraints(
+        cls, uow: AbstractUnitOfWork, constraint_type: int
+    ) -> pd.DataFrame:
+        def __get_constraints_dates_and_stages(
+            df: pd.DataFrame,
+        ) -> pd.DataFrame:
+            df[START_DATE_COL] = df.apply(
+                lambda row: __cast_constraints_stages_to_datetime(
+                    row, "inicial"
+                ),
+                axis=1,
+            )
+            df[END_DATE_COL] = df.apply(
+                lambda row: __cast_constraints_stages_to_datetime(row, "final"),
+                axis=1,
+            )
+            return df
+
+        def __cast_constraints_stages_to_datetime(row: pd.Series, period: str):
+            # Processa os dados de stages_durations para a futura conversao
+            df_stages["day"] = df_stages["data_inicio"].dt.day
+            df_stages["month"] = df_stages["data_inicio"].dt.month
+            df_stages["year"] = df_stages["data_inicio"].dt.year
+            initial_stage = df_stages[START_DATE_COL].min()
+            final_stage = df_stages[END_DATE_COL].max()
+
+            # Extrai infos a serem convertidas
+            day = row["dia_" + period]
+            hour = row["hora_" + period]
+            half_hour = row["meia_hora_" + period]
+
+            # Cast
+            if str(day) == "I":
+                return initial_stage
+            if str(day) == "F":
+                return final_stage
+
+            day_dt = int(day)
+            hour_dt = 0 if pd.isna(hour) else int(hour)
+            half_hour_dt = (
+                30 if (not pd.isna(half_hour) and int(half_hour) == 1) else 0
+            )
+            month = df_stages.loc[df_stages["day"] == day_dt]["month"].iloc[0]
+            year = df_stages.loc[df_stages["day"] == day_dt]["year"].iloc[0]
+            return datetime(year, month, day_dt, hour_dt, half_hour_dt)
+
+        def __expand_constraints_by_stages(
+            df: pd.DataFrame, df_stages: pd.DataFrame
+        ) -> pd.DataFrame:
+            # TODO o cálculo/agrupamento de limites atual não leva em conta datas inicio
+            # data fim que não coincidem com as datas inicio e fim do estágio, situação na qual
+            # o limite correto seria a média ponderada das participações do limite em cada estágio,
+            # considerando as respectivas durações. Nesses casos, o limite calculado para
+            # a sintese fica vazio, como uma restrição inexistente.
+            constraint_data = []
+            df = df.sort_values(by=["codigo_restricao", START_DATE_COL])
+
+            for idx, row in df.iterrows():
+                id = row["codigo_restricao"]
+                hydro_code = row["codigo_usina"]
+                multiplier = row["coeficiente"]
+                initial_date = row[START_DATE_COL]
+                final_date = row[END_DATE_COL]
+                consulted_date = initial_date
+
+                find_constraint = df.loc[df["codigo_restricao"] == id]
+
+                for idx_stage, row_stage in df_stages.iterrows():
+                    stage_start_date = row_stage[START_DATE_COL]
+                    stage_final_date = row_stage[END_DATE_COL]
+                    stage = row_stage[STAGE_COL]
+
+                    lower_bound = np.nan
+                    upper_bound = np.nan
+
+                    if (initial_date <= stage_start_date) & (
+                        final_date >= stage_final_date
+                    ):
+                        consulted_date = initial_date
+                        lower_bound = float(
+                            find_constraint.loc[
+                                (
+                                    find_constraint[START_DATE_COL]
+                                    == consulted_date
+                                ),
+                                "limite_inferior",
+                            ].iloc[0]
+                        )
+                        upper_bound = float(
+                            find_constraint.loc[
+                                (
+                                    find_constraint[START_DATE_COL]
+                                    == consulted_date
+                                ),
+                                "limite_superior",
+                            ].iloc[0]
+                        )
+
+                    data = {
+                        HYDRO_CODE_COL: hydro_code,
+                        START_DATE_COL: stage_start_date,
+                        STAGE_COL: stage,
+                        LOWER_BOUND_COL: lower_bound / multiplier,
+                        UPPER_BOUND_COL: upper_bound / multiplier,
+                    }
+                    constraint_data.append(data)
+
+            df_constraints = pd.DataFrame(constraint_data)
+
+            df_constraints = df_constraints.groupby(
+                by=[HYDRO_CODE_COL, STAGE_COL, START_DATE_COL],
+                as_index=False,
+            ).agg({LOWER_BOUND_COL: "max", UPPER_BOUND_COL: "min"})
+
+            return df_constraints
+
+        df_rest = cls.__hydro_operative_constraints_id(uow)
+        df_elem = cls.__hydro_operative_constraints_coefficients(uow)
+        df_lim = cls.__hydro_operative_constraints_bounds(uow)
+
+        # Filters and groups
+        constraints_ids = df_rest["codigo_restricao"].unique().tolist()
+        df = df_elem.loc[
+            (df_elem["tipo"] == constraint_type)
+            & (df_elem["codigo_restricao"].isin(constraints_ids))
+        ].copy()
+        if not df.empty:
+            df = pd.merge(df, df_lim, how="left", on="codigo_restricao")
+            df_stages = cls.stages_durations(uow)
+            df = __get_constraints_dates_and_stages(df)
+            df = __expand_constraints_by_stages(df, df_stages)
+            df.drop(
+                columns=[START_DATE_COL],
+                inplace=True,
+            )
+
+        return df
+
+    @classmethod
+    def __overwrite_hydro_bounds_with_operative_constraints(
+        cls,
+        df: pd.DataFrame,
+        df_constraints: pd.DataFrame,
+    ):
+        if df_constraints.empty:
+            return df
+
+        df = pd.merge(
+            df,
+            df_constraints,
+            how="left",
+            on=[HYDRO_CODE_COL, STAGE_COL],
+        )
+        df[LOWER_BOUND_COL] = df[
+            [LOWER_BOUND_COL + "_x", LOWER_BOUND_COL + "_y"]
+        ].max(axis=1)
+        df[UPPER_BOUND_COL] = df[
+            [UPPER_BOUND_COL + "_x", UPPER_BOUND_COL + "_y"]
+        ].min(axis=1)
+        df.drop(
+            columns=[
+                LOWER_BOUND_COL + "_x",
+                LOWER_BOUND_COL + "_y",
+                UPPER_BOUND_COL + "_x",
+                UPPER_BOUND_COL + "_y",
+            ],
+            inplace=True,
+        )
+        return df
+
+    @classmethod
+    def __initialize_df_hydro_bounds(
+        cls, uow: AbstractUnitOfWork, lower: float, upper: float
+    ) -> pd.DataFrame:
+        stages = cls.stages_durations(uow)[STAGE_COL].tolist()
+        hydros = cls.hydro_eer_map(uow)[HYDRO_CODE_COL].unique().tolist()
+
+        df = pd.DataFrame(
+            {
+                HYDRO_CODE_COL: np.tile(hydros, len(stages)),
+                STAGE_COL: np.repeat(stages, len(hydros)),
+                LOWER_BOUND_COL: np.repeat(lower, len(hydros) * len(stages)),
+                UPPER_BOUND_COL: np.repeat(upper, len(hydros) * len(stages)),
+            }
+        )
+        return df
+
+    @classmethod
     def hydro_turbined_flow_bounds(
         cls, uow: AbstractUnitOfWork
     ) -> pd.DataFrame:
@@ -1398,7 +1665,7 @@ class Deck:
                 pd.DataFrame,
                 "pdo_hidr",
             )
-            # TODO
+            # Limites de cadastro default
             df[LOWER_BOUND_COL] = df["vazao_turbinada_minima_m3s"]
             df[UPPER_BOUND_COL] = df[
                 ["vazao_turbinada_maxima_m3s", "engolimento_maximo_m3s"]
@@ -1412,5 +1679,53 @@ class Deck:
                     UPPER_BOUND_COL,
                 ]
             ]
+            df_constraints = cls._get_hydro_flow_operative_constraints(
+                uow, constraint_type=3
+            )
+            df = cls.__overwrite_hydro_bounds_with_operative_constraints(
+                df, df_constraints
+            )
+
+            cls.DECK_DATA_CACHING[name] = df
+        return cls.DECK_DATA_CACHING[name]
+
+    @classmethod
+    def hydro_outflow_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        name = "hydro_outflow_bounds"
+        hydro_outflow_bounds = cls.DECK_DATA_CACHING.get(name)
+        if hydro_outflow_bounds is None:
+            # Limites default
+            df = cls.__initialize_df_hydro_bounds(
+                uow, lower=0.00, upper=float("inf")
+            )
+
+            df_constraints = cls._get_hydro_flow_operative_constraints(
+                uow, constraint_type=6
+            )
+            df = cls.__overwrite_hydro_bounds_with_operative_constraints(
+                df, df_constraints
+            )
+
+            cls.DECK_DATA_CACHING[name] = df
+        return cls.DECK_DATA_CACHING[name]
+
+    @classmethod
+    def hydro_spilled_flow_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        name = "hydro_spilled_flow_bounds"
+        hydro_spilled_flow_bounds = cls.DECK_DATA_CACHING.get(name)
+        if hydro_spilled_flow_bounds is None:
+            # Limites default
+            df = cls.__initialize_df_hydro_bounds(
+                uow, lower=0.00, upper=float("inf")
+            )
+
+            df_constraints = cls._get_hydro_flow_operative_constraints(
+                uow, constraint_type=4
+            )
+            # TODO: incluir limitação de soleira de vertedouro
+            df = cls.__overwrite_hydro_bounds_with_operative_constraints(
+                df, df_constraints
+            )
+
             cls.DECK_DATA_CACHING[name] = df
         return cls.DECK_DATA_CACHING[name]

@@ -91,13 +91,45 @@ class OperationVariableBounds:
         OperationSynthesis(
             Variable.VAZAO_TURBINADA,
             SpatialResolution.USINA_HIDROELETRICA,
-        ): lambda df, uow, _: OperationVariableBounds._turbined_flow_bounds(
+        ): lambda df,
+        uow,
+        _: OperationVariableBounds._hydro_turbined_flow_bounds(
             df, uow, entity_column=HYDRO_CODE_COL
         ),
         OperationSynthesis(
             Variable.VAZAO_TURBINADA,
             SpatialResolution.SISTEMA_INTERLIGADO,
-        ): lambda df, uow, _: OperationVariableBounds._turbined_flow_bounds(
+        ): lambda df,
+        uow,
+        _: OperationVariableBounds._hydro_turbined_flow_bounds(
+            df, uow, entity_column=None
+        ),
+        OperationSynthesis(
+            Variable.VAZAO_DEFLUENTE,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df, uow, _: OperationVariableBounds._hydro_outflow_bounds(
+            df, uow, entity_column=HYDRO_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.VAZAO_DEFLUENTE,
+            SpatialResolution.SISTEMA_INTERLIGADO,
+        ): lambda df, uow, _: OperationVariableBounds._hydro_outflow_bounds(
+            df, uow, entity_column=None
+        ),
+        OperationSynthesis(
+            Variable.VAZAO_VERTIDA,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df,
+        uow,
+        _: OperationVariableBounds._hydro_spilled_flow_bounds(
+            df, uow, entity_column=HYDRO_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.VAZAO_VERTIDA,
+            SpatialResolution.SISTEMA_INTERLIGADO,
+        ): lambda df,
+        uow,
+        _: OperationVariableBounds._hydro_spilled_flow_bounds(
             df, uow, entity_column=None
         ),
     }
@@ -184,6 +216,14 @@ class OperationVariableBounds:
         return grouped_df
 
     @classmethod
+    def __round_values_and_bounds(
+        cls, df: pd.DataFrame, cols: list[str], digits: int
+    ) -> pd.DataFrame:
+        for col in cols:
+            df[col] = np.round(df[col], digits)
+        return df
+
+    @classmethod
     def _thermal_generation_bounds(
         cls,
         df: pd.DataFrame,
@@ -209,9 +249,10 @@ class OperationVariableBounds:
             on=[STAGE_COL] + entity_column_list,
             suffixes=[None, "_bounds"],
         )
-        for col in [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL]:
-            df[col] = np.round(df[col], 2)
         df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        df = cls.__round_values_and_bounds(
+            df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
+        )
         return df
 
     @classmethod
@@ -240,13 +281,14 @@ class OperationVariableBounds:
             on=[STAGE_COL] + entity_column_list,
             suffixes=[None, "_bounds"],
         )
-        for col in [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL]:
-            df[col] = np.round(df[col], 2)
         df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        df = cls.__round_values_and_bounds(
+            df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
+        )
         return df
 
     @classmethod
-    def _turbined_flow_bounds(
+    def _hydro_turbined_flow_bounds(
         cls,
         df: pd.DataFrame,
         uow: AbstractUnitOfWork,
@@ -271,9 +313,78 @@ class OperationVariableBounds:
             on=[STAGE_COL] + entity_column_list,
             suffixes=[None, "_bounds"],
         )
-        for col in [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL]:
-            df[col] = np.round(df[col], 2)
         df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        df = cls.__round_values_and_bounds(
+            df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
+        )
+        return df
+
+    @classmethod
+    def _hydro_outflow_bounds(
+        cls,
+        df: pd.DataFrame,
+        uow: AbstractUnitOfWork,
+        entity_column: Optional[str],
+    ) -> pd.DataFrame:
+        """
+        Adiciona ao DataFrame da síntese os limites inferior e superior
+        para a variável de Vazão Turbinada (QDEF) para cada UHE, submercado e SIN.
+        """
+        df_bounds = Deck.hydro_outflow_bounds(uow)
+
+        if entity_column != HYDRO_CODE_COL:
+            df_bounds = cls._group_bounds_df(
+                df_bounds,
+                entity_column,
+                extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
+            )
+        entity_column_list = [] if entity_column is None else [entity_column]
+        df = pd.merge(
+            df,
+            df_bounds,
+            how="left",
+            on=[STAGE_COL] + entity_column_list,
+            suffixes=[None, "_bounds"],
+        )
+        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        df = cls.__round_values_and_bounds(
+            df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
+        )
+
+        return df
+
+    @classmethod
+    def _hydro_spilled_flow_bounds(
+        cls,
+        df: pd.DataFrame,
+        uow: AbstractUnitOfWork,
+        entity_column: Optional[str],
+    ) -> pd.DataFrame:
+        """
+        Adiciona ao DataFrame da síntese os limites inferior e superior
+        para a variável de Vazão Turbinada (QDEF) para cada UHE, submercado e SIN.
+        """
+        df_bounds = Deck.hydro_spilled_flow_bounds(uow)
+
+        if entity_column != HYDRO_CODE_COL:
+            df_bounds = cls._group_bounds_df(
+                df_bounds,
+                entity_column,
+                extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
+            )
+        entity_column_list = [] if entity_column is None else [entity_column]
+        df = pd.merge(
+            df,
+            df_bounds,
+            how="left",
+            on=[STAGE_COL] + entity_column_list,
+            suffixes=[None, "_bounds"],
+        )
+        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        df = cls.__round_values_and_bounds(
+            df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
+        )
+
         return df
 
     @classmethod
@@ -290,8 +401,9 @@ class OperationVariableBounds:
 
         df_bounds = Deck.stored_volume_bounds(uow)
         df = df.merge(df_bounds, how="left", on=HYDRO_CODE_COL)
-        for col in [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL]:
-            df[col] = np.round(df[col], 2)
+        df = cls.__round_values_and_bounds(
+            df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
+        )
 
         return df
 
