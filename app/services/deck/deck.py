@@ -308,12 +308,53 @@ class Deck:
 
     @classmethod
     def pdo_hidr(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        def _get_initial_volume(df: pd.DataFrame) -> pd.DataFrame:
+            df_vol_ini = cls.hydro_initial_volumes(uow)
+            perc_initial_volumes = df_vol_ini["volume_inicial"].to_numpy()
+            total_uhes = len(df_vol_ini)
+
+            # Volumes percentuais
+            perc_volumes = np.concatenate(
+                (
+                    perc_initial_volumes,
+                    df["volume_final_percentual"].to_numpy()[:-total_uhes],
+                )
+            )
+            df["volume_inicial_percentual"] = perc_volumes
+
+            # Volumes absolutos totais
+            min_volumes = df["volume_armazenado_minimo_hm3"].to_numpy()[
+                :total_uhes
+            ]
+            max_volumes = df["volume_armazenado_maximo_hm3"].to_numpy()[
+                :total_uhes
+            ]
+            abs_initial_volumes = min_volumes + 0.01 * perc_initial_volumes * (
+                max_volumes - min_volumes
+            )
+            abs_volumes = np.concatenate(
+                (
+                    abs_initial_volumes,
+                    df["volume_final_absoluto_hm3"].to_numpy()[:-total_uhes],
+                )
+            )
+            df["volume_inicial_absoluto_hm3"] = abs_volumes
+
+            return df
+
         def _cast_volumes_to_absolute(df: pd.DataFrame) -> pd.DataFrame:
             col_min_vol = "volume_armazenado_minimo_hm3"
-            df_eco = cls.pdo_eco_usih(uow)[[HYDRO_CODE_COL, col_min_vol]]
+            col_max_vol = "volume_armazenado_maximo_hm3"
+            df_eco = cls.pdo_eco_usih(uow)[
+                [HYDRO_CODE_COL, col_min_vol, col_max_vol]
+            ]
+
             num_stages = len(cls.stages_durations(uow))
             df[col_min_vol] = np.tile(
                 df_eco[col_min_vol].to_numpy(), num_stages
+            )
+            df[col_max_vol] = np.tile(
+                df_eco[col_max_vol].to_numpy(), num_stages
             )
             df["volume_final_absoluto_hm3"] = (
                 df["volume_final_hm3"] + df[col_min_vol]
@@ -335,6 +376,8 @@ class Deck:
             df = df.loc[df["conjunto"] == 99].reset_index(drop=True)
             df = df.drop(columns=["nome_usina", "conjunto", "unidade"])
             df = _cast_volumes_to_absolute(df)
+            df = _get_initial_volume(df)
+
             df = cls._add_single_scenario(df)
             df = df.rename(
                 columns={
@@ -652,6 +695,9 @@ class Deck:
                 pd.DataFrame,
                 "pdo_eco_usih",
             )
+            # Filtra usinas que se encontram no estudo
+            hydros = cls.hydro_eer_submarket_map(uow)[HYDRO_CODE_COL].unique()
+            df = df.loc[df[HYDRO_CODE_COL].isin(hydros)]
             cls.DECK_DATA_CACHING["pdo_eco_usih"] = df
         return cls.DECK_DATA_CACHING["pdo_eco_usih"]
 
@@ -860,6 +906,39 @@ class Deck:
         return df.copy()
 
     @classmethod
+    def hydro_initial_volumes(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = cls.DECK_DATA_CACHING.get("hydro_initial_volumes")
+        if df is None:
+            entdados = cls.entdados(uow)
+            df = cls._validate_data(
+                entdados.uh(df=True),
+                pd.DataFrame,
+                "UH",
+            )
+            df = df.rename(
+                columns={
+                    "codigo_usina": HYDRO_CODE_COL,
+                }
+            )
+            df = df[[HYDRO_CODE_COL, "volume_inicial"]]
+
+            df_eco_usih = cls.pdo_eco_usih(uow)
+            df_eco_usih = df_eco_usih.loc[
+                np.isnan(df_eco_usih["volume_util_inicial_hm3"])
+            ]
+            hydos_run_of_river = df_eco_usih.loc[
+                np.isnan(df_eco_usih["volume_util_inicial_hm3"])
+            ][HYDRO_CODE_COL].unique()
+
+            df.loc[
+                df[HYDRO_CODE_COL].isin(hydos_run_of_river), "volume_inicial"
+            ] = np.nan
+
+            df.sort_values(by=HYDRO_CODE_COL, inplace=True)
+            cls.DECK_DATA_CACHING["hydro_initial_volumes"] = df
+        return df.copy()
+
+    @classmethod
     def thermals(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         df = cls.DECK_DATA_CACHING.get("thermals")
         if df is None:
@@ -1039,7 +1118,7 @@ class Deck:
         df = cls._validate_data(
             cls.pdo_hidr_hydro(col, uow),
             pd.DataFrame,
-            "pdo_hidr_eer",
+            "pdo_hidr_hydro",
         )
         common_cols = [
             c
@@ -1070,7 +1149,7 @@ class Deck:
         df = cls._validate_data(
             cls.pdo_hidr_hydro(col, uow),
             pd.DataFrame,
-            "pdo_hidr_eer",
+            "pdo_hidr_sin",
         )
         common_cols = [
             c
@@ -1391,9 +1470,26 @@ class Deck:
                     "volume_armazenado_minimo_hm3": LOWER_BOUND_COL,
                 }
             )
+            df_eco_usih = cls.pdo_eco_usih(uow)
+            hydos_run_of_river = df_eco_usih.loc[
+                np.isnan(df_eco_usih["volume_util_inicial_hm3"])
+            ][HYDRO_CODE_COL].unique()
+
+            # Retira contabilização de usinas fio dagua
+            df.loc[
+                df[HYDRO_CODE_COL].isin(hydos_run_of_river), LOWER_BOUND_COL
+            ] = np.nan
+            df.loc[
+                df[HYDRO_CODE_COL].isin(hydos_run_of_river), UPPER_BOUND_COL
+            ] = np.nan
+
+            df = cls._add_submarket_code(
+                uow, df, "nome_submercado", SUBMARKET_CODE_COL
+            )
             df = df[
                 [
                     HYDRO_CODE_COL,
+                    SUBMARKET_CODE_COL,
                     LOWER_BOUND_COL,
                     UPPER_BOUND_COL,
                 ]

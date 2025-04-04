@@ -10,6 +10,7 @@ from idessem.dessem.pdo_oper_term import PdoOperTerm
 from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
+from idessem.dessem.pdo_eco_usih import PdoEcoUsih
 
 from app.internal.constants import (
     IV_SUBMARKET_CODE,
@@ -495,6 +496,48 @@ def test_sintese_varmf_uhe(test_settings):
     __valida_metadata(synthesis_str, df_meta, False)
 
 
+def test_sintese_varmf_sbm(test_settings):
+    synthesis_str = "VARMF_SBM"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
+    df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    df_pdo_hidr = df_pdo_hidr.groupby(
+        ["estagio", "nome_submercado"], as_index=False
+    ).sum(numeric_only=True)
+    __valida_limites(df)
+    df[VALUE_COL] -= df[LOWER_BOUND_COL]
+    __compara_sintese_pdo_oper(
+        df,
+        df_pdo_hidr,
+        "volume_final_hm3",
+        estagio=1,
+        cenario=1,
+        codigo_submercado=[1],
+        nome_submercado=["SE"],
+    )
+    __valida_metadata(synthesis_str, df_meta, False)
+
+
+def test_sintese_varmf_sin(test_settings):
+    synthesis_str = "VARMF_SIN"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
+    df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99]
+    df_pdo_hidr = df_pdo_hidr.groupby(["estagio"], as_index=False).sum(
+        numeric_only=True
+    )
+    __valida_limites(df)
+    df[VALUE_COL] -= df[LOWER_BOUND_COL]
+    __compara_sintese_pdo_oper(
+        df,
+        df_pdo_hidr,
+        "volume_final_hm3",
+        estagio=1,
+        cenario=1,
+    )
+    __valida_metadata(synthesis_str, df_meta, False)
+
+
 def test_sintese_varpf_uhe(test_settings):
     synthesis_str = "VARPF_UHE"
     df, df_meta = __sintetiza_com_mock(synthesis_str)
@@ -508,6 +551,120 @@ def test_sintese_varpf_uhe(test_settings):
         estagio=1,
         cenario=1,
         codigo_usina=[1],
+    )
+    __valida_metadata(synthesis_str, df_meta, False)
+
+
+def test_sintese_varpi_uhe(test_settings):
+    synthesis_str = "VARPI_UHE"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
+    df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99].copy()
+    df_eco = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT")).tabela
+    num_uhes = len(df_eco)
+    initial_volumes = df_eco["volume_util_inicial_percentual"].to_numpy()
+    final_volumes = df_pdo_hidr["volume_final_percentual"].to_numpy()[
+        :-num_uhes
+    ]
+    df_pdo_hidr["volume_inicial_percentual"] = np.concatenate(
+        (initial_volumes, final_volumes)
+    )
+    __valida_limites(df)
+    __compara_sintese_pdo_oper(
+        df,
+        df_pdo_hidr,
+        "volume_inicial_percentual",
+        estagio=1,
+        cenario=1,
+        codigo_usina=[1],
+    )
+    __valida_metadata(synthesis_str, df_meta, False)
+
+
+def test_sintese_varmi_uhe(test_settings):
+    synthesis_str = "VARMI_UHE"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
+    df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99].copy()
+    # Obtem volume inicial
+    df_eco = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT")).tabela
+    num_uhes = len(df_eco)
+    initial_volumes = df_eco["volume_util_inicial_hm3"].to_numpy()
+    final_volumes = df_pdo_hidr["volume_final_hm3"].to_numpy()[:-num_uhes]
+    df_pdo_hidr["volume_inicial_hm3"] = np.concatenate(
+        (initial_volumes, final_volumes)
+    )
+
+    __valida_limites(df)
+    df[VALUE_COL] -= df[LOWER_BOUND_COL]
+    __compara_sintese_pdo_oper(
+        df,
+        df_pdo_hidr,
+        "volume_inicial_hm3",
+        estagio=1,
+        cenario=1,
+        codigo_usina=[1],
+    )
+    __valida_metadata(synthesis_str, df_meta, False)
+
+
+def test_sintese_varmi_sbm(test_settings):
+    synthesis_str = "VARMI_SBM"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
+    df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99].copy()
+
+    # Obtem volume inicial
+    df_eco = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT")).tabela
+    num_uhes = len(df_eco)
+    initial_volumes = df_eco["volume_util_inicial_hm3"].to_numpy()
+    final_volumes = df_pdo_hidr["volume_final_hm3"].to_numpy()[:-num_uhes]
+    df_pdo_hidr["volume_inicial_hm3"] = np.concatenate(
+        (initial_volumes, final_volumes)
+    )
+
+    df_pdo_hidr = df_pdo_hidr.groupby(
+        ["estagio", "nome_submercado"], as_index=False
+    ).sum(numeric_only=True)
+    __valida_limites(df)
+    df[VALUE_COL] -= df[LOWER_BOUND_COL]
+    __compara_sintese_pdo_oper(
+        df,
+        df_pdo_hidr,
+        "volume_final_hm3",
+        estagio=1,
+        cenario=1,
+        codigo_submercado=[1],
+        nome_submercado=["SE"],
+    )
+    __valida_metadata(synthesis_str, df_meta, False)
+
+
+def test_sintese_varmi_sin(test_settings):
+    synthesis_str = "VARMI_SIN"
+    df, df_meta = __sintetiza_com_mock(synthesis_str)
+    df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
+    df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99].copy()
+    # Obtem volume inicial
+    df_eco = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT")).tabela
+    num_uhes = len(df_eco)
+    initial_volumes = df_eco["volume_util_inicial_hm3"].to_numpy()
+    final_volumes = df_pdo_hidr["volume_final_hm3"].to_numpy()[:-num_uhes]
+    df_pdo_hidr["volume_inicial_hm3"] = np.concatenate(
+        (initial_volumes, final_volumes)
+    )
+
+    df_pdo_hidr = df_pdo_hidr.groupby(["estagio"], as_index=False).sum(
+        numeric_only=True
+    )
+    __valida_limites(df)
+    df[VALUE_COL] -= df[LOWER_BOUND_COL]
+    __compara_sintese_pdo_oper(
+        df,
+        df_pdo_hidr,
+        "volume_final_hm3",
+        estagio=1,
+        cenario=1,
     )
     __valida_metadata(synthesis_str, df_meta, False)
 

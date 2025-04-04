@@ -18,7 +18,9 @@ class Variable(Enum):
     VAZAO_VERTIDA = "QVER"
     VAZAO_TURBINADA = "QTUR"
     VOLUME_ARMAZENADO_ABSOLUTO_FINAL = "VARMF"
+    VOLUME_ARMAZENADO_ABSOLUTO_INICIAL = "VARMI"
     VOLUME_ARMAZENADO_PERCENTUAL_FINAL = "VARPF"
+    VOLUME_ARMAZENADO_PERCENTUAL_INICIAL = "VARPI"
     VOLUME_CALHA = "VCALHA"
     INTERCAMBIO = "INT"
     MERCADO = "MER"
@@ -52,7 +54,9 @@ class Variable(Enum):
             "QTUR": "Vazão TUR",
             "QVER": "Vazão VER",
             "VARMF": "VAR Final",
+            "VARMI": "VAR Inicial",
             "VARPF": "VAR Percentual Final",
+            "VARPI": "VAR Percentual Inicial",
             "INT": "Intercâmbio",
             "MER": "Mercado",
             "MERL": "Mercado Líq.",
@@ -77,7 +81,9 @@ class Variable(Enum):
             "QTUR": "Vazão Turbinada",
             "QVER": "Vazão Vertida",
             "VARMF": "Volume Armazenado Absoluto Final",
+            "VARMI": "Volume Armazenado Absoluto Inicial",
             "VARPF": "Volume Armazenado Percentual Final",
+            "VARPI": "Volume Armazenado Percentual Inicial",
             "INT": "Intercâmbio de Energia",
             "MER": "Mercado de Energia",
             "MERL": "Mercado de Energia Líquido",

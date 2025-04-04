@@ -165,10 +165,46 @@ class OperationSynthetizer:
                 uow, "volume_final_percentual"
             ),
             (
+                Variable.VOLUME_ARMAZENADO_PERCENTUAL_INICIAL,
+                SpatialResolution.USINA_HIDROELETRICA,
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(
+                uow, "volume_inicial_percentual"
+            ),
+            (
                 Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
                 SpatialResolution.USINA_HIDROELETRICA,
             ): lambda uow: cls._resolve_pdo_hidr_uhe(
                 uow, "volume_final_absoluto_hm3"
+            ),
+            (
+                Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
+                SpatialResolution.USINA_HIDROELETRICA,
+            ): lambda uow: cls._resolve_pdo_hidr_uhe(
+                uow, "volume_inicial_absoluto_hm3"
+            ),
+            (
+                Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+                SpatialResolution.SUBMERCADO,
+            ): lambda uow: cls._resolve_pdo_hidr_sbm(
+                uow, "volume_final_absoluto_hm3"
+            ),
+            (
+                Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
+                SpatialResolution.SUBMERCADO,
+            ): lambda uow: cls._resolve_pdo_hidr_sbm(
+                uow, "volume_inicial_absoluto_hm3"
+            ),
+            (
+                Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+            ): lambda uow: cls._resolve_pdo_hidr_sin(
+                uow, "volume_final_absoluto_hm3"
+            ),
+            (
+                Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
+                SpatialResolution.SISTEMA_INTERLIGADO,
+            ): lambda uow: cls._resolve_pdo_hidr_sin(
+                uow, "volume_inicial_absoluto_hm3"
             ),
             (
                 Variable.VALOR_AGUA,

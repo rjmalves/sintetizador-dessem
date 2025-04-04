@@ -85,6 +85,59 @@ class OperationVariableBounds:
             Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
             SpatialResolution.USINA_HIDROELETRICA,
         ): lambda df, uow, _: OperationVariableBounds._stored_volume_bounds(
+            df, uow, entity_column=HYDRO_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df, uow, _: OperationVariableBounds._stored_volume_bounds(
+            df, uow, entity_column=HYDRO_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+            SpatialResolution.SUBMERCADO,
+        ): lambda df, uow, _: OperationVariableBounds._stored_volume_bounds(
+            df, uow, entity_column=SUBMARKET_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
+            SpatialResolution.SUBMERCADO,
+        ): lambda df, uow, _: OperationVariableBounds._stored_volume_bounds(
+            df, uow, entity_column=SUBMARKET_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+            SpatialResolution.SISTEMA_INTERLIGADO,
+        ): lambda df, uow, _: OperationVariableBounds._stored_volume_bounds(
+            df, uow, entity_column=None
+        ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
+            SpatialResolution.SISTEMA_INTERLIGADO,
+        ): lambda df, uow, _: OperationVariableBounds._stored_volume_bounds(
+            df, uow, entity_column=None
+        ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_PERCENTUAL_FINAL,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df, uow, _: OperationVariableBounds._stored_volume_bounds(
+            df, uow, entity_column=HYDRO_CODE_COL
+        ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_PERCENTUAL_INICIAL,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df,
+        uow,
+        _: OperationVariableBounds._stored_volume_percentual_bounds(
+            df,
+            uow,
+        ),
+        OperationSynthesis(
+            Variable.VOLUME_ARMAZENADO_PERCENTUAL_FINAL,
+            SpatialResolution.USINA_HIDROELETRICA,
+        ): lambda df,
+        uow,
+        _: OperationVariableBounds._stored_volume_percentual_bounds(
             df,
             uow,
         ),
@@ -207,6 +260,15 @@ class OperationVariableBounds:
             for c in df.columns
             if c in IDENTIFICATION_COLUMNS and c not in valid_grouping_columns
         ]
+
+        if len(grouping_columns) == 0:
+            return pd.DataFrame(
+                {
+                    LOWER_BOUND_COL: [df[LOWER_BOUND_COL].sum(skipna=True)],
+                    UPPER_BOUND_COL: [df[UPPER_BOUND_COL].sum(skipna=True)],
+                }
+            )
+
         grouped_df = fast_group_df(
             df,
             grouping_columns,
@@ -392,18 +454,54 @@ class OperationVariableBounds:
         cls,
         df: pd.DataFrame,
         uow: AbstractUnitOfWork,
+        entity_column: Optional[str],
     ) -> pd.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
-        para as variáveis de Volume Armazenado Absoluto (VARM) e Volume
-        Armazenado Percentual (VARP) para cada UHE.
+        para as variáveis de Volume Armazenado Absoluto (VARM) para cada UHE.
         """
 
         df_bounds = Deck.stored_volume_bounds(uow)
-        df = df.merge(df_bounds, how="left", on=HYDRO_CODE_COL)
+
+        if entity_column != HYDRO_CODE_COL:
+            df_bounds = cls._group_bounds_df(
+                df_bounds,
+                entity_column,
+                extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
+            )
+        entity_column_list = [] if entity_column is None else [entity_column]
+        if len(entity_column_list) > 0:
+            df = pd.merge(
+                df,
+                df_bounds,
+                how="left",
+                on=entity_column_list,
+                suffixes=[None, "_bounds"],
+            )
+            df.drop(
+                [c for c in df.columns if "_bounds" in c], axis=1, inplace=True
+            )
+        else:
+            df[LOWER_BOUND_COL] = df_bounds[LOWER_BOUND_COL].iloc[0]
+            df[UPPER_BOUND_COL] = df_bounds[UPPER_BOUND_COL].iloc[0]
+
         df = cls.__round_values_and_bounds(
             df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
         )
+
+        return df
+
+    @classmethod
+    def _stored_volume_percentual_bounds(
+        cls, df: pd.DataFrame, uow: AbstractUnitOfWork
+    ) -> pd.DataFrame:
+        """
+        Adiciona ao DataFrame da síntese os limites inferior e superior
+        para as variáveis de Volume Armazenado Percentual (VARP) para cada UHE.
+        """
+        df[VALUE_COL] = np.round(df[VALUE_COL], 2)
+        df[LOWER_BOUND_COL] = 0.0
+        df[UPPER_BOUND_COL] = 100.0
 
         return df
 
