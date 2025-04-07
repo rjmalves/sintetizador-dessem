@@ -69,7 +69,11 @@ SUPPORTED_SYNTHESIS: list[str] = [
     "VARPF_UHE",
     "VARPI_UHE",
     "VARMF_UHE",
+    "VARMF_SBM",
+    "VARMF_SIN",
     "VARMI_UHE",
+    "VARMI_SBM",
+    "VARMI_SIN",
     "VAGUA_UHE",
     "QTUR_UHE",
     "QTUR_SIN",
@@ -154,8 +158,24 @@ UNITS: dict[OperationSynthesis, Unit] = {
         SpatialResolution.USINA_HIDROELETRICA,
     ): Unit.hm3,
     OperationSynthesis(
+        Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+        SpatialResolution.SUBMERCADO,
+    ): Unit.hm3,
+    OperationSynthesis(
+        Variable.VOLUME_ARMAZENADO_ABSOLUTO_FINAL,
+        SpatialResolution.SISTEMA_INTERLIGADO,
+    ): Unit.hm3,
+    OperationSynthesis(
         Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
         SpatialResolution.USINA_HIDROELETRICA,
+    ): Unit.hm3,
+    OperationSynthesis(
+        Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
+        SpatialResolution.SUBMERCADO,
+    ): Unit.hm3,
+    OperationSynthesis(
+        Variable.VOLUME_ARMAZENADO_ABSOLUTO_INICIAL,
+        SpatialResolution.SISTEMA_INTERLIGADO,
     ): Unit.hm3,
     OperationSynthesis(
         Variable.VOLUME_ARMAZENADO_PERCENTUAL_FINAL,
@@ -201,4 +221,7 @@ UNITS: dict[OperationSynthesis, Unit] = {
     OperationSynthesis(
         Variable.VOLUME_CALHA, SpatialResolution.USINA_HIDROELETRICA
     ): Unit.hm3,
+    OperationSynthesis(
+        Variable.VALOR_AGUA, SpatialResolution.USINA_HIDROELETRICA
+    ): Unit.RS_MWh,
 }
