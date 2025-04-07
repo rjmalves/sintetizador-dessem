@@ -20,6 +20,8 @@ class ExecutionSynthesis:
 
 SUPPORTED_SYNTHESIS: list[str] = [
     "PROGRAMA",
+    "VERSAO",
+    "TITULO",
     "TEMPO",
     "CUSTOS",
 ]
