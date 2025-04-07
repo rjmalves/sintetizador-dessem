@@ -52,7 +52,7 @@ Para realizar a síntese completa do caso, está disponível o comando `completa
 
 Se for desejado não realizar a síntese completa, mas apenas de alguns dos elementos, é possível chamar cada elemento a ser sintetizado::
 
-    $ sintetizador-dessem operacao CMO_SBM VARMF_SIN GTER_SBM
+    $ sintetizador-dessem operacao CMO_SBM VARMF_UHE GTER_SBM
 
 O formato de escrita padrão das sínteses é `PARQUET <https://www.databricks.com/glossary/what-is-parquet>`, que é um formato eficiente
 de armazenamento de dados tabulares para aplicações de *big data*.
