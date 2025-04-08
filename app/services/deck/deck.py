@@ -240,10 +240,14 @@ class Deck:
             }
             df = df.replace(variaveis)
             df = df.loc[df["variavel"].isin(list(variaveis.values()))]
-            df = df.rename(columns={"variavel": "parcela", "valor": "mean"})
-            df["std"] = 0
+            df = df.rename(
+                columns={"variavel": "parcela", "valor": "valor_esperado"}
+            )
+            df["desvio_padrao"] = 0
 
-            df = df[["parcela", "mean", "std"]].reset_index(drop=True)
+            df = df[["parcela", "valor_esperado", "desvio_padrao"]].reset_index(
+                drop=True
+            )
             cls.DECK_DATA_CACHING["costs"] = df
         return df
 
@@ -741,13 +745,13 @@ class Deck:
         name = "version"
         version = cls.DECK_DATA_CACHING.get(name)
         if version is None:
-            pdo = cls._validate_data(
-                cls._get_pdo_sist(uow),
-                PdoSist,
+            des = cls._validate_data(
+                cls._get_des_log_relato(uow),
+                DesLogRelato,
                 "pdo_sist",
             )
             version = cls._validate_data(
-                pdo.versao,
+                des.versao,
                 str,
                 name,
             )
@@ -987,6 +991,7 @@ class Deck:
                 pd.DataFrame,
                 "SIST",
             )
+            df = df.drop(columns=["ficticio"])
             df = df.rename(
                 columns={
                     "codigo_submercado": SUBMARKET_CODE_COL,
@@ -997,6 +1002,7 @@ class Deck:
                 IV_SUBMARKET_CODE,
                 "IV",
             )
+            df[SUBMARKET_CODE_COL] = df[SUBMARKET_CODE_COL].astype("Int64")
 
             cls.DECK_DATA_CACHING["submarkets"] = df
         return df.copy()

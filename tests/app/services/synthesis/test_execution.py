@@ -80,6 +80,6 @@ def test_sintese_custos(test_settings):
     synthesis_str = "CUSTOS"
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     assert df.at[1, "parcela"] == "FUTURO"
-    assert df.at[1, "mean"] == 52015991.62856
-    assert df.at[0, "std"] == 0.0
+    assert df.at[1, "valor_esperado"] == 52015991.62856
+    assert df.at[0, "desvio_padrao"] == 0.0
     __valida_metadata(synthesis_str, df_meta)
