@@ -216,8 +216,7 @@ class Deck:
             )
 
             convergence_time = df[RUNTIME_COL].sum()
-            total_time = total_time.total_seconds()
-            other_times = total_time - convergence_time
+            other_times = total_time.total_seconds() - convergence_time
             df.loc[len(df)] = ["Leitura de Dados e Impressão", other_times]
 
             cls.DECK_DATA_CACHING["runtime"] = df
