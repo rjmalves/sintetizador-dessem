@@ -7,7 +7,7 @@ name = "sintetizador-dessem"
 dynamic = ["version"]
 dependencies = [
     "click>=8.1.8",
-    "idessem>=0.0.23",
+    "idessem>=1.0.0",
     "pyarrow>=19.0.0",
 ]
 requires-python = ">= 3.10"

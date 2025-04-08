@@ -1,0 +1,18 @@
+# v1.0.0
+- Primeira major release.
+- Compatibilidade com as releases 2.0 dos [sintetizador-newave](https://github.com/rjmalves/sintetizador-newave) e [sintetizador-decomp](https://github.com/rjmalves/sintetizador-decomp).
+- Compatível com [idessem](https://github.com/rjmalves/idessem) versão 1.0.0.
+- Apenas versões de Python >= 3.10 são suportadas nos ambientes de CI e tem garantia de reprodutibilidade.
+- Adoção do [ruff](https://github.com/astral-sh/ruff) como linter para garantir padrões PEP de código.
+- Opção de exportação de saídas `PARQUET` realiza compressão adotando o `snappy` (padrão do Arrow). A extensão dos arquivos é apenas `.parquet`.
+- Colunas do tipo `datetime` garante que a informação de fuso seja `UTC`, permitindo maior compatibilidade na leitura em outras implementações do Arrow. 
+- Colunas dos DataFrames de síntese padronizadas para `snake_case`.
+- Entidades são indexadas pelos seus códigos ao invés de nomes nos DataFrames das sínteses da operação. A síntese com opção `sistema` contem o mapeamento entre códigos e nomes.
+- Estatísticas calculadas a partir dos cenários de cada variável, para cada entidade, em um determinado estágio, passam a ser salvas em saídas específicas (`ESTATISTICAS_OPERACAO_UHE.parquet`, por exemplo).
+- Eliminado o sufixo `EST` da síntese da operação. 
+- As sínteses produzem sempre como saída um arquivo de metadados, com informações sobre as sínteses que foram geradas (`METADADOS_OPERACAO.parquet`, `METADADOS_SISTEMA.parquet`, etc.).
+- Implementado suporte para uso do caractere de `wildcard` (`*`) na especificação das sínteses desejadas via CLI.
+- Implementado o cálculo de limites para variáveis da síntese da operação que sejam limitadas inferior ou superiormente (colunas `limite_inferior` e `limite_superior`).
+- Dados das sínteses de operação que sejam agrupados por entidades menores contém os códigos dos conjuntos que englobam estas entidades, permitindo agrupamentos arbitrários pelo usuário (ex. sínteses por UHE também contém colunas `codigo_ree` e `codigo_submercado`).
+- Logging do processo de síntese resumido, incluindo os tempos gastos em cada etapa do processo.
+- Criação da abstração `Deck` que centraliza as conversões de formato e implementação de cálculos já realizados pelo modelo quando necessários para padronização do restante dos módulos de síntese.
