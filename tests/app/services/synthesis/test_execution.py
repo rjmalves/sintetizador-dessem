@@ -73,6 +73,7 @@ def test_sintese_tempo(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     assert df.at[0, "etapa"] == "PL"
     assert df.at[0, "tempo"] == 0.4 * 60
+    assert df["tempo"].sum() == 1301
     __valida_metadata(synthesis_str, df_meta)
 
 

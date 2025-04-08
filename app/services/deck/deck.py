@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 from typing import Any, Dict, Optional, Type, TypeVar
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 from idessem.dessem.dessemarq import DessemArq
@@ -205,8 +205,21 @@ class Deck:
             )
             df = df.rename(columns={"tipo": "etapa", "tempo_min": RUNTIME_COL})
             df[RUNTIME_COL] = df[RUNTIME_COL] * 60
-
             df = df[["etapa", RUNTIME_COL]].copy()
+
+            # Calcula tempo de leitura de dados e impressão
+            des_log_relato = cls.des_log_relato(uow)
+            total_time = cls._validate_data(
+                des_log_relato.tempo_processamento,
+                timedelta,
+                "tempo total de processamento",
+            )
+
+            convergence_time = df[RUNTIME_COL].sum()
+            total_time = total_time.total_seconds()
+            other_times = total_time - convergence_time
+            df.loc[len(df)] = ["Leitura de Dados e Impressão", other_times]
+
             cls.DECK_DATA_CACHING["runtime"] = df
         return df
 
