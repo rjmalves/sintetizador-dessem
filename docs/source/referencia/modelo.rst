@@ -53,6 +53,11 @@ Informações da execução do modelo, como ambiente escolhido, recursos computa
      - `CUSTOS`
    * - Tempo de Execução
      - `TEMPO`
+   * - Convergência
+     - `CONVERGENCIA`
+   * - Inviabilidades do caso
+     - `INVIABILIDADES`
+
 
 Operação
 *********
@@ -255,17 +260,31 @@ em relação ao conjunto de elementos do sistema.
 Estado do Desenvolvimento
 ***************************
 
-Todas as variáveis das categorias `Sistema` e `Execução` que são listadas
+Todas as variáveis das categorias `Sistema` que são listadas e estão disponíveis no
+modelo DESSEM, estão disponíveis para uso no sintetizador.
+
+ e `Execução` que são listadas
 e estão presentes no modelo DESSEM, estão disponíveis para uso no sintetizador.
 
-Já para a categoria de operação, nem todas as combinações de agregações espaciais, temporais e variáveis
+Já para as categorias de `Operação` e `Execução`, nem todas as combinações de agregações espaciais, temporais e variáveis
 fazem sentido, ou especialmente são modeladas ou possíveis de se obter no DESSEM. Desta forma,
-o estado do desenvolvimento é listado a seguir, onde se encontram as combinações de sínteses da operação
-que estão disponíveis no modelo.
+o estado do desenvolvimento é listado a seguir, onde se encontram as combinações de sínteses da operação e execução
+que estão disponíveis para o modelo.
+
+.. list-table:: Sínteses de Execução Existentes
+   :widths: 50
+   :header-rows: 1
+
+   * - VARIÁVEL
+   * - `PROGRAMA`
+   * - `VERSAO`
+   * - `TITULO`
+   * - `CUSTOS`
+   * - `TEMPO`
 
 
 .. list-table:: Sínteses da Operação Existentes
-   :widths: 50 10 10
+   :widths: 50 10
    :header-rows: 1
 
 

@@ -7,8 +7,8 @@ Saídas
 Arquivos de Saída
 -----------------------
 
-Os arquivos de saída das sínteses são armazenados na pasta `sintese` do diretório de trabalho. Para cada síntese realizada, é configurados
-um arquivo com metadados e um conjunto de arquivos com os dados sintetizados. Para as sínteses da operação e de cenários, além dos arquivos
+Os arquivos de saída das sínteses são armazenados na pasta `sintese` do diretório de trabalho. Para cada síntese realizada, é configurado
+um arquivo com metadados e um conjunto de arquivos com os dados sintetizados. Para as sínteses da operação, além dos arquivos
 com os dados brutos sintetizados, são criados arquivos com estatísticas pré-calculadas sobre os dados brutos,
 permitindo análises mais rápidas.
 
@@ -26,74 +26,36 @@ No caso de uma síntese do sistema, são esperados os arquivos::
 Para a síntese da execução::
     
     $ ls sintese
-    >>> CONVERGENCIA.parquet
     >>> CUSTOS.parquet
     >>> METADADOS_EXECUCAO.parquet
     >>> PROGRAMA.parquet
     >>> TEMPO.parquet
+    >>> TITULO.parquet
+    >>> VERSAO.parquet
 
-Para a síntese da política::
-    
-    $ ls sintese
-    >>> CORTES.parquet
-    >>> ESTADOS.parquet
-    >>> METADADOS_POLITICA.parquet
-
-Alguns dos arquivos esperados na síntese de cenários::
-    
-    $ ls sintese
-    >>> ENAA_REE_BKW.parquet
-    >>> ENAA_REE_FOR.parquet
-    >>> ENAA_REE_SF.parquet
-    >>> ...
-    >>> ESTATISTICAS_CENARIOS_REE_BKW.parquet
-    >>> ESTATISTICAS_CENARIOS_REE_FOR.parquet
-    >>> ESTATISTICAS_CENARIOS_REE_SF.parquet
-    >>> ESTATISTICAS_CENARIOS_UHE_BKW.parquet
-    >>> ESTATISTICAS_CENARIOS_UHE_FOR.parquet
-    >>> ...
-    >>> METADADOS_CENARIOS.parquet
-    >>> QINC_UHE_BKW.parquet
-    >>> QINC_UHE_FOR.parquet
-    >>> ...
 
 Alguns dos arquivos esperados na síntese da operação::
 
     $ ls sintese
-    >>> CDEF_SBM.parquet
-    >>> CDEF_SIN.parquet
+    >>> CFU_SIN.parquet
     >>> CMO_SBM.parquet
     >>> COP_SIN.parquet
-    >>> CTER_SBM.parquet
-    >>> CTER_SIN.parquet
     >>> ...
-    >>> ESTATISTICAS_OPERACAO_REE.parquet
     >>> ESTATISTICAS_OPERACAO_SBM.parquet
     >>> ESTATISTICAS_OPERACAO_SBP.parquet
     >>> ESTATISTICAS_OPERACAO_SIN.parquet
     >>> ESTATISTICAS_OPERACAO_UHE.parquet
     >>> ESTATISTICAS_OPERACAO_UTE.parquet
-    >>> EVERFT_REE.parquet
-    >>> EVERFT_SBM.parquet
     >>> ...
-    >>> GHID_REE.parquet
     >>> GHID_SBM.parquet
     >>> GHID_SIN.parquet
     >>> GHID_UHE.parquet
     >>> GTER_SBM.parquet
     >>> GTER_SIN.parquet
     >>> GTER_UTE.parquet
-    >>> HJUS_UHE.parquet
-    >>> HLIQ_UHE.parquet
-    >>> HMON_UHE.parquet
-    >>> INT_SBP.parquet
-    >>> MERL_SBM.parquet
-    >>> MERL_SIN.parquet
     >>> ...
     >>> METADADOS_OPERACAO.parquet
     >>> QAFL_UHE.parquet
-    >>> QDEF_REE.parquet
-    >>> QDEF_SBM.parquet
     >>> ... 
     >>> VARMF_UHE.parquet
     >>> VARMI_REE.parquet
@@ -117,27 +79,54 @@ Por exemplo, em uma síntese da operação, os metadados podem ser acessados com
     meta_df = pd.read_parquet("sintese/METADADOS_OPERACAO.parquet")
     meta_df
 
-                chave nome_curto_variavel              nome_longo_variavel nome_curto_agregacao      nome_longo_agregacao  unidade  calculado  limitado
-    0         CMO_SBM                 CMO       Custo Marginal de Operação                  SBM                Submercado  'R$/MWh'      False     False
-    1       VAGUA_REE               VAGUA                    Valor da Água                  REE  Reservatório Equivalente  'R$/MWh'      False     False
-    2       VAGUA_UHE               VAGUA                    Valor da Água                  UHE       Usina Hidroelétrica  'R$/hm3'      False     False
-    3      VAGUAI_UHE   VAGUA Incremental        Valor da Água Incremental                  UHE       Usina Hidroelétrica  'R$/hm3'      False     False
-    4        CTER_SBM         Custo de GT         Custo de Geração Térmica                  SBM                Submercado '10^6 R$'      False     False
-    ..            ...                 ...                              ...                  ...                       ...      ...        ...       ...
-    164  VNEGEVAP_UHE  Violação Neg. EVAP  Violação Negativa de Evaporação                  UHE       Usina Hidroelétrica                False     False
-    165     VEVAP_UHE       Violação EVAP           Violação de Evaporação                  UHE       Usina Hidroelétrica     'hm3'       True     False
-    166     VEVAP_REE       Violação EVAP           Violação de Evaporação                  REE  Reservatório Equivalente     'hm3'       True     False
-    167     VEVAP_SBM       Violação EVAP           Violação de Evaporação                  SBM                Submercado     'hm3'       True     False
-    168     VEVAP_SIN       Violação EVAP           Violação de Evaporação                  SIN       Sistema Interligado     'hm3'       True     False
-    
-    [169 rows x 8 columns]
+             chave               nome_curto_variavel                         nome_longo_variavel nome_curto_agregacao nome_longo_agregacao  unidade  calculado  limitado
+    0      CMO_SBM                               CMO                  Custo Marginal de Operação                  SBM           Submercado   R$/MWh      False     False
+    1      MER_SBM                           Mercado                          Mercado de Energia                  SBM           Submercado       MW      False     False
+    2      MER_SIN                           Mercado                          Mercado de Energia                  SIN  Sistema Interligado       MW      False     False
+    3     MERL_SBM                      Mercado Líq.                  Mercado de Energia Líquido                  SBM           Submercado       MW      False     False
+    4     MERL_SIN                      Mercado Líq.                  Mercado de Energia Líquido                  SIN  Sistema Interligado       MW      False     False
+    5     GHID_UHE                                GH                          Geração Hidráulica                  UHE  Usina Hidroelétrica       MW      False      True
+    6     GHID_SBM                                GH                          Geração Hidráulica                  SBM           Submercado       MW      False      True
+    7     GHID_SIN                                GH                          Geração Hidráulica                  SIN  Sistema Interligado       MW      False      True
+    8     GTER_UTE                                GT                             Geração Térmica                  UTE   Usina Termelétrica       MW      False      True
+    9     GTER_SBM                                GT                             Geração Térmica                  SBM           Submercado       MW      False      True
+    10    GTER_SIN                                GT                             Geração Térmica                  SIN  Sistema Interligado       MW      False      True
+    11    GUNS_SBM             Geração Não Simuladas             Geração de Usinas Não Simuladas                  SBM           Submercado       MW      False     False
+    12    GUNS_SIN             Geração Não Simuladas             Geração de Usinas Não Simuladas                  SIN  Sistema Interligado       MW      False     False
+    13   GUNSD_SBM  Geração Não Simuladas Disponível  Geração de Usinas Não Simuladas Disponível                  SBM           Submercado       MW      False     False
+    14   GUNSD_SIN  Geração Não Simuladas Disponível  Geração de Usinas Não Simuladas Disponível                  SIN  Sistema Interligado       MW      False     False
+    15    CUNS_SBM            Corte de Não Simuladas    Corte da Geração de Usinas Não Simuladas                  SBM           Submercado       MW      False     False
+    16    CUNS_SIN            Corte de Não Simuladas    Corte da Geração de Usinas Não Simuladas                  SIN  Sistema Interligado       MW      False     False
+    17   EARMF_SBM                         EAR Final           Energia Armazenada Absoluta Final                  SBM           Submercado      MWh      False     False
+    18   EARMF_SIN                         EAR Final           Energia Armazenada Absoluta Final                  SIN  Sistema Interligado      MWh      False     False
+    19   VARPF_UHE              VAR Percentual Final          Volume Armazenado Percentual Final                  UHE  Usina Hidroelétrica        %      False      True
+    20   VARPI_UHE            VAR Percentual Inicial        Volume Armazenado Percentual Inicial                  UHE  Usina Hidroelétrica        %      False      True
+    21   VARMF_UHE                         VAR Final            Volume Armazenado Absoluto Final                  UHE  Usina Hidroelétrica      hm3      False      True
+    22   VARMF_SBM                         VAR Final            Volume Armazenado Absoluto Final                  SBM           Submercado      hm3      False      True
+    23   VARMF_SIN                         VAR Final            Volume Armazenado Absoluto Final                  SIN  Sistema Interligado      hm3      False      True
+    24   VARMI_UHE                       VAR Inicial          Volume Armazenado Absoluto Inicial                  UHE  Usina Hidroelétrica      hm3      False      True
+    25   VARMI_SBM                       VAR Inicial          Volume Armazenado Absoluto Inicial                  SBM           Submercado      hm3      False      True
+    26   VARMI_SIN                       VAR Inicial          Volume Armazenado Absoluto Inicial                  SIN  Sistema Interligado      hm3      False      True
+    27   VAGUA_UHE                              None                                        None                  UHE  Usina Hidroelétrica   R$/MWh      False     False
+    28    QTUR_UHE                         Vazão TUR                             Vazão Turbinada                  UHE  Usina Hidroelétrica     m3/s      False      True
+    29    QTUR_SIN                         Vazão TUR                             Vazão Turbinada                  SIN  Sistema Interligado     m3/s      False      True
+    30    QVER_UHE                         Vazão VER                               Vazão Vertida                  UHE  Usina Hidroelétrica     m3/s      False      True
+    31    QVER_SIN                         Vazão VER                               Vazão Vertida                  SIN  Sistema Interligado     m3/s      False      True
+    32    QINC_UHE                         Vazão INC                           Vazão Incremental                  UHE  Usina Hidroelétrica     m3/s      False     False
+    33    QAFL_UHE                         Vazão AFL                              Vazão Afluente                  UHE  Usina Hidroelétrica     m3/s      False      True
+    34    QDEF_UHE                         Vazão DEF                             Vazão Defluente                  UHE  Usina Hidroelétrica     m3/s      False      True
+    35    QDEF_SIN                         Vazão DEF                             Vazão Defluente                  SIN  Sistema Interligado     m3/s      False      True
+    36     COP_SIN                             COPER                           Custo de Operação                  SIN  Sistema Interligado  10^3 R$      False     False
+    37     CFU_SIN                               CFU                                Custo Futuro                  SIN  Sistema Interligado  10^6 R$      False     False
+    38     INT_SBP                       Intercâmbio                      Intercâmbio de Energia                  SBP   Par de Submercados       MW      False     False
+    39  VCALHA_UHE                              None                                        None                  UHE  Usina Hidroelétrica      hm3      False     False
 
 
 Formato das Estatísticas
 --------------------------
 
-As sínteses da operação e dos cenários gerados também produzem estatísticas dos dados envolvidos. Em cada uma das sínteses, as estatísticas são armazenadas segundo diferentes premissas, dependendo geralmente
-da agregação espacial dos dados. No caso da síntese dos cenários, além da agregação espacial, também é considerada a etapa da execução do modelo para a qual os cenários foram gerados (forward, backward ou simulação final).
+As sínteses da operação produzem estatísticas dos dados envolvidos. Em cada uma das sínteses, as estatísticas são armazenadas segundo diferentes premissas, dependendo geralmente
+da agregação espacial dos dados. 
 
 As estatísticas são armazenadas em arquivos com o prefixo `ESTATISTICAS_` e o nome da síntese. Por exemplo, para a síntese da operação, as estatísticas são armazenadas em arquivos com prefixo `ESTATISTICAS_OPERACAO_`, sendo um arquivo por agregação espacial.
 
@@ -150,23 +139,23 @@ Por exemplo, em uma síntese da operação, as estatísticas podem ser acessadas
     hydro_df = pd.read_parquet("sintese/ESTATISTICAS_OPERACAO_UHE.parquet")
     hydro_df
 
-            variavel  estagio data_inicio   data_fim cenario  patamar  ...       valor  codigo_usina  codigo_ree  codigo_submercado  limite_inferior  limite_superior
-    0          VAGUA        1  2023-10-01 2023-11-01     max        0  ...   13.249930             1          10                  1             -inf              inf
-    1         VAGUAI        1  2023-10-01 2023-11-01     max        0  ...    2.568698             1          10                  1             -inf              inf
-    2           VTUR        1  2023-10-01 2023-11-01     max        0  ...  522.970000             1          10                  1              0.0           562.82
-    3           VVER        1  2023-10-01 2023-11-01     max        0  ...    0.850000             1          10                  1              0.0              inf
-    4           QTUR        1  2023-10-01 2023-11-01     max        0  ...  198.850000             1          10                  1              0.0           214.00
-    ...          ...      ...         ...        ...     ...      ...  ...         ...           ...         ...                ...              ...              ...
-    2451565     GHID       51  2027-12-01 2028-01-01     std        3  ...   21.759415           314           8                  4             -inf              inf
-    2451566   VGHMIN       51  2027-12-01 2028-01-01     std        3  ...    0.000000           314           8                  4             -inf              inf
-    2451567    VFPHA       51  2027-12-01 2028-01-01     std        3  ...         NaN           314           8                  4             -inf              inf
-    2451568     HJUS       51  2027-12-01 2028-01-01     std        3  ...    0.136938           314           8                  4             -inf              inf
-    2451569     HLIQ       51  2027-12-01 2028-01-01     std        3  ...    0.136938           314           8                  4             -inf              inf
-    
-    [2451570 rows x 13 columns]
+           variavel  codigo_usina  codigo_ree  codigo_submercado  estagio               data_inicio                  data_fim cenario  patamar  duracao_patamar  valor  limite_inferior  limite_superior
+    0          GHID             1          10                  1        1 2022-09-03 00:00:00+00:00 2022-09-03 00:30:00+00:00    mean        2              0.5   7.54              0.0             46.0
+    1          GHID             1          10                  1        2 2022-09-03 00:30:00+00:00 2022-09-03 01:00:00+00:00    mean        2              0.5   7.54              0.0             46.0
+    2          GHID             1          10                  1        3 2022-09-03 01:00:00+00:00 2022-09-03 01:30:00+00:00    mean        2              0.5   7.54              0.0             46.0
+    3          GHID             1          10                  1        4 2022-09-03 01:30:00+00:00 2022-09-03 02:00:00+00:00    mean        2              0.5   7.54              0.0             46.0
+    4          GHID             1          10                  1        5 2022-09-03 02:00:00+00:00 2022-09-03 02:30:00+00:00    mean        2              0.5   7.54              0.0             46.0
+    ...         ...           ...         ...                ...      ...                       ...                       ...     ...      ...              ...    ...              ...              ...
+    119065   VCALHA           315          10                  1       66 2022-09-08 20:00:00+00:00 2022-09-09 00:00:00+00:00    mean        1              4.0   0.00             -inf              inf
+    119066   VCALHA           315          10                  1       67 2022-09-09 00:00:00+00:00 2022-09-09 08:00:00+00:00    mean        2              8.0   0.00             -inf              inf
+    119067   VCALHA           315          10                  1       68 2022-09-09 08:00:00+00:00 2022-09-09 10:00:00+00:00    mean        1              2.0   0.00             -inf              inf
+    119068   VCALHA           315          10                  1       69 2022-09-09 10:00:00+00:00 2022-09-09 20:00:00+00:00    mean        0             10.0   0.70             -inf              inf
+    119069   VCALHA           315          10                  1       70 2022-09-09 20:00:00+00:00 2022-09-10 00:00:00+00:00    mean        1              4.0   2.00             -inf              inf
+
+    [119070 rows x 13 columns]
 
 
-No arquivo de estatísticas, ao invés dos dados associados aos `N` cenários da etapa de simulação final, são armazenadas as estatísticas dos dados associados a cada entidade, em cada estágio / patamar, calculadas nos cenários.
+No arquivo de estatísticas, ao invés dos dados associados aos `N` cenários da etapa de simulação final, quando houver, são armazenadas as estatísticas dos dados associados a cada entidade, em cada estágio / patamar, calculadas nos cenários, quando presentes.
 Nestes arquivos, a coluna `cenario` possui tipo `str`, assumindo valores `mean`, `std` e percentis de 5 em 5 (`min`, `p5`, ..., `p45`, `median`, `p55`, ..., `p95`, `max`).
 
 
@@ -174,26 +163,26 @@ Formato dos Dados Brutos
 --------------------------
 
 Os dados brutos também são armazenados em arquivos de mesma extensão dos demais produzidos pela síntese. Por exemplo, para a síntese da operação, os dados são armazenados em arquivos que possuem os nomes da chave identificadora da variável e da agregação espacial,
-como `CMO_SBM` e `EARMF_REE`. Para uma mesma entidade, os arquivos de todas as variáveis possuem as mesmas colunas:
+como `CMO_SBM` e `GHID_SBM`. Para uma mesma entidade, os arquivos de todas as variáveis possuem as mesmas colunas:
 
 
 .. code-block:: python
 
     import pandas as pd
-    eer_df = pd.read_parquet("sintese/EARMF_REE.parquet")
-    eer_df
+    sbm_df = pd.read_parquet("sintese/GHID_SBM.parquet")
+    sbm_df
 
-           codigo_ree  codigo_submercado  estagio data_inicio   data_fim  cenario  patamar  duracao_patamar    valor  limite_inferior  limite_superior
-    0               1                  1        1  2023-10-01 2023-11-01        1        0            730.0  30647.0          10194.0          50969.0
-    1               1                  1        1  2023-10-01 2023-11-01        2        0            730.0  30494.0          10194.0          50969.0
-    2               1                  1        1  2023-10-01 2023-11-01        3        0            730.0  31585.0          10194.0          50969.0
-    3               1                  1        1  2023-10-01 2023-11-01        4        0            730.0  30273.0          10194.0          50969.0
-    4               1                  1        1  2023-10-01 2023-11-01        5        0            730.0  31046.0          10194.0          50969.0
-    ...           ...                ...      ...         ...        ...      ...      ...              ...      ...              ...              ...
-    18332          12                  1       51  2027-12-01 2028-01-01        3        0            730.0  10132.0           2027.0          11831.0
-    18333          12                  1       51  2027-12-01 2028-01-01        4        0            730.0  10132.0           2027.0          11831.0
-    18334          12                  1       51  2027-12-01 2028-01-01        5        0            730.0   3955.0           2027.0          11831.0
-    18335          12                  1       51  2027-12-01 2028-01-01        6        0            730.0   7294.0           2027.0          11831.0
-    18336          12                  1       51  2027-12-01 2028-01-01        7        0            730.0   9903.0           2027.0          11831.0
-    
-    [4284 rows x 11 columns]
+         codigo_submercado  estagio               data_inicio                  data_fim  cenario  patamar  duracao_patamar     valor  limite_inferior  limite_superior
+    0                    1        1 2022-09-03 00:00:00+00:00 2022-09-03 00:30:00+00:00        1        2              0.5  22206.06              0.0         53638.40
+    1                    1        2 2022-09-03 00:30:00+00:00 2022-09-03 01:00:00+00:00        1        2              0.5  20803.97              0.0         53638.40
+    2                    1        3 2022-09-03 01:00:00+00:00 2022-09-03 01:30:00+00:00        1        2              0.5  19624.69              0.0         53638.40
+    3                    1        4 2022-09-03 01:30:00+00:00 2022-09-03 02:00:00+00:00        1        2              0.5  18869.01              0.0         53638.40
+    4                    1        5 2022-09-03 02:00:00+00:00 2022-09-03 02:30:00+00:00        1        2              0.5  18239.59              0.0         53638.40
+    ..                 ...      ...                       ...                       ...      ...      ...              ...       ...              ...              ...
+    275                  4       66 2022-09-08 20:00:00+00:00 2022-09-09 00:00:00+00:00        1        1              4.0   5131.01              0.0         20912.74
+    276                  4       67 2022-09-09 00:00:00+00:00 2022-09-09 08:00:00+00:00        1        2              8.0   2706.70              0.0         20912.74
+    277                  4       68 2022-09-09 08:00:00+00:00 2022-09-09 10:00:00+00:00        1        1              2.0   2906.70              0.0         20912.74
+    278                  4       69 2022-09-09 10:00:00+00:00 2022-09-09 20:00:00+00:00        1        0             10.0   3342.78              0.0         20912.74
+    279                  4       70 2022-09-09 20:00:00+00:00 2022-09-10 00:00:00+00:00        1        1              4.0   4329.93              0.0         20912.74
+
+    [280 rows x 10 columns]
