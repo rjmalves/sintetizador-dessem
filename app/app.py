@@ -17,6 +17,31 @@ def app():
     pass
 
 
+@click.command("sistema")
+@click.argument(
+    "variaveis",
+    nargs=-1,
+)
+@click.option(
+    "--formato", default="PARQUET", help="formato para escrita da síntese"
+)
+def sistema(variaveis, formato):
+    """
+    Realiza a síntese dos dados do sistema do DECOMP.
+    """
+    os.environ["FORMATO_SINTESE"] = formato
+    Log.log().info("# Realizando síntese do SISTEMA #")
+
+    uow = factory(
+        "FS",
+        os.curdir,
+    )
+    command = commands.SynthetizeSystem(variaveis)
+    handlers.synthetize_system(command, uow)
+
+    Log.log().info("# Fim da síntese #")
+
+
 @click.command("operacao")
 @click.argument(
     "variaveis",
@@ -77,6 +102,9 @@ def limpeza():
 
 @click.command("completa")
 @click.option(
+    "--sistema", multiple=True, help="variável do sistema para síntese"
+)
+@click.option(
     "--operacao", multiple=True, help="variável da operação para síntese"
 )
 @click.option(
@@ -85,7 +113,7 @@ def limpeza():
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def completa(operacao, execucao, formato):
+def completa(sistema, operacao, execucao, formato):
     """
     Realiza a síntese completa do DESSEM.
     """
@@ -96,6 +124,8 @@ def completa(operacao, execucao, formato):
         "FS",
         os.curdir,
     )
+    command = commands.SynthetizeSystem(sistema)
+    handlers.synthetize_system(command, uow)
     command = commands.SynthetizeOperation(operacao)
     handlers.synthetize_operation(command, uow)
     command = commands.SynthetizeExecution(execucao)
@@ -105,6 +135,7 @@ def completa(operacao, execucao, formato):
 
 
 app.add_command(completa)
+app.add_command(sistema)
 app.add_command(operacao)
 app.add_command(execucao)
 app.add_command(limpeza)
