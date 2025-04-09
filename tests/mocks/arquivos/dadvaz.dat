@@ -1,0 +1,591 @@
+NUMERO DE USINAS
+XXX
+161
+NUMERO DAS USINAS NO CADASTRO
+1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36  37  38  39  40  41  42  43  44  45  46  47  48  49  50  51  52  53  54  55  56  57  58  59  60  61  62  63  64  65  66  67  68  69  70  71  72  73  74  75  76  77  78  79  80  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95  96  97  98  99  100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 
+XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX 
+1   2   4   24  27  28  25  33  156 134 10  143 162 148 217 193 141 14  18  37  40  42  15  16  38  39  62  63  52  51  47  49  61  50  45  43  34  153 46  120 121 6   7   8   12  17  31  30  251 278 123 129 20  287 257 122 124 130 131 133 125 180 181 182 147 146 107 108 109 117 118 119 32  11  135 139 262 88  89  144 66  110 111 112 113 114 74  76  82  83  115 73  71  72  57  77  78  93  91  92  252 253 267 281 9   26  86  90  97  98  99  103 169 172 173 174 175 178 190 189 275 272 279 280 204 127 126 283 261 48  249 241 304 305 196 195 95  203 154 310 29  94  215 155 311 312 315 21  290 101 276 102 277 285 286 284 227 228 229 192 230 
+Hr  Dd  Mm  Ano
+XX  XX  XX  XXXX
+00  03  09  2022
+Dia inic(1-SAB...7-SEX); sem da FCF; n. semanas; pre-interesse
+X X X X
+1 1 1 0
+VAZOES DIARIAS PARA CADA USINA (m3/s)
+NUM     NOME      itp   DI HI M DF HF M      VAZAO
+XXX XXXXXXXXXXXX   X    XXxXXxXxXXxXXxX     XXXXXXXXX
+  1 CAMARGOS       1    03      F                  41
+  1 CAMARGOS       1    05      F                  40
+  1 CAMARGOS       1    09      F                  39
+  2 ITUTINGA       1    03      F                   0
+  4 FUNIL-GRANDE   1    03      F                  48
+  4 FUNIL-GRANDE   1    06      F                  47
+ 24 EMBORCACAO     1    03      F                  96
+ 24 EMBORCACAO     1    04      F                  95
+ 24 EMBORCACAO     1    05      F                  94
+ 24 EMBORCACAO     1    07      F                  93
+ 27 CAPIM BRANC1   1    03      F                   0
+ 28 CAPIM BRANC2   1    03      F                   1
+ 25 NOVA PONTE     1    03      F                  69
+ 25 NOVA PONTE     1    04      F                  68
+ 25 NOVA PONTE     1    06      F                  67
+ 25 NOVA PONTE     1    08      F                  66
+ 33 SAO SIMAO      1    03      F                 267
+ 33 SAO SIMAO      1    04      F                 265
+ 33 SAO SIMAO      1    05      F                 264
+ 33 SAO SIMAO      1    06      F                 262
+ 33 SAO SIMAO      1    07      F                 261
+ 33 SAO SIMAO      1    08      F                 260
+ 33 SAO SIMAO      1    09      F                 258
+156 TRES MARIAS    1    03      F                 123
+156 TRES MARIAS    1    04      F                 122
+156 TRES MARIAS    1    05      F                 121
+156 TRES MARIAS    1    06      F                 120
+156 TRES MARIAS    1    07      F                 119
+156 TRES MARIAS    1    08      F                 118
+156 TRES MARIAS    1    09      F                 117
+134 SALTO GRANDE   1    03      F                  36
+134 SALTO GRANDE   1    06      F                  35
+ 10 IGARAPAVA      1    03      F                   5
+143 AIMORES        1    03      F                  33
+143 AIMORES        1    05      F                  32
+162 QUEIMADO       1    03      F                  10
+148 IRAPE          1    03      F                  12
+217 ROSAL          1    03      F                  14
+217 ROSAL          1    08      F                  13
+193 SA CARVALHO    1    03      F                   1
+141 BAGUARI        1    03      F                  76
+141 BAGUARI        1    08      F                  75
+ 14 CACONDE        1    03      F                  14
+ 14 CACONDE        1    08      F                  13
+ 18 A. VERMELHA    1    03      F                  85
+ 18 A. VERMELHA    1    05      F                  84
+ 18 A. VERMELHA    1    06      F                  83
+ 37 BARRA BONITA   1    03      F                 100
+ 37 BARRA BONITA   1    04      F                  99
+ 37 BARRA BONITA   1    06      F                  98
+ 37 BARRA BONITA   1    08      F                 102
+ 37 BARRA BONITA   1    09      F                 104
+ 40 PROMISSAO      1    03      F                  37
+ 40 PROMISSAO      1    05      F                  36
+ 40 PROMISSAO      1    06      F                  37
+ 40 PROMISSAO      1    07      F                  41
+ 40 PROMISSAO      1    08      F                  40
+ 40 PROMISSAO      1    09      F                  39
+ 42 NAVANHANDAVA   1    03      F                  15
+ 42 NAVANHANDAVA   1    04      F                  14
+ 42 NAVANHANDAVA   1    06      F                  15
+ 42 NAVANHANDAVA   1    07      F                  16
+ 42 NAVANHANDAVA   1    09      F                  15
+ 15 E. DA CUNHA    1    03      F                   9
+ 16 A.S.OLIVEIRA   1    03      F                   0
+ 38 A.S. LIMA      1    03      F                  23
+ 38 A.S. LIMA      1    07      F                  24
+ 39 IBITINGA       1    03      F                  45
+ 39 IBITINGA       1    05      F                  44
+ 39 IBITINGA       1    06      F                  45
+ 39 IBITINGA       1    07      F                  46
+ 39 IBITINGA       1    09      F                  45
+ 62 TAQUARUCU      1    03      F                  33
+ 62 TAQUARUCU      1    07      F                  34
+ 62 TAQUARUCU      1    08      F                  35
+ 63 ROSANA         1    03      F                  78
+ 63 ROSANA         1    07      F                  79
+ 63 ROSANA         1    08      F                  83
+ 63 ROSANA         1    09      F                  82
+ 52 CANOAS I       1    03      F                   7
+ 51 CANOAS II      1    03      F                   3
+ 47 A.A. LAYDNER   1    03      F                  62
+ 47 A.A. LAYDNER   1    05      F                  61
+ 47 A.A. LAYDNER   1    06      F                  60
+ 47 A.A. LAYDNER   1    08      F                  63
+ 47 A.A. LAYDNER   1    09      F                  64
+ 49 CHAVANTES      1    03      F                  34
+ 49 CHAVANTES      1    05      F                  35
+ 49 CHAVANTES      1    07      F                  39
+ 49 CHAVANTES      1    08      F                  53
+ 49 CHAVANTES      1    09      F                  56
+ 61 CAPIVARA       1    03      F                  93
+ 61 CAPIVARA       1    04      F                  91
+ 61 CAPIVARA       1    05      F                  90
+ 61 CAPIVARA       1    06      F                  89
+ 61 CAPIVARA       1    07      F                  97
+ 61 CAPIVARA       1    08      F                 109
+ 61 CAPIVARA       1    09      F                 120
+ 50 L.N. GARCEZ    1    03      F                  42
+ 50 L.N. GARCEZ    1    04      F                  41
+ 50 L.N. GARCEZ    1    07      F                  42
+ 50 L.N. GARCEZ    1    08      F                  44
+ 50 L.N. GARCEZ    1    09      F                  43
+ 45 JUPIA          1    03      F                 230
+ 45 JUPIA          1    04      F                 228
+ 45 JUPIA          1    05      F                 227
+ 45 JUPIA          1    06      F                 225
+ 45 JUPIA          1    07      F                 224
+ 45 JUPIA          1    08      F                 223
+ 45 JUPIA          1    09      F                 222
+ 43 TRES IRMAOS    1    03      F                  10
+ 43 TRES IRMAOS    1    05      F                   9
+ 34 I. SOLTEIRA    1    03      F                 149
+ 34 I. SOLTEIRA    1    04      F                 148
+ 34 I. SOLTEIRA    1    06      F                 147
+ 34 I. SOLTEIRA    1    09      F                 146
+153 SAO DOMINGOS   1    03      F                  78
+153 SAO DOMINGOS   1    07      F                  77
+ 46 P. PRIMAVERA   1    03      F                 398
+ 46 P. PRIMAVERA   1    04      F                 391
+ 46 P. PRIMAVERA   1    05      F                 385
+ 46 P. PRIMAVERA   1    06      F                 380
+ 46 P. PRIMAVERA   1    07      F                 376
+ 46 P. PRIMAVERA   1    08      F                 378
+ 46 P. PRIMAVERA   1    09      F                 381
+120 JAGUARI        1    03      F                   7
+121 PARAIBUNA      1    03      F                  27
+  6 FURNAS         1    03      F                 131
+  6 FURNAS         1    04      F                 130
+  6 FURNAS         1    05      F                 129
+  6 FURNAS         1    06      F                 128
+  6 FURNAS         1    07      F                 127
+  6 FURNAS         1    08      F                 126
+  7 M. DE MORAES   1    03      F                  19
+  7 M. DE MORAES   1    07      F                  18
+  8 ESTREITO       1    03      F                   4
+ 12 P. COLOMBIA    1    03      F                  36
+ 12 P. COLOMBIA    1    06      F                  35
+ 12 P. COLOMBIA    1    09      F                  34
+ 17 MARIMBONDO     1    03      F                 147
+ 17 MARIMBONDO     1    04      F                 146
+ 17 MARIMBONDO     1    05      F                 145
+ 17 MARIMBONDO     1    06      F                 144
+ 17 MARIMBONDO     1    08      F                 143
+ 31 ITUMBIARA      1    03      F                  66
+ 31 ITUMBIARA      1    05      F                  65
+ 31 ITUMBIARA      1    08      F                  64
+ 30 CORUMBA I      1    03      F                  54
+ 30 CORUMBA I      1    06      F                  53
+ 30 CORUMBA I      1    08      F                  52
+251 SERRA MESA     1    03      F                 118
+251 SERRA MESA     1    04      F                 117
+251 SERRA MESA     1    05      F                 116
+251 SERRA MESA     1    06      F                 114
+251 SERRA MESA     1    07      F                 113
+251 SERRA MESA     1    08      F                 112
+251 SERRA MESA     1    09      F                 111
+278 MANSO          1    03      F                  46
+278 MANSO          1    04      F                  45
+278 MANSO          1    08      F                  44
+123 FUNIL          1    03      F                  44
+129 SIMPLICIO      1    03      F                  82
+ 20 BATALHA        1    03      F                  20
+ 20 BATALHA        1    09      F                  19
+287 STO ANTONIO    1    03      F                 225
+287 STO ANTONIO    1    04      F                 258
+287 STO ANTONIO    1    05      F                 256
+287 STO ANTONIO    1    06      F                 215
+287 STO ANTONIO    1    07      F                 177
+287 STO ANTONIO    1    08      F                 136
+287 STO ANTONIO    1    09      F                 120
+257 PEIXE ANGIC    1    03      F                  92
+257 PEIXE ANGIC    1    04      F                  91
+257 PEIXE ANGIC    1    05      F                  90
+257 PEIXE ANGIC    1    06      F                  89
+257 PEIXE ANGIC    1    07      F                  88
+257 PEIXE ANGIC    1    08      F                  87
+257 PEIXE ANGIC    1    09      F                  86
+122 SANTA BRANCA   1    03      F                   5
+124 LAJES          1    03      F                   6
+130 ILHA POMBOS    1    03      F                   8
+131 NILO PECANHA   1    03      F                   0
+133 P. PASSOS      1    03      F                   0
+125 STA CECILIA    1    03      F                  24
+180 TOCOS          1    03      F                  15
+181 SANTANA        1    03      F                   7
+182 VIGARIO        1    03      F                   0
+147 FONTES AB      1    03      F                   0
+146 FONTES C       1    03      F                   0
+107 EDGARD SOUZA   1    03      F                  22
+107 EDGARD SOUZA   1    04      F                  26
+107 EDGARD SOUZA   1    05      F                  24
+107 EDGARD SOUZA   1    06      F                  22
+107 EDGARD SOUZA   1    07      F                  27
+107 EDGARD SOUZA   1    08      F                  24
+107 EDGARD SOUZA   1    09      F                  26
+108 TRAICAO        1    03      F                   0
+109 PEDREIRA       1    03      F                   0
+117 GUARAPIRANGA   1    03      F                   4
+117 GUARAPIRANGA   1    04      F                   5
+117 GUARAPIRANGA   1    06      F                   4
+117 GUARAPIRANGA   1    07      F                   5
+118 BILLINGS       1    03      F                   5
+118 BILLINGS       1    04      F                   6
+118 BILLINGS       1    06      F                   5
+118 BILLINGS       1    07      F                   6
+119 HENRY BORDEN   1    03      F                   0
+ 32 CACH.DOURADA   1    03      F                  18
+ 11 VOLTA GRANDE   1    03      F                  12
+ 11 VOLTA GRANDE   1    05      F                  11
+135 P. ESTRELA     1    03      F                   0
+139 CANDONGA       1    03      F                  78
+139 CANDONGA       1    04      F                  77
+139 CANDONGA       1    06      F                  76
+139 CANDONGA       1    09      F                  75
+262 SALTO          1    03      F                  74
+262 SALTO          1    07      F                  73
+ 88 SAO ROQUE      1    03      F                 153
+ 88 SAO ROQUE      1    04      F                 162
+ 88 SAO ROQUE      1    05      F                 158
+ 88 SAO ROQUE      1    06      F                 149
+ 88 SAO ROQUE      1    07      F                 146
+ 88 SAO ROQUE      1    08      F                 170
+ 88 SAO ROQUE      1    09      F                 185
+ 89 GARIBALDI      1    03      F                  34
+ 89 GARIBALDI      1    04      F                  36
+ 89 GARIBALDI      1    05      F                  35
+ 89 GARIBALDI      1    06      F                  33
+ 89 GARIBALDI      1    07      F                  32
+ 89 GARIBALDI      1    08      F                  38
+ 89 GARIBALDI      1    09      F                  41
+144 MASCARENHAS    1    03      F                  58
+ 66 ITAIPU         1    03      F                1542
+ 66 ITAIPU         1    04      F                1489
+ 66 ITAIPU         1    05      F                1442
+ 66 ITAIPU         1    06      F                1404
+ 66 ITAIPU         1    07      F                1381
+ 66 ITAIPU         1    08      F                1370
+ 66 ITAIPU         1    09      F                1414
+110 ERNESTINA      1    03      F                  35
+110 ERNESTINA      1    04      F                  28
+110 ERNESTINA      1    05      F                  25
+110 ERNESTINA      1    07      F                  28
+110 ERNESTINA      1    08      F                  26
+110 ERNESTINA      1    09      F                  36
+111 PASSO REAL     1    03      F                 178
+111 PASSO REAL     1    04      F                 167
+111 PASSO REAL     1    05      F                 159
+111 PASSO REAL     1    06      F                 155
+111 PASSO REAL     1    07      F                 153
+111 PASSO REAL     1    08      F                 150
+111 PASSO REAL     1    09      F                 153
+112 JACUI          1    03      F                   2
+112 JACUI          1    04      F                   1
+113 ITAUBA         1    03      F                  36
+113 ITAUBA         1    04      F                  29
+113 ITAUBA         1    05      F                  25
+113 ITAUBA         1    06      F                  23
+113 ITAUBA         1    08      F                  22
+113 ITAUBA         1    09      F                  24
+114 D. FRANCISCA   1    03      F                  40
+114 D. FRANCISCA   1    04      F                  32
+114 D. FRANCISCA   1    05      F                  28
+114 D. FRANCISCA   1    06      F                  26
+114 D. FRANCISCA   1    07      F                  25
+114 D. FRANCISCA   1    08      F                  24
+114 D. FRANCISCA   1    09      F                  26
+ 74 G.B. MUNHOZ    1    03      F                 543
+ 74 G.B. MUNHOZ    1    04      F                 518
+ 74 G.B. MUNHOZ    1    05      F                 488
+ 74 G.B. MUNHOZ    1    06      F                 474
+ 74 G.B. MUNHOZ    1    07      F                 516
+ 74 G.B. MUNHOZ    1    08      F                 555
+ 74 G.B. MUNHOZ    1    09      F                 548
+ 76 SEGREDO        1    03      F                 130
+ 76 SEGREDO        1    04      F                 125
+ 76 SEGREDO        1    05      F                 124
+ 76 SEGREDO        1    06      F                 157
+ 76 SEGREDO        1    07      F                 166
+ 76 SEGREDO        1    08      F                 146
+ 76 SEGREDO        1    09      F                 161
+ 82 SALTO CAXIAS   1    03      F                 209
+ 82 SALTO CAXIAS   1    04      F                 199
+ 82 SALTO CAXIAS   1    05      F                 185
+ 82 SALTO CAXIAS   1    06      F                 202
+ 82 SALTO CAXIAS   1    07      F                 274
+ 82 SALTO CAXIAS   1    08      F                 271
+ 82 SALTO CAXIAS   1    09      F                 247
+ 83 BAIXO IGUACU   1    03      F                 109
+115 G.P. SOUZA     1    03      F                  12
+115 G.P. SOUZA     1    05      F                  11
+115 G.P. SOUZA     1    06      F                  13
+115 G.P. SOUZA     1    07      F                  16
+115 G.P. SOUZA     1    08      F                  15
+115 G.P. SOUZA     1    09      F                  17
+ 73 JORDAO         1    03      F                  25
+ 73 JORDAO         1    04      F                  24
+ 73 JORDAO         1    06      F                  31
+ 73 JORDAO         1    07      F                  32
+ 73 JORDAO         1    08      F                  29
+ 73 JORDAO         1    09      F                  31
+ 71 STA CLARA PR   1    03      F                  68
+ 71 STA CLARA PR   1    04      F                  66
+ 71 STA CLARA PR   1    05      F                  64
+ 71 STA CLARA PR   1    06      F                  68
+ 71 STA CLARA PR   1    07      F                  87
+ 71 STA CLARA PR   1    08      F                  86
+ 71 STA CLARA PR   1    09      F                  85
+ 72 FUNDAO         1    03      F                   6
+ 72 FUNDAO         1    06      F                   8
+ 72 FUNDAO         1    08      F                   7
+ 72 FUNDAO         1    09      F                   8
+ 57 MAUA           1    03      F                 241
+ 57 MAUA           1    04      F                 236
+ 57 MAUA           1    05      F                 226
+ 57 MAUA           1    06      F                 220
+ 57 MAUA           1    07      F                 259
+ 57 MAUA           1    08      F                 254
+ 57 MAUA           1    09      F                 251
+ 77 SLT.SANTIAGO   1    03      F                  84
+ 77 SLT.SANTIAGO   1    04      F                  80
+ 77 SLT.SANTIAGO   1    05      F                  75
+ 77 SLT.SANTIAGO   1    06      F                  81
+ 77 SLT.SANTIAGO   1    07      F                 110
+ 77 SLT.SANTIAGO   1    08      F                 109
+ 77 SLT.SANTIAGO   1    09      F                  99
+ 78 SALTO OSORIO   1    03      F                  33
+ 78 SALTO OSORIO   1    04      F                  32
+ 78 SALTO OSORIO   1    05      F                  30
+ 78 SALTO OSORIO   1    06      F                  32
+ 78 SALTO OSORIO   1    07      F                  44
+ 78 SALTO OSORIO   1    08      F                  43
+ 78 SALTO OSORIO   1    09      F                  39
+ 93 PASSO FUNDO    1    03      F                  56
+ 93 PASSO FUNDO    1    04      F                  51
+ 93 PASSO FUNDO    1    05      F                  46
+ 93 PASSO FUNDO    1    06      F                  44
+ 93 PASSO FUNDO    1    07      F                  47
+ 93 PASSO FUNDO    1    08      F                  45
+ 93 PASSO FUNDO    1    09      F                  53
+ 91 MACHADINHO     1    03      F                 106
+ 91 MACHADINHO     1    04      F                 158
+ 91 MACHADINHO     1    05      F                 147
+ 91 MACHADINHO     1    06      F                 125
+ 91 MACHADINHO     1    07      F                 116
+ 91 MACHADINHO     1    08      F                 156
+ 91 MACHADINHO     1    09      F                 160
+ 92 ITA            1    03      F                 182
+ 92 ITA            1    04      F                 203
+ 92 ITA            1    05      F                 191
+ 92 ITA            1    06      F                 181
+ 92 ITA            1    07      F                 200
+ 92 ITA            1    08      F                 220
+ 92 ITA            1    09      F                 225
+252 CANA BRAVA     1    03      F                  12
+252 CANA BRAVA     1    07      F                  11
+253 SAO SALVADOR   1    03      F                  12
+253 SAO SALVADOR   1    05      F                  11
+267 ESTREITO TOC   1    03      F                 458
+267 ESTREITO TOC   1    04      F                 454
+267 ESTREITO TOC   1    05      F                 450
+267 ESTREITO TOC   1    06      F                 446
+267 ESTREITO TOC   1    07      F                 442
+267 ESTREITO TOC   1    08      F                 438
+267 ESTREITO TOC   1    09      F                 434
+281 PONTE PEDRA    1    03      F                  61
+281 PONTE PEDRA    1    08      F                  60
+  9 JAGUARA        1    03      F                   2
+ 26 MIRANDA        1    03      F                   3
+ 86 BARRA GRANDE   1    03      F                 203
+ 86 BARRA GRANDE   1    04      F                 196
+ 86 BARRA GRANDE   1    05      F                 175
+ 86 BARRA GRANDE   1    06      F                 177
+ 86 BARRA GRANDE   1    07      F                 212
+ 86 BARRA GRANDE   1    08      F                 233
+ 86 BARRA GRANDE   1    09      F                 311
+ 90 CAMPOS NOVOS   1    03      F                  19
+ 90 CAMPOS NOVOS   1    04      F                  20
+ 90 CAMPOS NOVOS   1    05      F                  19
+ 90 CAMPOS NOVOS   1    06      F                  18
+ 90 CAMPOS NOVOS   1    08      F                  21
+ 90 CAMPOS NOVOS   1    09      F                  22
+ 97 CASTRO ALVES   1    03      F                 131
+ 97 CASTRO ALVES   1    04      F                 121
+ 97 CASTRO ALVES   1    05      F                 105
+ 97 CASTRO ALVES   1    06      F                  98
+ 97 CASTRO ALVES   1    07      F                 109
+ 97 CASTRO ALVES   1    08      F                 118
+ 97 CASTRO ALVES   1    09      F                 152
+ 98 MONTE CLARO    1    03      F                  77
+ 98 MONTE CLARO    1    04      F                  82
+ 98 MONTE CLARO    1    05      F                  75
+ 98 MONTE CLARO    1    06      F                  70
+ 98 MONTE CLARO    1    07      F                  71
+ 98 MONTE CLARO    1    08      F                  75
+ 98 MONTE CLARO    1    09      F                  83
+ 99 14 DE JULHO    1    03      F                  10
+ 99 14 DE JULHO    1    04      F                  11
+ 99 14 DE JULHO    1    05      F                  10
+ 99 14 DE JULHO    1    06      F                   9
+ 99 14 DE JULHO    1    08      F                  10
+ 99 14 DE JULHO    1    09      F                  11
+103 FOZ CHAPECO    1    03      F                 123
+103 FOZ CHAPECO    1    04      F                 132
+103 FOZ CHAPECO    1    05      F                 123
+103 FOZ CHAPECO    1    06      F                 117
+103 FOZ CHAPECO    1    07      F                 119
+103 FOZ CHAPECO    1    08      F                 124
+103 FOZ CHAPECO    1    09      F                 122
+169 SOBRADINHO     1    03      F                 450
+169 SOBRADINHO     1    04      F                 478
+169 SOBRADINHO     1    05      F                 475
+169 SOBRADINHO     1    06      F                 473
+169 SOBRADINHO     1    07      F                 472
+169 SOBRADINHO     1    08      F                 477
+169 SOBRADINHO     1    09      F                 486
+172 ITAPARICA      1    03      F                   0
+173 MOXOTO         1    03      F                   0
+174 P.AFONSO 123   1    03      F                   0
+175 P.AFONSO 4     1    03      F                   0
+178 XINGO          1    03      F                   0
+190 B. ESPERANCA   1    03      F                 213
+190 B. ESPERANCA   1    04      F                 212
+190 B. ESPERANCA   1    05      F                 211
+190 B. ESPERANCA   1    07      F                 210
+190 B. ESPERANCA   1    09      F                 209
+189 P. CAVALO      1    03      F                  15
+275 TUCURUI        1    03      F                 755
+275 TUCURUI        1    04      F                 741
+275 TUCURUI        1    05      F                 727
+275 TUCURUI        1    06      F                 715
+275 TUCURUI        1    07      F                 704
+275 TUCURUI        1    08      F                 696
+275 TUCURUI        1    09      F                 688
+272 CURUA-UNA      1    03      F                 203
+272 CURUA-UNA      1    04      F                 200
+272 CURUA-UNA      1    05      F                 198
+272 CURUA-UNA      1    06      F                 195
+272 CURUA-UNA      1    07      F                 193
+272 CURUA-UNA      1    08      F                 190
+272 CURUA-UNA      1    09      F                 188
+279 SAMUEL         1    03      F                  42
+279 SAMUEL         1    04      F                  39
+279 SAMUEL         1    05      F                  36
+279 SAMUEL         1    06      F                  34
+279 SAMUEL         1    07      F                  32
+279 SAMUEL         1    08      F                  31
+280 COARACY NUNE   1    03      F                   2
+204 CACH.CALDEIR   1    03      F                 640
+204 CACH.CALDEIR   1    04      F                 630
+204 CACH.CALDEIR   1    05      F                 621
+204 CACH.CALDEIR   1    06      F                 605
+204 CACH.CALDEIR   1    07      F                 589
+204 CACH.CALDEIR   1    08      F                 576
+204 CACH.CALDEIR   1    09      F                 564
+127 SOBRAGI        1    03      F                  19
+126 PICADA         1    03      F                  15
+283 STA CLARA MG   1    03      F                   9
+261 LAJEADO        1    03      F                  97
+261 LAJEADO        1    04      F                  95
+261 LAJEADO        1    05      F                  94
+261 LAJEADO        1    06      F                  93
+261 LAJEADO        1    07      F                  92
+261 LAJEADO        1    08      F                  91
+261 LAJEADO        1    09      F                  90
+ 48 PIRAJU         1    03      F                   2
+ 48 PIRAJU         1    08      F                   3
+249 OURINHOS       1    03      F                   2
+241 SLT VERDINHO   1    03      F                   6
+304 ITIQUIRA I     1    03      F                  39
+304 ITIQUIRA I     1    06      F                  38
+305 ITIQUIRA II    1    03      F                   0
+196 GUAPORE        1    03      F                  28
+195 JAURU          1    03      F                  55
+ 95 QUEBRA QUEIX   1    03      F                  67
+ 95 QUEBRA QUEIX   1    05      F                  64
+ 95 QUEBRA QUEIX   1    06      F                  61
+ 95 QUEBRA QUEIX   1    07      F                  63
+ 95 QUEBRA QUEIX   1    08      F                  65
+ 95 QUEBRA QUEIX   1    09      F                  62
+203 CORUMBA III    1    03      F                   6
+154 ITAPEBI        1    03      F                   9
+310 DARDANELOS     1    03      F                  45
+310 DARDANELOS     1    04      F                  44
+310 DARDANELOS     1    06      F                  43
+310 DARDANELOS     1    07      F                  42
+310 DARDANELOS     1    09      F                  41
+ 29 CORUMBA IV     1    03      F                  24
+ 29 CORUMBA IV     1    06      F                  23
+ 94 MONJOLINHO     1    03      F                  39
+ 94 MONJOLINHO     1    04      F                  36
+ 94 MONJOLINHO     1    05      F                  32
+ 94 MONJOLINHO     1    06      F                  31
+ 94 MONJOLINHO     1    07      F                  33
+ 94 MONJOLINHO     1    08      F                  32
+ 94 MONJOLINHO     1    09      F                  38
+215 SALTO PILAO    1    03      F                  65
+215 SALTO PILAO    1    04      F                  62
+215 SALTO PILAO    1    05      F                  57
+215 SALTO PILAO    1    06      F                  56
+215 SALTO PILAO    1    07      F                  85
+215 SALTO PILAO    1    09      F                  86
+155 RETIRO BAIXO   1    03      F                  38
+155 RETIRO BAIXO   1    04      F                  37
+155 RETIRO BAIXO   1    07      F                  36
+311 CACU           1    03      F                  51
+311 CACU           1    06      F                  50
+311 CACU           1    09      F                  49
+312 B. COQUEIROS   1    03      F                   2
+315 FOZ R. CLARO   1    03      F                   4
+ 21 SERRA FACAO    1    03      F                  13
+ 21 SERRA FACAO    1    06      F                  12
+290 ESPORA         1    03      F                  42
+290 ESPORA         1    07      F                  41
+101 SAO JOSE       1    03      F                 148
+101 SAO JOSE       1    04      F                 152
+101 SAO JOSE       1    05      F                 153
+101 SAO JOSE       1    06      F                 147
+101 SAO JOSE       1    07      F                 142
+101 SAO JOSE       1    08      F                 138
+101 SAO JOSE       1    09      F                 136
+276 RONDON II      1    03      F                  60
+276 RONDON II      1    05      F                  59
+102 PASSO S JOAO   1    03      F                   6
+102 PASSO S JOAO   1    07      F                   5
+277 BALBINA        1    03      F                 531
+277 BALBINA        1    04      F                 516
+277 BALBINA        1    05      F                 499
+277 BALBINA        1    06      F                 485
+277 BALBINA        1    07      F                 473
+277 BALBINA        1    08      F                 464
+277 BALBINA        1    09      F                 454
+285 JIRAU          1    03      F                4414
+285 JIRAU          1    04      F                4380
+285 JIRAU          1    05      F                4336
+285 JIRAU          1    06      F                4284
+285 JIRAU          1    07      F                4231
+285 JIRAU          1    08      F                4195
+285 JIRAU          1    09      F                4173
+286 STO ANT JARI   1    03      F                1144
+286 STO ANT JARI   1    04      F                1115
+286 STO ANT JARI   1    05      F                1085
+286 STO ANT JARI   1    06      F                1055
+286 STO ANT JARI   1    07      F                1027
+286 STO ANT JARI   1    08      F                1000
+286 STO ANT JARI   1    09      F                 975
+284 FERREIRA GOM   1    03      F                   5
+227 SINOP          1    03      F                 354
+227 SINOP          1    04      F                 352
+227 SINOP          1    05      F                 350
+227 SINOP          1    06      F                 349
+227 SINOP          1    07      F                 347
+227 SINOP          1    08      F                 345
+227 SINOP          1    09      F                 343
+228 COLIDER        1    03      F                  33
+228 COLIDER        1    06      F                  32
+229 TELES PIRES    1    03      F                 131
+229 TELES PIRES    1    04      F                 129
+229 TELES PIRES    1    05      F                 127
+229 TELES PIRES    1    06      F                 125
+229 TELES PIRES    1    07      F                 124
+229 TELES PIRES    1    08      F                 122
+229 TELES PIRES    1    09      F                 120
+192 GUILMAN-AMOR   1    03      F                  28
+192 GUILMAN-AMOR   1    08      F                  27
+230 SAO MANOEL     1    03      F                   1
+288 BELO MONTE     1    03      F                   0
+314 PIMENTAL       1    03      F                1074
+314 PIMENTAL       1    04      F                1060
+314 PIMENTAL       1    05      F                1046
+314 PIMENTAL       1    06      F                1032
+314 PIMENTAL       1    07      F                1019
+314 PIMENTAL       1    08      F                1005
+314 PIMENTAL       1    09      F                 992
+FIM
