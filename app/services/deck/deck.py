@@ -1,14 +1,18 @@
 import logging
+from datetime import datetime, timedelta
 from functools import partial
 from typing import Any, Dict, Optional, Type, TypeVar
-from datetime import datetime, timedelta
+
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
-from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.dadvaz import Dadvaz
 from idessem.dessem.des_log_relato import DesLogRelato
+from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.entdados import Entdados
 from idessem.dessem.log_matriz import LogMatriz
+from idessem.dessem.modelos.dessemarq import RegistroTitulo
+from idessem.dessem.operuh import Operuh
+from idessem.dessem.pdo_eco_usih import PdoEcoUsih
 from idessem.dessem.pdo_eolica import PdoEolica
 from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_inter import PdoInter
@@ -17,11 +21,7 @@ from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
-from idessem.dessem.pdo_eco_usih import PdoEcoUsih
-from idessem.dessem.operuh import Operuh
-from idessem.dessem.modelos.dessemarq import RegistroTitulo
 
-from app.utils.operations import fast_group_df
 from app.internal.constants import (
     BLOCK_COL,
     BLOCK_DURATION_COL,
@@ -32,7 +32,9 @@ from app.internal.constants import (
     EXCHANGE_TARGET_CODE_COL,
     HYDRO_CODE_COL,
     HYDRO_NAME_COL,
+    IDENTIFICATION_COLUMNS,
     IV_SUBMARKET_CODE,
+    LOWER_BOUND_COL,
     RUNTIME_COL,
     SCENARIO_COL,
     STAGE_COL,
@@ -41,12 +43,11 @@ from app.internal.constants import (
     SUBMARKET_NAME_COL,
     THERMAL_CODE_COL,
     THERMAL_NAME_COL,
-    VALUE_COL,
-    LOWER_BOUND_COL,
     UPPER_BOUND_COL,
-    IDENTIFICATION_COLUMNS,
+    VALUE_COL,
 )
 from app.services.unitofwork import AbstractUnitOfWork
+from app.utils.operations import fast_group_df
 
 
 class Deck:
@@ -330,12 +331,10 @@ class Deck:
             total_uhes = len(df_vol_ini)
 
             # Volumes percentuais
-            perc_volumes = np.concatenate(
-                (
-                    perc_initial_volumes,
-                    df["volume_final_percentual"].to_numpy()[:-total_uhes],
-                )
-            )
+            perc_volumes = np.concatenate((
+                perc_initial_volumes,
+                df["volume_final_percentual"].to_numpy()[:-total_uhes],
+            ))
             df["volume_inicial_percentual"] = perc_volumes
 
             # Volumes absolutos totais
@@ -348,12 +347,10 @@ class Deck:
             abs_initial_volumes = min_volumes + 0.01 * perc_initial_volumes * (
                 max_volumes - min_volumes
             )
-            abs_volumes = np.concatenate(
-                (
-                    abs_initial_volumes,
-                    df["volume_final_absoluto_hm3"].to_numpy()[:-total_uhes],
-                )
-            )
+            abs_volumes = np.concatenate((
+                abs_initial_volumes,
+                df["volume_final_absoluto_hm3"].to_numpy()[:-total_uhes],
+            ))
             df["volume_inicial_absoluto_hm3"] = abs_volumes
 
             return df
@@ -1364,6 +1361,50 @@ class Deck:
         ].copy()
 
     @classmethod
+    def thermal_costs(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = cls.DECK_DATA_CACHING.get("thermal_costs")
+        if df is None:
+            pdo_oper_term = cls._validate_data(
+                cls._get_pdo_oper_term(uow),
+                PdoOperTerm,
+                "pdo_oper_term",
+            )
+            df = cls._validate_data(
+                pdo_oper_term.tabela,
+                pd.DataFrame,
+                "pdo_oper_term",
+            )
+            df = df.rename(
+                columns={
+                    "estagio": STAGE_COL,
+                    "codigo_usina": THERMAL_CODE_COL,
+                }
+            )
+            df = df.groupby(
+                [STAGE_COL, THERMAL_CODE_COL],
+                as_index=False,
+            ).min(numeric_only=True)
+            stage_df = cls.stages_durations(uow)[[START_DATE_COL]]
+            num_entities = len(df.loc[df[STAGE_COL] == 1])
+            df[START_DATE_COL] = np.repeat(
+                stage_df[START_DATE_COL].tolist(), num_entities
+            )
+            df = df.rename(
+                columns={
+                    "custo_linear": VALUE_COL,
+                }
+            )
+
+            # df = cls.pdo_oper_term_ute("custo_linear", uow)
+            df = (
+                df[[THERMAL_CODE_COL, START_DATE_COL, VALUE_COL]]
+                .drop_duplicates()
+                .reset_index(drop=True)
+            )
+            cls.DECK_DATA_CACHING["thermal_costs"] = df
+        return df.copy()
+
+    @classmethod
     def _group_thermal_bounds_df(
         cls,
         df: pd.DataFrame,
@@ -1757,14 +1798,12 @@ class Deck:
         stages = cls.stages_durations(uow)[STAGE_COL].tolist()
         hydros = cls.hydro_eer_map(uow)[HYDRO_CODE_COL].unique().tolist()
 
-        df = pd.DataFrame(
-            {
-                HYDRO_CODE_COL: np.tile(hydros, len(stages)),
-                STAGE_COL: np.repeat(stages, len(hydros)),
-                LOWER_BOUND_COL: np.repeat(lower, len(hydros) * len(stages)),
-                UPPER_BOUND_COL: np.repeat(upper, len(hydros) * len(stages)),
-            }
-        )
+        df = pd.DataFrame({
+            HYDRO_CODE_COL: np.tile(hydros, len(stages)),
+            STAGE_COL: np.repeat(stages, len(hydros)),
+            LOWER_BOUND_COL: np.repeat(lower, len(hydros) * len(stages)),
+            UPPER_BOUND_COL: np.repeat(upper, len(hydros) * len(stages)),
+        })
         return df
 
     @classmethod

@@ -107,6 +107,16 @@ def test_synthesis_ute(test_settings):
     __validate_metadata(synthesis_str, df_meta)
 
 
+def test_synthesis_cvu(test_settings):
+    synthesis_str = "CVU"
+    start_date = datetime(2022, 9, 3)
+    df, df_meta = __synthetize_with_mock(synthesis_str)
+    assert df.at[0, THERMAL_CODE_COL] == 1
+    assert df.at[0, START_DATE_COL] == start_date
+    assert df.at[0, VALUE_COL] == 31.17
+    __validate_metadata(synthesis_str, df_meta)
+
+
 def test_synthesis_uhe(test_settings):
     synthesis_str = "UHE"
     df, df_meta = __synthetize_with_mock(synthesis_str)

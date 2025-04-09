@@ -24,5 +24,6 @@ SUPPORTED_SYNTHESIS: list[str] = [
     "REE",
     "SBM",
     "UTE",
+    "CVU",
     "UHE",
 ]

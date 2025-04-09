@@ -7,6 +7,7 @@ class Variable(Enum):
     SBM = "SBM"
     REE = "REE"
     UTE = "UTE"
+    CVU = "CVU"
     UGT = "UGT"
     UHE = "UHE"
     UGH = "UGH"
@@ -29,6 +30,7 @@ class Variable(Enum):
             "SBM": "SBM",
             "REE": "REE",
             "UTE": "UTE",
+            "CVU": "CVU",
             "UGT": "UGT",
             "UHE": "UHE",
             "UGH": "UGH",
@@ -43,6 +45,7 @@ class Variable(Enum):
             "SBM": "Submercados",
             "REE": "Reservatórios Equivalentes",
             "UTE": "Usinas Termelétricas",
+            "CVU": "Custos das Usinas Termelétricas",
             "UGT": "Unidades Geradoras de Termelétricas",
             "UHE": "Usinas Hidroelétricas",
             "UGH": "Unidades Geradoras de Hidroelétricas",

@@ -92,6 +92,7 @@ class SystemSynthetizer:
             Variable.SBM: cls._resolve_SBM,
             Variable.REE: cls._resolve_REE,
             Variable.UTE: cls._resolve_UTE,
+            Variable.CVU: cls._resolve_CVU,
             Variable.UHE: cls._resolve_UHE,
         }
         return RULES[synthesis.variable](uow)
@@ -138,6 +139,14 @@ class SystemSynthetizer:
         df = Deck.thermals(uow)
         if df is None:
             cls._log("Dados de usinas térmicas não encontrados", ERROR)
+            raise RuntimeError()
+        return df
+
+    @classmethod
+    def _resolve_CVU(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+        df = Deck.thermal_costs(uow)
+        if df is None:
+            cls._log("Dados de CVU de usinas térmicas não encontrados", ERROR)
             raise RuntimeError()
         return df
 
