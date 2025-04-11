@@ -60,6 +60,8 @@ class Variable(Enum):
             "INT": "Intercâmbio",
             "MER": "Mercado",
             "MERL": "Mercado Líq.",
+            "VCALHA": "VAR Calha",
+            "VAGUA": "VAGUA",
         }
         return SHORT_NAMES.get(self.value)
 
@@ -87,5 +89,7 @@ class Variable(Enum):
             "INT": "Intercâmbio de Energia",
             "MER": "Mercado de Energia",
             "MERL": "Mercado de Energia Líquido",
+            "VCALHA": "Volume Armazenado na Calha",
+            "VAGUA": "Valor da Água",
         }
         return LONG_NAMES.get(self.value)
