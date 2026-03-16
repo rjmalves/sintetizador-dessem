@@ -163,5 +163,3 @@ deck_teste/*
 docs/build/**
 
 # UV
-
-uv.lock

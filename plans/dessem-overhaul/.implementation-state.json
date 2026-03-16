@@ -1,0 +1,329 @@
+{
+  "plan": "dessem-overhaul",
+  "last_updated": "2026-03-16T22:22:49Z",
+  "progressive": true,
+  "tickets": {
+    "ticket-001-update-pyproject-and-python-version.md": {
+      "status": "completed",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        },
+        "quality": 0.85,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 0.5,
+          "type_safety": 0.5,
+          "test_delta": 1.0
+        }
+      },
+      "workflow_step": null,
+      "agent": "direct"
+    },
+    "ticket-002-modernize-ci-workflows.md": {
+      "status": "completed",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        },
+        "quality": 0.95,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.5,
+          "test_delta": 1.0
+        }
+      },
+      "workflow_step": null,
+      "agent": "direct"
+    },
+    "ticket-003-add-precommit-and-tooling.md": {
+      "status": "completed",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        },
+        "quality": 0.90,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.5,
+          "test_delta": 1.0
+        }
+      },
+      "workflow_step": null,
+      "agent": "direct"
+    },
+    "ticket-004-add-release-workflow-and-docs.md": {
+      "status": "completed",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        },
+        "quality": 0.92,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.5,
+          "test_delta": 1.0
+        }
+      },
+      "workflow_step": null,
+      "agent": "direct"
+    },
+    "ticket-005-upgrade-idessem-dependency.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-006-add-mypy-overrides-for-idessem.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-007-verify-files-repository-compatibility.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-008-create-deck-context-dataclass.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-009-extract-accessors-module.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-010-extract-temporal-module.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-011-extract-entities-module.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-012-extract-hydro-module.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-013-extract-thermal-and-system-modules.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-014-reduce-deck-to-facade.md": {
+      "status": "pending",
+      "detail_level": "detailed",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        }
+      }
+    },
+    "ticket-015-create-operation-synthesis-package.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-016-extract-operation-cache-and-export.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-017-extract-resolution-modules.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-018-create-operation-orchestrator.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-019-add-polars-dependency.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-020-add-polars-export-repository.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-021-migrate-deck-hot-paths-to-polars.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-022-migrate-operation-synthesis-to-polars.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-023-add-multiprocessing-logger.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-024-add-processadores-cli-option.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-025-integrate-process-pool-executor.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-026-enable-mypy-strict-full.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-027-type-annotations-and-constants-audit.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    },
+    "ticket-028-documentation-and-final-polish.md": {
+      "status": "pending",
+      "detail_level": "outline"
+    }
+  },
+  "epics": {
+    "epic-01-infrastructure": {
+      "phase": "executing",
+      "learning_extracted": false
+    },
+    "epic-02-idessem-upgrade": {
+      "phase": "executing",
+      "learning_extracted": false
+    },
+    "epic-03-deck-decomposition": {
+      "phase": "executing",
+      "learning_extracted": false
+    },
+    "epic-04-operation-decomposition": {
+      "phase": "outline",
+      "learning_extracted": false
+    },
+    "epic-05-polars-migration": {
+      "phase": "outline",
+      "learning_extracted": false
+    },
+    "epic-06-parallelism": {
+      "phase": "outline",
+      "learning_extracted": false
+    },
+    "epic-07-quality-polish": {
+      "phase": "outline",
+      "learning_extracted": false
+    }
+  }
+}
