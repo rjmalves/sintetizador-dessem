@@ -18,7 +18,7 @@ Modernize sintetizador-dessem to match sintetizador-newave's refactored architec
 | 01   | Infrastructure & Dependency Modernization | 4       | Detailed     |
 | 02   | idessem Upgrade & API Adaptation          | 3       | Detailed     |
 | 03   | Code Decomposition - Deck Service         | 7       | Detailed     |
-| 04   | Code Decomposition - Operation Synthesis  | 4       | Outline      |
+| 04   | Code Decomposition - Operation Synthesis  | 4       | Refined      |
 | 05   | Polars Migration                          | 4       | Outline      |
 | 06   | Parallelism & Logging                     | 3       | Outline      |
 | 07   | Quality & Polish                          | 3       | Outline      |
@@ -41,10 +41,10 @@ Modernize sintetizador-dessem to match sintetizador-newave's refactored architec
 | ticket-012 | Extract hydro module                           | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
 | ticket-013 | Extract thermal and system modules             | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
 | ticket-014 | Reduce deck to facade                          | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
-| ticket-015 | Create operation synthesis package             | epic-04 | pending   | Outline      | --        | --      | --         |
-| ticket-016 | Extract operation cache and export             | epic-04 | pending   | Outline      | --        | --      | --         |
-| ticket-017 | Extract spatial resolution modules             | epic-04 | pending   | Outline      | --        | --      | --         |
-| ticket-018 | Create operation orchestrator and pipeline     | epic-04 | pending   | Outline      | --        | --      | --         |
+| ticket-015 | Create operation synthesis package             | epic-04 | completed | Refined      | 1.00      | 0.95    | EXCELLENT  |
+| ticket-016 | Extract operation cache and export             | epic-04 | completed | Refined      | 1.00      | 0.95    | EXCELLENT  |
+| ticket-017 | Extract spatial resolution modules             | epic-04 | completed | Refined      | 1.00      | 0.95    | EXCELLENT  |
+| ticket-018 | Create operation orchestrator and pipeline     | epic-04 | completed | Refined      | 0.98      | 0.95    | EXCELLENT  |
 | ticket-019 | Add Polars dependency and export method        | epic-05 | pending   | Outline      | --        | --      | --         |
 | ticket-020 | Implement native Polars Parquet export         | epic-05 | pending   | Outline      | --        | --      | --         |
 | ticket-021 | Migrate deck hot paths to Polars               | epic-05 | pending   | Outline      | --        | --      | --         |
