@@ -34,13 +34,13 @@ Modernize sintetizador-dessem to match sintetizador-newave's refactored architec
 | ticket-005 | Upgrade idessem dependency to >= 1.1.0         | epic-02 | completed | Detailed     | 1.00      | 0.95    | EXCELLENT  |
 | ticket-006 | Add mypy overrides for idessem and cfinterface | epic-02 | completed | Detailed     | 1.00      | 0.85    | ACCEPTABLE |
 | ticket-007 | Verify files repository compatibility          | epic-02 | completed | Detailed     | 1.00      | 0.90    | EXCELLENT  |
-| ticket-008 | Create DeckContext dataclass                   | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
-| ticket-009 | Extract accessors module                       | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
-| ticket-010 | Extract temporal module                        | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
-| ticket-011 | Extract entities module                        | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
-| ticket-012 | Extract hydro module                           | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
-| ticket-013 | Extract thermal and system modules             | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
-| ticket-014 | Reduce deck to facade                          | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
+| ticket-008 | Create DeckContext dataclass                   | epic-03 | completed | Detailed     | 1.00      | 0.95    | EXCELLENT  |
+| ticket-009 | Extract accessors module                       | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
+| ticket-010 | Extract temporal module                        | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
+| ticket-011 | Extract entities module                        | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
+| ticket-012 | Extract hydro module                           | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
+| ticket-013 | Extract thermal and system modules             | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
+| ticket-014 | Reduce deck to facade                          | epic-03 | completed | Detailed     | 1.00      | 0.93    | EXCELLENT  |
 | ticket-015 | Create operation synthesis package             | epic-04 | pending   | Outline      | --        | --      | --         |
 | ticket-016 | Extract operation cache and export             | epic-04 | pending   | Outline      | --        | --      | --         |
 | ticket-017 | Extract spatial resolution modules             | epic-04 | pending   | Outline      | --        | --      | --         |

@@ -1,6 +1,6 @@
 {
   "plan": "dessem-overhaul",
-  "last_updated": "2026-03-16T22:30:36Z",
+  "last_updated": "2026-03-16T23:25:04Z",
   "progressive": true,
   "tickets": {
     "ticket-001-update-pyproject-and-python-version.md": {
@@ -172,7 +172,7 @@
       "agent": "direct"
     },
     "ticket-008-create-deck-context-dataclass.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -182,11 +182,21 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.95,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
         }
-      }
+      },
+      "workflow_step": null,
+      "agent": "direct"
     },
     "ticket-009-extract-accessors-module.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -196,11 +206,21 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.93,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 0.95,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
         }
-      }
+      },
+      "agent": "python-task-automation-developer",
+      "workflow_step": null
     },
     "ticket-010-extract-temporal-module.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -210,11 +230,21 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.93,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 0.95,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
         }
-      }
+      },
+      "agent": "python-task-automation-developer",
+      "workflow_step": null
     },
     "ticket-011-extract-entities-module.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -224,11 +254,21 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.93,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 0.95,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
         }
-      }
+      },
+      "agent": "python-task-automation-developer",
+      "workflow_step": null
     },
     "ticket-012-extract-hydro-module.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -238,11 +278,21 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.93,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 0.95,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
         }
-      }
+      },
+      "agent": "python-task-automation-developer",
+      "workflow_step": null
     },
     "ticket-013-extract-thermal-and-system-modules.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -252,11 +302,21 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.93,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 0.95,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
         }
-      }
+      },
+      "agent": "python-task-automation-developer",
+      "workflow_step": null
     },
     "ticket-014-reduce-deck-to-facade.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -266,8 +326,18 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.93,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 0.95,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
         }
-      }
+      },
+      "agent": "python-task-automation-developer",
+      "workflow_step": null
     },
     "ticket-015-create-operation-synthesis-package.md": {
       "status": "pending",
@@ -332,8 +402,8 @@
       "learning_extracted": true
     },
     "epic-02-idessem-upgrade": {
-      "phase": "executing",
-      "learning_extracted": false
+      "phase": "completed",
+      "learning_extracted": true
     },
     "epic-03-deck-decomposition": {
       "phase": "executing",
