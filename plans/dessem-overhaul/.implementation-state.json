@@ -1,6 +1,6 @@
 {
   "plan": "dessem-overhaul",
-  "last_updated": "2026-03-16T22:22:49Z",
+  "last_updated": "2026-03-16T22:30:36Z",
   "progressive": true,
   "tickets": {
     "ticket-001-update-pyproject-and-python-version.md": {
@@ -100,7 +100,7 @@
       "agent": "direct"
     },
     "ticket-005-upgrade-idessem-dependency.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -110,11 +110,21 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.95,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.5,
+          "test_delta": 1.0
         }
-      }
+      },
+      "workflow_step": null,
+      "agent": "direct"
     },
     "ticket-006-add-mypy-overrides-for-idessem.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -124,11 +134,21 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.85,
+        "quality_breakdown": {
+          "conformance": 0.75,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
         }
-      }
+      },
+      "workflow_step": null,
+      "agent": "direct"
     },
     "ticket-007-verify-files-repository-compatibility.md": {
-      "status": "pending",
+      "status": "completed",
       "detail_level": "detailed",
       "scores": {
         "readiness": 1.0,
@@ -138,8 +158,18 @@
           "boundary": 1.0,
           "dependency_clarity": 1.0,
           "atomicity": 1.0
+        },
+        "quality": 0.90,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.5,
+          "test_delta": 1.0
         }
-      }
+      },
+      "workflow_step": null,
+      "agent": "direct"
     },
     "ticket-008-create-deck-context-dataclass.md": {
       "status": "pending",
@@ -298,8 +328,8 @@
   },
   "epics": {
     "epic-01-infrastructure": {
-      "phase": "executing",
-      "learning_extracted": false
+      "phase": "completed",
+      "learning_extracted": true
     },
     "epic-02-idessem-upgrade": {
       "phase": "executing",

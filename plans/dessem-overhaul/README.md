@@ -31,9 +31,9 @@ Modernize sintetizador-dessem to match sintetizador-newave's refactored architec
 | ticket-002 | Modernize CI workflows                         | epic-01 | completed | Detailed     | 1.00      | 0.95    | EXCELLENT  |
 | ticket-003 | Add pre-commit hooks and tooling               | epic-01 | completed | Detailed     | 1.00      | 0.90    | EXCELLENT  |
 | ticket-004 | Add release workflow and contributing guide    | epic-01 | completed | Detailed     | 1.00      | 0.92    | EXCELLENT  |
-| ticket-005 | Upgrade idessem dependency to >= 1.1.0         | epic-02 | pending   | Detailed     | 1.00      | --      | --         |
-| ticket-006 | Add mypy overrides for idessem and cfinterface | epic-02 | pending   | Detailed     | 1.00      | --      | --         |
-| ticket-007 | Verify files repository compatibility          | epic-02 | pending   | Detailed     | 1.00      | --      | --         |
+| ticket-005 | Upgrade idessem dependency to >= 1.1.0         | epic-02 | completed | Detailed     | 1.00      | 0.95    | EXCELLENT  |
+| ticket-006 | Add mypy overrides for idessem and cfinterface | epic-02 | completed | Detailed     | 1.00      | 0.85    | ACCEPTABLE |
+| ticket-007 | Verify files repository compatibility          | epic-02 | completed | Detailed     | 1.00      | 0.90    | EXCELLENT  |
 | ticket-008 | Create DeckContext dataclass                   | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
 | ticket-009 | Extract accessors module                       | epic-03 | pending   | Detailed     | 1.00      | --      | --         |
 | ticket-010 | Extract temporal module                        | epic-03 | pending   | Detailed     | 1.00      | --      | --         |

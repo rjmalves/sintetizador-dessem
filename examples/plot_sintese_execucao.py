@@ -36,9 +36,10 @@ Síntese da Execução
 # %%
 # Os arquivos serão salvos no subdiretório `sintese`. Para realizar o processamento,
 # pode ser utilizado o próprio `python`:
-import plotly.express as px
 from datetime import timedelta
+
 import pandas as pd
+import plotly.express as px
 
 # %%
 # Para a síntese da execução é produzido um arquivo com as informações das sínteses

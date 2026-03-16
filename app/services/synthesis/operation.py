@@ -11,9 +11,9 @@ from app.internal.constants import (
     OPERATION_SYNTHESIS_STATS_ROOT,
     OPERATION_SYNTHESIS_SUBDIR,
     STRING_DF_TYPE,
+    SUBMARKET_CODE_COL,
     VALUE_COL,
     VARIABLE_COL,
-    SUBMARKET_CODE_COL,
 )
 from app.model.operation.operationsynthesis import (
     SUPPORTED_SYNTHESIS,

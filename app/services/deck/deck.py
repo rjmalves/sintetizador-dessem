@@ -331,10 +331,12 @@ class Deck:
             total_uhes = len(df_vol_ini)
 
             # Volumes percentuais
-            perc_volumes = np.concatenate((
-                perc_initial_volumes,
-                df["volume_final_percentual"].to_numpy()[:-total_uhes],
-            ))
+            perc_volumes = np.concatenate(
+                (
+                    perc_initial_volumes,
+                    df["volume_final_percentual"].to_numpy()[:-total_uhes],
+                )
+            )
             df["volume_inicial_percentual"] = perc_volumes
 
             # Volumes absolutos totais
@@ -347,10 +349,12 @@ class Deck:
             abs_initial_volumes = min_volumes + 0.01 * perc_initial_volumes * (
                 max_volumes - min_volumes
             )
-            abs_volumes = np.concatenate((
-                abs_initial_volumes,
-                df["volume_final_absoluto_hm3"].to_numpy()[:-total_uhes],
-            ))
+            abs_volumes = np.concatenate(
+                (
+                    abs_initial_volumes,
+                    df["volume_final_absoluto_hm3"].to_numpy()[:-total_uhes],
+                )
+            )
             df["volume_inicial_absoluto_hm3"] = abs_volumes
 
             return df
@@ -1798,12 +1802,14 @@ class Deck:
         stages = cls.stages_durations(uow)[STAGE_COL].tolist()
         hydros = cls.hydro_eer_map(uow)[HYDRO_CODE_COL].unique().tolist()
 
-        df = pd.DataFrame({
-            HYDRO_CODE_COL: np.tile(hydros, len(stages)),
-            STAGE_COL: np.repeat(stages, len(hydros)),
-            LOWER_BOUND_COL: np.repeat(lower, len(hydros) * len(stages)),
-            UPPER_BOUND_COL: np.repeat(upper, len(hydros) * len(stages)),
-        })
+        df = pd.DataFrame(
+            {
+                HYDRO_CODE_COL: np.tile(hydros, len(stages)),
+                STAGE_COL: np.repeat(stages, len(hydros)),
+                LOWER_BOUND_COL: np.repeat(lower, len(hydros) * len(stages)),
+                UPPER_BOUND_COL: np.repeat(upper, len(hydros) * len(stages)),
+            }
+        )
         return df
 
     @classmethod

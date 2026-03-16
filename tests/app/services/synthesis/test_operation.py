@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
+from idessem.dessem.pdo_eco_usih import PdoEcoUsih
 from idessem.dessem.pdo_eolica import PdoEolica
 from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_inter import PdoInter
@@ -10,7 +11,6 @@ from idessem.dessem.pdo_oper_term import PdoOperTerm
 from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
-from idessem.dessem.pdo_eco_usih import PdoEcoUsih
 
 from app.internal.constants import (
     IV_SUBMARKET_CODE,

@@ -3,9 +3,9 @@ import shutil
 
 import app.domain.commands as commands
 from app.model.settings import Settings
-from app.services.synthesis.system import SystemSynthetizer
 from app.services.synthesis.execution import ExecutionSynthetizer
 from app.services.synthesis.operation import OperationSynthetizer
+from app.services.synthesis.system import SystemSynthetizer
 from app.services.unitofwork import AbstractUnitOfWork
 
 

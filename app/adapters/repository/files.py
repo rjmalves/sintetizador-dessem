@@ -9,6 +9,8 @@ from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.entdados import Entdados
 from idessem.dessem.log_matriz import LogMatriz
+from idessem.dessem.operuh import Operuh
+from idessem.dessem.pdo_eco_usih import PdoEcoUsih
 from idessem.dessem.pdo_eolica import PdoEolica
 from idessem.dessem.pdo_hidr import PdoHidr
 from idessem.dessem.pdo_inter import PdoInter
@@ -17,8 +19,6 @@ from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
-from idessem.dessem.pdo_eco_usih import PdoEcoUsih
-from idessem.dessem.operuh import Operuh
 
 from app.model.settings import Settings
 from app.utils.encoding import converte_codificacao

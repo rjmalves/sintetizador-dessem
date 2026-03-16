@@ -1,10 +1,12 @@
-import pandas as pd  # type: ignore
 from typing import Callable, Dict
+
+import pandas as pd  # type: ignore
+
 from app.internal.constants import (
+    PANDAS_GROUPING_ENGINE,
     PROBABILITY_COL,
     SCENARIO_COL,
     VALUE_COL,
-    PANDAS_GROUPING_ENGINE,
 )
 
 

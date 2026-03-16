@@ -7,7 +7,8 @@ name = "sintetizador-dessem"
 dynamic = ["version"]
 dependencies = [
     "click>=8.1.8",
-    "idessem>=1.0.0",
+    "idessem>=1.1.0",
+    "pandas>=3.0.0",
     "pyarrow>=19.0.0",
 ]
 requires-python = ">= 3.11"
@@ -77,3 +78,22 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["idessem.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["cfinterface.*"]
+ignore_errors = true
+
+# idessem v1.1+ .read() classmethods return base types (SectionFile,
+# BlockFile, RegisterFile) instead of Self, causing many false-positive
+# errors throughout this module.
+[[tool.mypy.overrides]]
+module = ["app.adapters.repository.files"]
+disable_error_code = ["assignment", "return-value", "attr-defined", "unused-ignore"]
+
+[[tool.mypy.overrides]]
+module = ["dateutil.*"]
+ignore_errors = true
