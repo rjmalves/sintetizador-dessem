@@ -13,10 +13,5 @@ class SynthetizeExecution:
 
 
 @dataclass
-class SynthetizeScenario:
-    variables: List[str]
-
-
-@dataclass
 class SynthetizeOperation:
     variables: List[str]

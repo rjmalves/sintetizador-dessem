@@ -20,10 +20,11 @@ from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
 
+import logging
+
 from app.model.settings import Settings
 from app.utils.encoding import converte_codificacao
 from app.utils.fs import find_file_case_insensitive
-from app.utils.log import Log
 
 if platform.system() == "Windows":
     DessemArq.ENCODING = "iso-8859-1"
@@ -121,9 +122,8 @@ class RawFilesRepository(AbstractFilesRepository):
             self.__convert_utf8(path)
             self.__dessemarq = DessemArq.read(path)
         except FileNotFoundError as e:
-            logger = Log.log()
-            if logger is not None:
-                logger.error("Não foi encontrado o arquivo dessem.arq")
+            logger = logging.getLogger("main")
+            logger.error("Não foi encontrado o arquivo dessem.arq")
             raise e
         self.__extension: str | None = None
         self.__read_dessemarq_extension = False
@@ -171,11 +171,10 @@ class RawFilesRepository(AbstractFilesRepository):
     def get_extension(self) -> str | None:
         if self.__read_dessemarq_extension is False:
             self.__read_dessemarq_extension = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             reg_caso = self.__dessemarq.caso
             if reg_caso is None:
-                if logger is not None:
-                    logger.error("Extensão não encontrada")
+                logger.error("Extensão não encontrada")
                 raise RuntimeError()
             self.__extension = (
                 reg_caso.valor if reg_caso.valor is not None else "DAT"
@@ -185,232 +184,205 @@ class RawFilesRepository(AbstractFilesRepository):
     def get_entdados(self) -> Entdados | None:
         if self.__read_entdados is False:
             self.__read_entdados = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"ENTDADOS.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__entdados = Entdados.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do ENTDADOS: {e}")
+                logger.error(f"Erro na leitura do ENTDADOS: {e}")
                 raise e
         return self.__entdados
 
     def get_dadvaz(self) -> Dadvaz | None:
         if self.__read_dadvaz is False:
             self.__read_dadvaz = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"DADVAZ.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__dadvaz = Dadvaz.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do DADVAZ: {e}")
+                logger.error(f"Erro na leitura do DADVAZ: {e}")
                 raise e
         return self.__dadvaz
 
     def get_pdo_operacao(self) -> PdoOperacao | None:
         if self.__read_pdo_operacao is False:
             self.__read_pdo_operacao = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_OPERACAO.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_operacao = PdoOperacao.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do PDO_OPERACAO: {e}")
+                logger.error(f"Erro na leitura do PDO_OPERACAO: {e}")
                 raise e
         return self.__pdo_operacao
 
     def get_pdo_sist(self) -> PdoSist | None:
         if self.__read_pdo_sist is False:
             self.__read_pdo_sist = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_SIST.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_sist = PdoSist.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do PDO_SIST: {e}")
+                logger.error(f"Erro na leitura do PDO_SIST: {e}")
                 raise e
         return self.__pdo_sist
 
     def get_pdo_eolica(self) -> PdoEolica | None:
         if self.__read_pdo_eolica is False:
             self.__read_pdo_eolica = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_EOLICA.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_eolica = PdoEolica.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do PDO_EOLICA: {e}")
+                logger.error(f"Erro na leitura do PDO_EOLICA: {e}")
                 raise e
         return self.__pdo_eolica
 
     def get_pdo_inter(self) -> PdoInter | None:
         if self.__read_pdo_inter is False:
             self.__read_pdo_inter = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_INTER.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_inter = PdoInter.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do PDO_INTER: {e}")
+                logger.error(f"Erro na leitura do PDO_INTER: {e}")
                 raise e
         return self.__pdo_inter
 
     def get_pdo_hidr(self) -> PdoHidr | None:
         if self.__read_pdo_hidr is False:
             self.__read_pdo_hidr = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_HIDR.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_hidr = PdoHidr.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do PDO_HIDR: {e}")
+                logger.error(f"Erro na leitura do PDO_HIDR: {e}")
                 raise e
         return self.__pdo_hidr
 
     def get_pdo_oper_uct(self) -> PdoOperUct | None:
         if self.__read_pdo_oper_uct is False:
             self.__read_pdo_oper_uct = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_OPER_UCT.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_oper_uct = PdoOperUct.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do PDO_OPER_UCT: {e}")
+                logger.error(f"Erro na leitura do PDO_OPER_UCT: {e}")
                 raise e
         return self.__pdo_oper_uct
 
     def get_des_log_relato(self) -> DesLogRelato | None:
         if self.__read_des_log_relato is False:
             self.__read_des_log_relato = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"DES_LOG_RELATO.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__des_log_relato = DesLogRelato.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do DES_LOG_RELATO: {e}")
+                logger.error(f"Erro na leitura do DES_LOG_RELATO: {e}")
                 raise e
         return self.__des_log_relato
 
     def get_log_matriz(self) -> LogMatriz | None:
         if self.__read_log_matriz is False:
             self.__read_log_matriz = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"LOG_MATRIZ.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__log_matriz = LogMatriz.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do LOG_MATRIZ: {e}")
+                logger.error(f"Erro na leitura do LOG_MATRIZ: {e}")
                 raise e
         return self.__log_matriz
 
     def get_pdo_oper_term(self) -> PdoOperTerm | None:
         if self.__read_pdo_oper_term is False:
             self.__read_pdo_oper_term = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_OPER_TERM.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_oper_term = PdoOperTerm.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do PDO_OPER_TERM: {e}")
+                logger.error(f"Erro na leitura do PDO_OPER_TERM: {e}")
                 raise e
         return self.__pdo_oper_term
 
     def get_pdo_oper_tviag_calha(self) -> PdoOperTviagCalha | None:
         if self.__read_pdo_oper_tviag_calha is False:
             self.__read_pdo_oper_tviag_calha = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_OPER_TVIAG_CALHA.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_oper_tviag_calha = PdoOperTviagCalha.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(
-                        f"Erro na leitura do PDO_OPER_TVIAG_CALHA: {e}"
-                    )
+                logger.error(f"Erro na leitura do PDO_OPER_TVIAG_CALHA: {e}")
                 raise e
         return self.__pdo_oper_tviag_calha
 
     def get_pdo_eco_usih(self) -> PdoEcoUsih | None:
         if self.__read_pdo_eco_usih is False:
             self.__read_pdo_eco_usih = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"PDO_ECO_USIH.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__pdo_eco_usih = PdoEcoUsih.read(path)
                 if self.__pdo_eco_usih is not None:
                     version = self.__pdo_eco_usih.versao
@@ -419,26 +391,23 @@ class RawFilesRepository(AbstractFilesRepository):
                     PdoEcoUsih.set_version(version)
                 self.__pdo_eco_usih = PdoEcoUsih.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do {filename}: {e}")
+                logger.error(f"Erro na leitura do {filename}: {e}")
                 raise e
         return self.__pdo_eco_usih
 
     def get_operuh(self) -> Operuh | None:
         if self.__read_operuh is False:
             self.__read_operuh = True
-            logger = Log.log()
+            logger = logging.getLogger("main")
             try:
                 extension = self.get_extension()
                 filename = f"OPERUH.{extension}"
                 path = find_file_case_insensitive(self.__tmppath, filename)
                 self.__convert_utf8(path)
-                if logger is not None:
-                    logger.info(f"Lendo arquivo {filename}")
+                logger.info(f"Lendo arquivo {filename}")
                 self.__operuh = Operuh.read(path)
             except Exception as e:
-                if logger is not None:
-                    logger.error(f"Erro na leitura do OPERUH: {e}")
+                logger.error(f"Erro na leitura do OPERUH: {e}")
                 raise e
         return self.__operuh
 

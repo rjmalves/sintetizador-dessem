@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from os import chdir, curdir
 from pathlib import Path
-from typing import Dict, Type
+from typing import Any, Dict, Optional, Type
 
 from app.adapters.repository.export import (
     AbstractExportRepository,
@@ -17,17 +16,18 @@ from app.model.settings import Settings
 
 
 class AbstractUnitOfWork(ABC):
-    def __init__(self) -> None:
+    def __init__(self, q: Any = None) -> None:
+        self._queue = q
         self._subdir = ""
 
     def __enter__(self) -> "AbstractUnitOfWork":
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:
         self.rollback()
 
     @abstractmethod
-    def rollback(self):
+    def rollback(self) -> None:
         raise NotImplementedError
 
     @property
@@ -41,41 +41,44 @@ class AbstractUnitOfWork(ABC):
         raise NotImplementedError
 
     @property
+    def queue(self) -> Any:
+        return self._queue
+
+    @property
     def subdir(self) -> str:
         return self._subdir
 
     @subdir.setter
-    def subdir(self, subdir: str):
+    def subdir(self, subdir: str) -> None:
         self._subdir = subdir
 
 
 class FSUnitOfWork(AbstractUnitOfWork):
-    def __init__(self, directory: str):
-        super().__init__()
-        self._current_path = Path(curdir).resolve()
-        self._path = Path(directory).resolve()
-        self._files = None
-        self._exporter = None
+    def __init__(self, directory: str, q: Any = None) -> None:
+        super().__init__(q)
+        self._path = str(Path(directory).resolve())
+        self._files: Optional[AbstractFilesRepository] = None
+        self._exporter: Optional[AbstractExportRepository] = None
 
-    def __create_repository(self):
+    def __create_repository(self) -> None:
         if self._files is None:
             self._files = RawFilesRepository(str(self._path))
         if self._exporter is None:
-            synthesis_outdir = self._path.joinpath(
-                Settings().synthesis_dir
-            ).joinpath(self._subdir)
+            synthesis_outdir = (
+                Path(self._path)
+                .joinpath(Settings().synthesis_dir)
+                .joinpath(self._subdir)
+            )
             synthesis_outdir.mkdir(parents=True, exist_ok=True)
             self._exporter = export_factory(
                 Settings().synthesis_format, str(synthesis_outdir)
             )
 
     def __enter__(self) -> "AbstractUnitOfWork":
-        chdir(self._path)
         self.__create_repository()
         return super().__enter__()
 
-    def __exit__(self, *args):
-        chdir(self._current_path)
+    def __exit__(self, *args: Any) -> None:
         super().__exit__(*args)
 
     @property
@@ -90,12 +93,12 @@ class FSUnitOfWork(AbstractUnitOfWork):
             raise RuntimeError()
         return self._exporter
 
-    def rollback(self):
+    def rollback(self) -> None:
         pass
 
 
-def factory(kind: str, *args, **kwargs) -> AbstractUnitOfWork:
+def factory(kind: str, *args: Any, **kwargs: Any) -> AbstractUnitOfWork:
     mappings: Dict[str, Type[AbstractUnitOfWork]] = {
         "FS": FSUnitOfWork,
     }
-    return mappings.get(kind, FSUnitOfWork)(*args, **kwargs)
+    return mappings[kind](*args, **kwargs)

@@ -20,7 +20,7 @@ Modernize sintetizador-dessem to match sintetizador-newave's refactored architec
 | 03   | Code Decomposition - Deck Service         | 7       | Detailed     |
 | 04   | Code Decomposition - Operation Synthesis  | 4       | Refined      |
 | 05   | Polars Migration                          | 4       | Refined      |
-| 06   | Parallelism & Logging                     | 3       | Outline      |
+| 06   | Parallelism & Logging                     | 3       | Refined      |
 | 07   | Quality & Polish                          | 3       | Outline      |
 
 ## Progress
@@ -49,9 +49,9 @@ Modernize sintetizador-dessem to match sintetizador-newave's refactored architec
 | ticket-020 | Implement native Polars Parquet export         | epic-05 | completed | Refined      | 1.00      | 0.95    | EXCELLENT  |
 | ticket-021 | Migrate deck hot paths to Polars               | epic-05 | completed | Refined      | 0.94      | 0.93    | EXCELLENT  |
 | ticket-022 | Migrate operation synthesis to Polars          | epic-05 | completed | Refined      | 0.98      | 0.93    | EXCELLENT  |
-| ticket-023 | Add multiprocessing-safe logger                | epic-06 | pending   | Outline      | --        | --      | --         |
-| ticket-024 | Add --processadores CLI option                 | epic-06 | pending   | Outline      | --        | --      | --         |
-| ticket-025 | Integrate ProcessPoolExecutor                  | epic-06 | pending   | Outline      | --        | --      | --         |
+| ticket-023 | Add multiprocessing-safe logger                | epic-06 | completed | Refined      | 1.00      | 0.93    | EXCELLENT  |
+| ticket-024 | Add --processadores CLI option                 | epic-06 | completed | Refined      | 0.98      | 0.93    | EXCELLENT  |
+| ticket-025 | Integrate ProcessPoolExecutor                  | epic-06 | completed | Refined      | 1.00      | 0.93    | EXCELLENT  |
 | ticket-026 | Enable full mypy strict mode compliance        | epic-07 | pending   | Outline      | --        | --      | --         |
 | ticket-027 | Audit type annotations and constants           | epic-07 | pending   | Outline      | --        | --      | --         |
 | ticket-028 | Update documentation and final polish          | epic-07 | pending   | Outline      | --        | --      | --         |

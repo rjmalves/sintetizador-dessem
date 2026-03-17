@@ -1,4 +1,7 @@
 import os
+import time
+from multiprocessing import Manager
+from typing import Any, Tuple
 
 import click
 
@@ -25,21 +28,26 @@ def app():
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def sistema(variaveis, formato):
+def sistema(variaveis: Tuple[str, ...], formato: str) -> None:
     """
-    Realiza a síntese dos dados do sistema do DECOMP.
+    Realiza a síntese dos dados do sistema do DESSEM.
     """
     os.environ["FORMATO_SINTESE"] = formato
-    Log.log().info("# Realizando síntese do SISTEMA #")
 
-    uow = factory(
-        "FS",
-        os.curdir,
-    )
-    command = commands.SynthetizeSystem(variaveis)
+    m = Manager()
+    q: Any = m.Queue(-1)
+    Log.start_logging_process(q)
+
+    logger = Log.configure_main_logger(q)
+    logger.info("# Realizando síntese do SISTEMA #")
+
+    uow = factory("FS", os.curdir, q)
+    command = commands.SynthetizeSystem(list(variaveis))
     handlers.synthetize_system(command, uow)
 
-    Log.log().info("# Fim da síntese #")
+    logger.info("# Fim da síntese #")
+    time.sleep(1.0)
+    Log.terminate_logging_process()
 
 
 @click.command("operacao")
@@ -50,21 +58,34 @@ def sistema(variaveis, formato):
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def operacao(variaveis, formato):
+@click.option(
+    "--processadores",
+    default=1,
+    help="numero de processadores para paralelizar",
+)
+def operacao(
+    variaveis: Tuple[str, ...], formato: str, processadores: int
+) -> None:
     """
     Realiza a síntese dos dados da operação do DESSEM.
     """
     os.environ["FORMATO_SINTESE"] = formato
-    Log.log().info("# Realizando síntese da OPERACAO #")
+    os.environ["PROCESSADORES"] = str(processadores)
 
-    uow = factory(
-        "FS",
-        os.curdir,
-    )
-    command = commands.SynthetizeOperation(variaveis)
+    m = Manager()
+    q: Any = m.Queue(-1)
+    Log.start_logging_process(q)
+
+    logger = Log.configure_main_logger(q)
+    logger.info("# Realizando síntese da OPERACAO #")
+
+    uow = factory("FS", os.curdir, q)
+    command = commands.SynthetizeOperation(list(variaveis))
     handlers.synthetize_operation(command, uow)
 
-    Log.log().info("# Fim da síntese #")
+    logger.info("# Fim da síntese #")
+    time.sleep(1.0)
+    Log.terminate_logging_process()
 
 
 @click.command("execucao")
@@ -75,25 +96,30 @@ def operacao(variaveis, formato):
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def execucao(variaveis, formato):
+def execucao(variaveis: Tuple[str, ...], formato: str) -> None:
     """
     Realiza a síntese dos dados da execução do DESSEM.
     """
     os.environ["FORMATO_SINTESE"] = formato
-    Log.log().info("# Realizando síntese da EXECUÇÃO #")
 
-    uow = factory(
-        "FS",
-        os.curdir,
-    )
-    command = commands.SynthetizeExecution(variaveis)
+    m = Manager()
+    q: Any = m.Queue(-1)
+    Log.start_logging_process(q)
+
+    logger = Log.configure_main_logger(q)
+    logger.info("# Realizando síntese da EXECUÇÃO #")
+
+    uow = factory("FS", os.curdir, q)
+    command = commands.SynthetizeExecution(list(variaveis))
     handlers.synthetize_execution(command, uow)
 
-    Log.log().info("# Fim da síntese #")
+    logger.info("# Fim da síntese #")
+    time.sleep(1.0)
+    Log.terminate_logging_process()
 
 
 @click.command("limpeza")
-def limpeza():
+def limpeza() -> None:
     """
     Realiza a limpeza dos dados resultantes de uma síntese.
     """
@@ -113,25 +139,42 @@ def limpeza():
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def completa(sistema, operacao, execucao, formato):
+@click.option(
+    "--processadores",
+    default=1,
+    help="numero de processadores para paralelizar",
+)
+def completa(
+    sistema: Tuple[str, ...],
+    operacao: Tuple[str, ...],
+    execucao: Tuple[str, ...],
+    formato: str,
+    processadores: int,
+) -> None:
     """
     Realiza a síntese completa do DESSEM.
     """
     os.environ["FORMATO_SINTESE"] = formato
-    Log.log().info("# Realizando síntese COMPLETA #")
+    os.environ["PROCESSADORES"] = str(processadores)
 
-    uow = factory(
-        "FS",
-        os.curdir,
-    )
-    command = commands.SynthetizeSystem(sistema)
+    m = Manager()
+    q: Any = m.Queue(-1)
+    Log.start_logging_process(q)
+
+    logger = Log.configure_main_logger(q)
+    logger.info("# Realizando síntese COMPLETA #")
+
+    uow = factory("FS", os.curdir, q)
+    command = commands.SynthetizeSystem(list(sistema))
     handlers.synthetize_system(command, uow)
-    command = commands.SynthetizeOperation(operacao)
+    command = commands.SynthetizeOperation(list(operacao))
     handlers.synthetize_operation(command, uow)
-    command = commands.SynthetizeExecution(execucao)
+    command = commands.SynthetizeExecution(list(execucao))
     handlers.synthetize_execution(command, uow)
 
-    Log.log().info("# Fim da síntese #")
+    logger.info("# Fim da síntese #")
+    time.sleep(1.0)
+    Log.terminate_logging_process()
 
 
 app.add_command(completa)

@@ -12,6 +12,7 @@ from app.model.operation.operationsynthesis import (
     OperationSynthesis,
 )
 from app.model.operation.spatialresolution import SpatialResolution
+from app.model.settings import Settings
 from app.services.deck.bounds import OperationVariableBounds
 from app.services.deck.deck import Deck
 from app.services.unitofwork import AbstractUnitOfWork
@@ -192,6 +193,8 @@ class OperationSynthetizer:
         Deck.logger = cls.logger
         OperationVariableBounds.logger = cls.logger
         uow.subdir = OPERATION_SYNTHESIS_SUBDIR
+        n_procs = int(Settings().processors)
+        cls._log(f"Utilizando {n_procs} processadores para sintese")
         with time_and_log(
             message_root="Tempo para sintese da operacao",
             logger=cls.logger,
@@ -200,6 +203,13 @@ class OperationSynthetizer:
                 variables, uow
             )
             success_synthesis: list[OperationSynthesis] = []
+            # DESSEM resolves each variable from a single file read (pdo_sist,
+            # pdo_hidr, etc.), unlike newave which resolves per-entity (per
+            # submarket, per plant). Variable-level parallelism would require
+            # a multiprocessing-safe cache and dependency graph partitioning.
+            # The overhead is not justified for DESSEM's workload, so we
+            # process variables sequentially. The --processadores option and
+            # multiprocessing logger infrastructure are in place for future use.
             for s in synthesis_with_dependencies:
                 r = cls._synthetize_single_variable(s, uow)
                 if r:
