@@ -5,9 +5,9 @@ Covers pdo_sist, pdo_eolica, pdo_inter and their SBM/SIN aggregations,
 plus pdo_operacao_costs for operational cost data.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-import pandas as pd  # type: ignore
+import pandas as pd
 import polars as pl
 import polars.selectors as cs
 from idessem.dessem.pdo_eolica import PdoEolica
@@ -34,7 +34,7 @@ from app.services.unitofwork import AbstractUnitOfWork
 
 def pdo_sist(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("pdo_sist")
@@ -85,7 +85,7 @@ def pdo_sist(
 
 def pdo_eolica(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("pdo_eolica")
@@ -146,7 +146,7 @@ def pdo_eolica(
 
 def pdo_inter(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("pdo_inter")
@@ -213,7 +213,7 @@ def pdo_inter(
 def pdo_sist_sbm(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_sist(deck_cls, cache, uow).rename({col: VALUE_COL})
@@ -237,7 +237,7 @@ def pdo_sist_sbm(
 def pdo_sist_sin(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_sist_sbm(col, deck_cls, cache, uow)
@@ -266,7 +266,7 @@ def pdo_sist_sin(
 def pdo_eolica_sbm(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_eolica(deck_cls, cache, uow).rename({col: VALUE_COL})
@@ -290,7 +290,7 @@ def pdo_eolica_sbm(
 def pdo_eolica_sin(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_eolica_sbm(col, deck_cls, cache, uow)
@@ -319,7 +319,7 @@ def pdo_eolica_sin(
 def pdo_inter_sbp(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_inter(deck_cls, cache, uow).rename({col: VALUE_COL})
@@ -344,7 +344,7 @@ def pdo_inter_sbp(
 def pdo_operacao_costs(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     pdo_operacao = accessors.validate_data(

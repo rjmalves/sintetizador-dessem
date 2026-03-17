@@ -1,7 +1,7 @@
 import logging
 from logging import ERROR, INFO, WARNING
 from traceback import print_exc
-from typing import List, TypeVar
+from typing import TypeVar
 
 import polars as pl
 
@@ -15,19 +15,19 @@ from app.model.operation.spatialresolution import SpatialResolution
 from app.model.settings import Settings
 from app.services.deck.bounds import OperationVariableBounds
 from app.services.deck.deck import Deck
-from app.services.unitofwork import AbstractUnitOfWork
-from app.utils.regex import match_variables_with_wildcards
-from app.utils.timing import time_and_log
 from app.services.synthesis.operation import cache as _cache_mod
 from app.services.synthesis.operation import export as _export_mod
 from app.services.synthesis.operation import pipeline as _pipeline_mod
+from app.services.unitofwork import AbstractUnitOfWork
+from app.utils.regex import match_variables_with_wildcards
+from app.utils.timing import time_and_log
 
 
 class OperationSynthetizer:
     T = TypeVar("T")
     logger: logging.Logger | None = None
 
-    DEFAULT_OPERATION_SYNTHESIS_ARGS = SUPPORTED_SYNTHESIS
+    DEFAULT_OPERATION_SYNTHESIS_ARGS: list[str] = SUPPORTED_SYNTHESIS
 
     # Todas as sínteses que forem dependências de outras sínteses
     # devem ser armazenadas em cache
@@ -37,13 +37,15 @@ class OperationSynthetizer:
 
     # Estratégias de cache para reduzir tempo total de síntese
     CACHED_SYNTHESIS: dict[OperationSynthesis, pl.DataFrame] = {}
-    ORDERED_SYNTHESIS_ENTITIES: dict[OperationSynthesis, dict[str, list]] = {}
+    ORDERED_SYNTHESIS_ENTITIES: dict[
+        OperationSynthesis, dict[str, list[object]]
+    ] = {}
 
     # Estatísticas das sínteses são armazenadas separadamente
     SYNTHESIS_STATS: dict[SpatialResolution, list[pl.DataFrame]] = {}
 
     @classmethod
-    def clear_cache(cls):
+    def clear_cache(cls) -> None:
         """
         Limpa o cache de síntese de operação.
         """
@@ -52,12 +54,12 @@ class OperationSynthetizer:
         cls.SYNTHESIS_STATS.clear()
 
     @classmethod
-    def _log(cls, msg: str, level: int = INFO):
+    def _log(cls, msg: str, level: int = INFO) -> None:
         if cls.logger is not None:
             cls.logger.log(level, msg)
 
     @classmethod
-    def _default_args(cls) -> List[str]:
+    def _default_args(cls) -> list[str]:
         return cls.DEFAULT_OPERATION_SYNTHESIS_ARGS
 
     @classmethod
@@ -102,7 +104,7 @@ class OperationSynthetizer:
         def _add_synthesis_dependencies_recursive(
             current_synthesis: list[OperationSynthesis],
             todo_synthesis: OperationSynthesis,
-        ):
+        ) -> None:
             if todo_synthesis in SYNTHESIS_DEPENDENCIES.keys():
                 for dep in SYNTHESIS_DEPENDENCIES[todo_synthesis]:
                     _add_synthesis_dependencies_recursive(
@@ -188,7 +190,7 @@ class OperationSynthetizer:
                 return None
 
     @classmethod
-    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork):
+    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork) -> None:
         cls.logger = logging.getLogger("main")
         Deck.logger = cls.logger
         OperationVariableBounds.logger = cls.logger

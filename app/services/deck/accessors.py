@@ -8,9 +8,9 @@ validation and caching logic.
 """
 
 from datetime import timedelta
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, TypeVar
 
-import pandas as pd  # type: ignore
+import pandas as pd
 from idessem.dessem.dadvaz import Dadvaz
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.dessemarq import DessemArq
@@ -39,7 +39,7 @@ T = TypeVar("T")
 
 
 def validate_data(
-    deck_cls: Any, data: Any, type_: Type[T], msg: str = "dados"
+    deck_cls: Any, data: Any, type_: type[T], msg: str = "dados"
 ) -> T:
     """Raise RuntimeError (with optional logger) if data is not the expected type."""
     if not isinstance(data, type_):
@@ -47,7 +47,7 @@ def validate_data(
         if logger is not None:
             logger.error(f"Erro na leitura de {msg}")
         raise RuntimeError()
-    return data  # type: ignore[return-value]
+    return data
 
 
 # ---------------------------------------------------------------------------
@@ -55,95 +55,89 @@ def validate_data(
 # ---------------------------------------------------------------------------
 
 
-def get_entdados(deck_cls: Any, uow: AbstractUnitOfWork) -> Optional[Entdados]:
+def get_entdados(deck_cls: Any, uow: AbstractUnitOfWork) -> Entdados | None:
     with uow:
         return uow.files.get_entdados()
 
 
-def get_dessemarq(
-    deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[DessemArq]:
+def get_dessemarq(deck_cls: Any, uow: AbstractUnitOfWork) -> DessemArq | None:
     with uow:
         return uow.files.dessemarq
 
 
-def get_dadvaz(deck_cls: Any, uow: AbstractUnitOfWork) -> Optional[Dadvaz]:
+def get_dadvaz(deck_cls: Any, uow: AbstractUnitOfWork) -> Dadvaz | None:
     with uow:
         return uow.files.get_dadvaz()
 
 
-def get_log_matriz(
-    deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[LogMatriz]:
+def get_log_matriz(deck_cls: Any, uow: AbstractUnitOfWork) -> LogMatriz | None:
     with uow:
         return uow.files.get_log_matriz()
 
 
 def get_des_log_relato(
     deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[DesLogRelato]:
+) -> DesLogRelato | None:
     with uow:
         return uow.files.get_des_log_relato()
 
 
-def get_pdo_sist(deck_cls: Any, uow: AbstractUnitOfWork) -> Optional[PdoSist]:
+def get_pdo_sist(deck_cls: Any, uow: AbstractUnitOfWork) -> PdoSist | None:
     with uow:
         return uow.files.get_pdo_sist()
 
 
-def get_pdo_inter(deck_cls: Any, uow: AbstractUnitOfWork) -> Optional[PdoInter]:
+def get_pdo_inter(deck_cls: Any, uow: AbstractUnitOfWork) -> PdoInter | None:
     with uow:
         return uow.files.get_pdo_inter()
 
 
-def get_pdo_hidr(deck_cls: Any, uow: AbstractUnitOfWork) -> Optional[PdoHidr]:
+def get_pdo_hidr(deck_cls: Any, uow: AbstractUnitOfWork) -> PdoHidr | None:
     with uow:
         return uow.files.get_pdo_hidr()
 
 
-def get_pdo_eolica(
-    deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[PdoEolica]:
+def get_pdo_eolica(deck_cls: Any, uow: AbstractUnitOfWork) -> PdoEolica | None:
     with uow:
         return uow.files.get_pdo_eolica()
 
 
 def get_pdo_operacao(
     deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[PdoOperacao]:
+) -> PdoOperacao | None:
     with uow:
         return uow.files.get_pdo_operacao()
 
 
 def get_pdo_oper_uct(
     deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[PdoOperUct]:
+) -> PdoOperUct | None:
     with uow:
         return uow.files.get_pdo_oper_uct()
 
 
 def get_pdo_oper_term(
     deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[PdoOperTerm]:
+) -> PdoOperTerm | None:
     with uow:
         return uow.files.get_pdo_oper_term()
 
 
 def get_pdo_oper_tviag_calha(
     deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[PdoOperTviagCalha]:
+) -> PdoOperTviagCalha | None:
     with uow:
         return uow.files.get_pdo_oper_tviag_calha()
 
 
 def get_pdo_eco_usih(
     deck_cls: Any, uow: AbstractUnitOfWork
-) -> Optional[PdoEcoUsih]:
+) -> PdoEcoUsih | None:
     with uow:
         return uow.files.get_pdo_eco_usih()
 
 
-def get_operuh(deck_cls: Any, uow: AbstractUnitOfWork) -> Optional[Operuh]:
+def get_operuh(deck_cls: Any, uow: AbstractUnitOfWork) -> Operuh | None:
     with uow:
         return uow.files.get_operuh()
 
@@ -155,7 +149,7 @@ def get_operuh(deck_cls: Any, uow: AbstractUnitOfWork) -> Optional[Operuh]:
 
 def entdados(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> Entdados:
     val = cache.get("entdados")
@@ -169,7 +163,7 @@ def entdados(
 
 def dadvaz(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> Dadvaz:
     val = cache.get("dadvaz")
@@ -183,7 +177,7 @@ def dadvaz(
 
 def log_matriz(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> LogMatriz:
     val = cache.get("log_matriz")
@@ -197,7 +191,7 @@ def log_matriz(
 
 def des_log_relato(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> DesLogRelato:
     val = cache.get("des_log_relato")
@@ -214,7 +208,7 @@ def des_log_relato(
 
 def runtimes(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pd.DataFrame:
     df = cache.get("runtime")
@@ -242,7 +236,7 @@ def runtimes(
 
 def costs(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pd.DataFrame:
     df = cache.get("costs")

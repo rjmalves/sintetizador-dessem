@@ -1,8 +1,9 @@
 import asyncio
+import logging
 import pathlib
 import platform
 from abc import ABC, abstractmethod
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from idessem.dessem.dadvaz import Dadvaz
 from idessem.dessem.des_log_relato import DesLogRelato
@@ -19,8 +20,6 @@ from idessem.dessem.pdo_oper_tviag_calha import PdoOperTviagCalha
 from idessem.dessem.pdo_oper_uct import PdoOperUct
 from idessem.dessem.pdo_operacao import PdoOperacao
 from idessem.dessem.pdo_sist import PdoSist
-
-import logging
 
 from app.model.settings import Settings
 from app.utils.encoding import converte_codificacao
@@ -46,7 +45,7 @@ if platform.system() == "Windows":
 class AbstractFilesRepository(ABC):
     T = TypeVar("T")
 
-    def _validate_data(self, data, type: Type[T]) -> T:
+    def _validate_data(self, data: object, type: type[T]) -> T:
         if not isinstance(data, type):
             raise RuntimeError()
         return data
@@ -160,11 +159,12 @@ class RawFilesRepository(AbstractFilesRepository):
     def dessemarq(self) -> DessemArq:
         return self.__dessemarq
 
-    def __convert_utf8(self, path: str):
+    def __convert_utf8(self, path: str) -> None:
+        installdir = Settings().installdir
+        if installdir is None:
+            return
         script = str(
-            pathlib.Path(Settings().installdir).joinpath(
-                Settings().encoding_script
-            )
+            pathlib.Path(installdir).joinpath(Settings().encoding_script)
         )
         asyncio.run(converte_codificacao(path, script))
 
@@ -412,8 +412,8 @@ class RawFilesRepository(AbstractFilesRepository):
         return self.__operuh
 
 
-def factory(kind: str, *args, **kwargs) -> AbstractFilesRepository:
-    mapping: dict[str, Type[AbstractFilesRepository]] = {
+def factory(kind: str, *args: str, **kwargs: str) -> AbstractFilesRepository:
+    mapping: dict[str, type[AbstractFilesRepository]] = {
         "FS": RawFilesRepository
     }
     return mapping.get(kind, RawFilesRepository)(*args, **kwargs)

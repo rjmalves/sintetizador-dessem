@@ -2,12 +2,12 @@ import logging
 import os
 import pathlib
 from abc import ABC, abstractmethod
-from typing import Type
+from typing import cast
 
-import pandas as pd  # type: ignore
+import pandas as pd
 import polars as pl
-import pyarrow as pa  # type: ignore
-import pyarrow.parquet as pq  # type: ignore
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from app.utils.tz import enforce_utc
 
@@ -23,7 +23,7 @@ class AbstractExportRepository(ABC):
         pass
 
     @abstractmethod
-    def synthetize_df(self, df: pd.DataFrame, filename: str):
+    def synthetize_df(self, df: pd.DataFrame, filename: str) -> bool:
         pass
 
     def synthetize_pl(self, df: pl.DataFrame, filename: str) -> bool:
@@ -31,7 +31,7 @@ class AbstractExportRepository(ABC):
 
 
 class ParquetExportRepository(AbstractExportRepository):
-    def __init__(self, path: str):
+    def __init__(self, path: str) -> None:
         self.__path = path
 
     @property
@@ -41,11 +41,11 @@ class ParquetExportRepository(AbstractExportRepository):
     def read_df(self, filename: str) -> pd.DataFrame | None:
         arq = self.path.joinpath(filename + ".parquet.gzip")
         if os.path.isfile(arq):
-            return pd.read_parquet(arq)
+            return cast(pd.DataFrame, pd.read_parquet(arq))
         else:
             return None
 
-    def synthetize_df(self, df: pd.DataFrame, filename: str):
+    def synthetize_df(self, df: pd.DataFrame, filename: str) -> bool:
         pq.write_table(
             pa.Table.from_pandas(enforce_utc(df)),
             self.path.joinpath(filename + ".parquet"),
@@ -84,7 +84,7 @@ class ParquetExportRepository(AbstractExportRepository):
 
 
 class CSVExportRepository(AbstractExportRepository):
-    def __init__(self, path: str):
+    def __init__(self, path: str) -> None:
         self.__path = path
 
     @property
@@ -94,18 +94,19 @@ class CSVExportRepository(AbstractExportRepository):
     def read_df(self, filename: str) -> pd.DataFrame | None:
         arq = self.path.joinpath(filename + ".csv")
         if os.path.isfile(arq):
-            return pd.read_csv(arq)
+            return cast(pd.DataFrame, pd.read_csv(arq))
         else:
             return None
 
-    def synthetize_df(self, df: pd.DataFrame, filename: str):
+    def synthetize_df(self, df: pd.DataFrame, filename: str) -> bool:
         enforce_utc(df).to_csv(
             self.path.joinpath(filename + ".csv"), index=False
         )
+        return True
 
 
 class TestExportRepository(AbstractExportRepository):
-    def __init__(self, path: str):
+    def __init__(self, path: str) -> None:
         self.__path = path
 
     @property
@@ -119,8 +120,8 @@ class TestExportRepository(AbstractExportRepository):
         return True
 
 
-def factory(kind: str, *args, **kwargs) -> AbstractExportRepository:
-    mapping: dict[str, Type[AbstractExportRepository]] = {
+def factory(kind: str, *args: str, **kwargs: str) -> AbstractExportRepository:
+    mapping: dict[str, type[AbstractExportRepository]] = {
         "PARQUET": ParquetExportRepository,
         "CSV": CSVExportRepository,
         "TEST": TestExportRepository,

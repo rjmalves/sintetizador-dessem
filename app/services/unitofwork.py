@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from app.adapters.repository.export import (
     AbstractExportRepository,
@@ -57,8 +57,8 @@ class FSUnitOfWork(AbstractUnitOfWork):
     def __init__(self, directory: str, q: Any = None) -> None:
         super().__init__(q)
         self._path = str(Path(directory).resolve())
-        self._files: Optional[AbstractFilesRepository] = None
-        self._exporter: Optional[AbstractExportRepository] = None
+        self._files: AbstractFilesRepository | None = None
+        self._exporter: AbstractExportRepository | None = None
 
     def __create_repository(self) -> None:
         if self._files is None:
@@ -98,7 +98,7 @@ class FSUnitOfWork(AbstractUnitOfWork):
 
 
 def factory(kind: str, *args: Any, **kwargs: Any) -> AbstractUnitOfWork:
-    mappings: Dict[str, Type[AbstractUnitOfWork]] = {
+    mappings: dict[str, type[AbstractUnitOfWork]] = {
         "FS": FSUnitOfWork,
     }
     return mappings[kind](*args, **kwargs)

@@ -1,7 +1,7 @@
 import os
 import time
 from multiprocessing import Manager
-from typing import Any, Tuple
+from typing import Any
 
 import click
 
@@ -12,7 +12,7 @@ from app.utils.log import Log
 
 
 @click.group()
-def app():
+def app() -> None:
     """
     Aplicação para realizar a síntese de informações em
     um modelo unificado de dados para o DESSEM.
@@ -28,7 +28,7 @@ def app():
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def sistema(variaveis: Tuple[str, ...], formato: str) -> None:
+def sistema(variaveis: tuple[str, ...], formato: str) -> None:
     """
     Realiza a síntese dos dados do sistema do DESSEM.
     """
@@ -64,7 +64,7 @@ def sistema(variaveis: Tuple[str, ...], formato: str) -> None:
     help="numero de processadores para paralelizar",
 )
 def operacao(
-    variaveis: Tuple[str, ...], formato: str, processadores: int
+    variaveis: tuple[str, ...], formato: str, processadores: int
 ) -> None:
     """
     Realiza a síntese dos dados da operação do DESSEM.
@@ -96,7 +96,7 @@ def operacao(
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def execucao(variaveis: Tuple[str, ...], formato: str) -> None:
+def execucao(variaveis: tuple[str, ...], formato: str) -> None:
     """
     Realiza a síntese dos dados da execução do DESSEM.
     """
@@ -145,9 +145,9 @@ def limpeza() -> None:
     help="numero de processadores para paralelizar",
 )
 def completa(
-    sistema: Tuple[str, ...],
-    operacao: Tuple[str, ...],
-    execucao: Tuple[str, ...],
+    sistema: tuple[str, ...],
+    operacao: tuple[str, ...],
+    execucao: tuple[str, ...],
     formato: str,
     processadores: int,
 ) -> None:
@@ -165,12 +165,12 @@ def completa(
     logger.info("# Realizando síntese COMPLETA #")
 
     uow = factory("FS", os.curdir, q)
-    command = commands.SynthetizeSystem(list(sistema))
-    handlers.synthetize_system(command, uow)
-    command = commands.SynthetizeOperation(list(operacao))
-    handlers.synthetize_operation(command, uow)
-    command = commands.SynthetizeExecution(list(execucao))
-    handlers.synthetize_execution(command, uow)
+    sys_cmd = commands.SynthetizeSystem(list(sistema))
+    handlers.synthetize_system(sys_cmd, uow)
+    op_cmd = commands.SynthetizeOperation(list(operacao))
+    handlers.synthetize_operation(op_cmd, uow)
+    exec_cmd = commands.SynthetizeExecution(list(execucao))
+    handlers.synthetize_execution(exec_cmd, uow)
 
     logger.info("# Fim da síntese #")
     time.sleep(1.0)

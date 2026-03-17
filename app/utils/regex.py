@@ -1,11 +1,10 @@
 import re
-from typing import List
 
 
 def match_variables_with_wildcards(
-    given_variables: List[str], all_variables: List[str]
-):
-    variables_with_wildcards: List[str] = []
+    given_variables: list[str], all_variables: list[str]
+) -> list[str]:
+    variables_with_wildcards: list[str] = []
     for v in given_variables:
         if "*" in v:
             variables_with_wildcards += [

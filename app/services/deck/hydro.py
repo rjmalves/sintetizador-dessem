@@ -6,10 +6,10 @@ aggregated variants, plus all hydro bounds methods (operative constraints).
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, cast
 
-import numpy as np  # type: ignore
-import pandas as pd  # type: ignore
+import numpy as np
+import pandas as pd
 import polars as pl
 from idessem.dessem.operuh import Operuh
 from idessem.dessem.pdo_eco_usih import PdoEcoUsih
@@ -38,7 +38,6 @@ from app.services.deck import entities as _entities
 from app.services.deck import temporal as _temporal
 from app.services.unitofwork import AbstractUnitOfWork
 
-
 # ---------------------------------------------------------------------------
 # pdo_eco_usih - needed by pdo_hidr and hydro_initial_volumes
 # ---------------------------------------------------------------------------
@@ -46,7 +45,7 @@ from app.services.unitofwork import AbstractUnitOfWork
 
 def pdo_eco_usih(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     val = cache.get("pdo_eco_usih")
@@ -71,7 +70,7 @@ def pdo_eco_usih(
         )
         df = df.filter(pl.col(HYDRO_CODE_COL).is_in(hydros))
         cache["pdo_eco_usih"] = df
-    return cache["pdo_eco_usih"]
+    return cast(pl.DataFrame, cache["pdo_eco_usih"])
 
 
 # ---------------------------------------------------------------------------
@@ -81,7 +80,7 @@ def pdo_eco_usih(
 
 def pdo_operacao(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> PdoOperacao:
     val = cache.get("pdo_operacao")
@@ -93,7 +92,7 @@ def pdo_operacao(
             "pdo_operacao",
         )
         cache["pdo_operacao"] = val
-    return val
+    return cast(PdoOperacao, val)
 
 
 # ---------------------------------------------------------------------------
@@ -103,7 +102,7 @@ def pdo_operacao(
 
 def hydro_inflows(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("hydro_inflows")
@@ -119,7 +118,7 @@ def hydro_inflows(
             }
         )
         cache["hydro_inflows"] = df
-    return df
+    return cast(pl.DataFrame, df)
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +129,7 @@ def hydro_inflows(
 def _get_initial_volume(
     df: pl.DataFrame,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     """Compute initial volumes (percentual and absolute) for each UHE."""
@@ -164,7 +163,7 @@ def _get_initial_volume(
 def _cast_volumes_to_absolute(
     df: pl.DataFrame,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     """Convert relative volume columns to absolute hm3 values."""
@@ -197,7 +196,7 @@ def _cast_volumes_to_absolute(
 
 def pdo_hidr(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("pdo_hidr")
@@ -260,7 +259,6 @@ def pdo_hidr(
         )
 
         # Assign start/end dates by joining on STAGE_COL
-        num_entities = df.filter(pl.col(STAGE_COL) == 1).height
         stage_df = _temporal.stages_durations(deck_cls, cache, uow).select(
             [STAGE_COL, START_DATE_COL, END_DATE_COL]
         )
@@ -286,7 +284,7 @@ def pdo_hidr(
         )
         df = df.sort([HYDRO_CODE_COL, STAGE_COL])
         cache["pdo_hidr"] = df
-    return cache["pdo_hidr"]
+    return cast(pl.DataFrame, cache["pdo_hidr"])
 
 
 # ---------------------------------------------------------------------------
@@ -296,7 +294,7 @@ def pdo_hidr(
 
 def pdo_oper_tviag_calha(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("pdo_oper_tviag_calha")
@@ -366,7 +364,7 @@ def pdo_oper_tviag_calha(
         )
         df = df.join(stage_df, on=STAGE_COL, how="left")
         cache["pdo_oper_tviag_calha"] = df
-    return cache["pdo_oper_tviag_calha"]
+    return cast(pl.DataFrame, cache["pdo_oper_tviag_calha"])
 
 
 # ---------------------------------------------------------------------------
@@ -377,7 +375,7 @@ def pdo_oper_tviag_calha(
 def pdo_hidr_hydro(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_hidr(deck_cls, cache, uow).rename({col: VALUE_COL})
@@ -403,7 +401,7 @@ def pdo_hidr_hydro(
 def pdo_hidr_eer(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_hidr_hydro(col, deck_cls, cache, uow)
@@ -434,7 +432,7 @@ def pdo_hidr_eer(
 def pdo_hidr_sbm(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_hidr_hydro(col, deck_cls, cache, uow)
@@ -464,7 +462,7 @@ def pdo_hidr_sbm(
 def pdo_hidr_sin(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_hidr_hydro(col, deck_cls, cache, uow)
@@ -493,7 +491,7 @@ def pdo_hidr_sin(
 def pdo_oper_tviag_calha_hydro(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_oper_tviag_calha(deck_cls, cache, uow).rename({col: VALUE_COL})
@@ -526,7 +524,7 @@ def pdo_oper_tviag_calha_hydro(
 
 def _hydro_operative_constraints_id(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pd.DataFrame:
     name = "hydro_operative_constraints_id"
@@ -543,12 +541,12 @@ def _hydro_operative_constraints_id(
         )
         df = df.loc[df["tipo_restricao"] == "L"]
         cache[name] = df
-    return cache[name]
+    return cast(pd.DataFrame, cache[name])
 
 
 def _hydro_operative_constraints_coefficients(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pd.DataFrame:
     name = "hydro_operative_constraints_coefficients"
@@ -571,12 +569,12 @@ def _hydro_operative_constraints_coefficients(
         ].unique()
         df = df.loc[~df["codigo_restricao"].isin(constraints_remove)]
         cache[name] = df
-    return cache[name]
+    return cast(pd.DataFrame, cache[name])
 
 
 def _hydro_operative_constraints_bounds(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pd.DataFrame:
     name = "hydro_operative_constraints_bounds"
@@ -592,12 +590,12 @@ def _hydro_operative_constraints_bounds(
             "registros LIM do operuh",
         )
         cache[name] = df
-    return cache[name]
+    return cast(pd.DataFrame, cache[name])
 
 
 def _get_hydro_flow_operative_constraints(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
     constraint_type: int,
 ) -> pl.DataFrame:
@@ -617,12 +615,14 @@ def _get_hydro_flow_operative_constraints(
         )
         return df
 
-    def __cast_constraints_stages_to_datetime(row: pd.Series, period: str):
+    def __cast_constraints_stages_to_datetime(
+        row: pd.Series, period: str
+    ) -> datetime:
         df_stages["day"] = df_stages["data_inicio"].dt.day
         df_stages["month"] = df_stages["data_inicio"].dt.month
         df_stages["year"] = df_stages["data_inicio"].dt.year
-        initial_stage = df_stages[START_DATE_COL].min()
-        final_stage = df_stages[END_DATE_COL].max()
+        initial_stage = cast(datetime, df_stages[START_DATE_COL].min())
+        final_stage = cast(datetime, df_stages[END_DATE_COL].max())
 
         day = row["dia_" + period]
         hour = row["hora_" + period]
@@ -756,7 +756,7 @@ def _overwrite_hydro_bounds_with_operative_constraints(
 
 def _initialize_df_hydro_bounds(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
     lower: float,
     upper: float,
@@ -787,7 +787,7 @@ def _initialize_df_hydro_bounds(
 
 def hydro_generation_bounds(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     name = "hydro_generation_bounds"
@@ -807,12 +807,12 @@ def hydro_generation_bounds(
             df, df_constraints
         )
         cache[name] = df
-    return cache[name]
+    return cast(pl.DataFrame, cache[name])
 
 
 def stored_volume_bounds(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     name = "stored_volume_bounds"
@@ -860,12 +860,12 @@ def stored_volume_bounds(
             ]
         )
         cache[name] = df
-    return cache[name]
+    return cast(pl.DataFrame, cache[name])
 
 
 def hydro_turbined_flow_bounds(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     name = "hydro_turbined_bounds"
@@ -896,12 +896,12 @@ def hydro_turbined_flow_bounds(
             df, df_constraints
         )
         cache[name] = df
-    return cache[name]
+    return cast(pl.DataFrame, cache[name])
 
 
 def hydro_outflow_bounds(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     name = "hydro_outflow_bounds"
@@ -917,12 +917,12 @@ def hydro_outflow_bounds(
             df, df_constraints
         )
         cache[name] = df
-    return cache[name]
+    return cast(pl.DataFrame, cache[name])
 
 
 def hydro_spilled_flow_bounds(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     name = "hydro_spilled_flow_bounds"
@@ -939,4 +939,4 @@ def hydro_spilled_flow_bounds(
             df, df_constraints
         )
         cache[name] = df
-    return cache[name]
+    return cast(pl.DataFrame, cache[name])

@@ -1,5 +1,5 @@
 from logging import INFO, Logger
-from typing import Callable, Dict, Optional, TypeVar
+from typing import Callable, TypeVar
 
 import polars as pl
 
@@ -29,9 +29,15 @@ class OperationVariableBounds:
     """
 
     T = TypeVar("T")
-    logger: Optional[Logger] = None
+    logger: Logger | None = None
 
-    MAPPINGS: Dict[OperationSynthesis, Callable] = {
+    MAPPINGS: dict[
+        OperationSynthesis,
+        Callable[
+            [pl.DataFrame, AbstractUnitOfWork, dict[str, list[object]]],
+            pl.DataFrame,
+        ],
+    ] = {
         OperationSynthesis(
             Variable.GERACAO_TERMICA,
             SpatialResolution.USINA_TERMELETRICA,
@@ -187,7 +193,7 @@ class OperationVariableBounds:
     }
 
     @classmethod
-    def _log(cls, msg: str, level: int = INFO):
+    def _log(cls, msg: str, level: int = INFO) -> None:
         if cls.logger is not None:
             cls.logger.log(level, msg)
 
@@ -231,7 +237,7 @@ class OperationVariableBounds:
     def _group_bounds_df(
         cls,
         df: pl.DataFrame,
-        grouping_column: Optional[str] = None,
+        grouping_column: str | None = None,
         extract_columns: list[str] = [VALUE_COL],
     ) -> pl.DataFrame:
         """
@@ -245,7 +251,7 @@ class OperationVariableBounds:
             HYDRO_CODE_COL,
             SUBMARKET_CODE_COL,
         ]
-        grouping_column_map: Dict[str, list[str]] = {
+        grouping_column_map: dict[str, list[str]] = {
             THERMAL_CODE_COL: [
                 THERMAL_CODE_COL,
                 SUBMARKET_CODE_COL,
@@ -294,7 +300,7 @@ class OperationVariableBounds:
         cls,
         df: pl.DataFrame,
         uow: AbstractUnitOfWork,
-        entity_column: Optional[str],
+        entity_column: str | None,
     ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
@@ -324,7 +330,7 @@ class OperationVariableBounds:
         cls,
         df: pl.DataFrame,
         uow: AbstractUnitOfWork,
-        entity_column: Optional[str],
+        entity_column: str | None,
     ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
@@ -353,7 +359,7 @@ class OperationVariableBounds:
         cls,
         df: pl.DataFrame,
         uow: AbstractUnitOfWork,
-        entity_column: Optional[str],
+        entity_column: str | None,
     ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
@@ -382,7 +388,7 @@ class OperationVariableBounds:
         cls,
         df: pl.DataFrame,
         uow: AbstractUnitOfWork,
-        entity_column: Optional[str],
+        entity_column: str | None,
     ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
@@ -412,7 +418,7 @@ class OperationVariableBounds:
         cls,
         df: pl.DataFrame,
         uow: AbstractUnitOfWork,
-        entity_column: Optional[str],
+        entity_column: str | None,
     ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
@@ -442,7 +448,7 @@ class OperationVariableBounds:
         cls,
         df: pl.DataFrame,
         uow: AbstractUnitOfWork,
-        entity_column: Optional[str],
+        entity_column: str | None,
     ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
@@ -503,7 +509,7 @@ class OperationVariableBounds:
         cls,
         s: OperationSynthesis,
         df: pl.DataFrame,
-        ordered_synthesis_entities: Dict[str, list],
+        ordered_synthesis_entities: dict[str, list[object]],
         uow: AbstractUnitOfWork,
     ) -> pl.DataFrame:
         """

@@ -1,5 +1,3 @@
-from importlib.util import find_spec
-
 HM3_M3S_MONTHLY_FACTOR = 1.0 / 2.63
 
 NULL_INFLOW_STATION = 300
@@ -126,13 +124,3 @@ POLICY_SYNTHESIS_SUBDIR = ""
 SYSTEM_SYNTHESIS_SUBDIR = ""
 
 QUANTILES_FOR_STATISTICS = [0.05 * i for i in range(21)]
-
-import pandas  # type: ignore # noqa: E402
-
-__has_numba = find_spec("numba") is not None
-if pandas.__version__ >= "2.2.0" and __has_numba:
-    PANDAS_GROUPING_ENGINE = "numba"
-else:
-    PANDAS_GROUPING_ENGINE = "cython"
-
-STRING_DF_TYPE = pandas.StringDtype(storage="pyarrow")

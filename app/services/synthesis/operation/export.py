@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import polars as pl
@@ -13,7 +13,6 @@ from app.model.operation.operationsynthesis import (
     UNITS,
     OperationSynthesis,
 )
-from app.model.operation.spatialresolution import SpatialResolution
 from app.services.deck.bounds import OperationVariableBounds
 from app.services.unitofwork import AbstractUnitOfWork
 from app.utils.operations import calc_statistics
@@ -27,7 +26,7 @@ if TYPE_CHECKING:
 
 def export_metadata(
     cls: "type[OperationSynthetizer]",
-    success_synthesis: List[OperationSynthesis],
+    success_synthesis: list[OperationSynthesis],
     uow: AbstractUnitOfWork,
 ) -> None:
     """

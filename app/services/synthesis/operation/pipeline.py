@@ -28,7 +28,7 @@ def post_resolve_file(df: pl.DataFrame) -> pl.DataFrame:
 
 def get_unique_column_values_in_order(
     df: pl.DataFrame, cols: list[str]
-) -> dict[str, list]:
+) -> dict[str, list[object]]:
     """Extrai valores únicos na ordem em que aparecem para um conjunto de colunas."""
     return {col: df[col].unique(maintain_order=True).to_list() for col in cols}
 
@@ -36,7 +36,7 @@ def get_unique_column_values_in_order(
 def set_ordered_entities(
     cls: "type[OperationSynthetizer]",
     s: OperationSynthesis,
-    entities: dict[str, list],
+    entities: dict[str, list[object]],
 ) -> None:
     """Armazena um conjunto de entidades ordenadas para uma síntese."""
     cls.ORDERED_SYNTHESIS_ENTITIES[s] = entities
@@ -44,7 +44,7 @@ def set_ordered_entities(
 
 def get_ordered_entities(
     cls: "type[OperationSynthetizer]", s: OperationSynthesis
-) -> dict[str, list]:
+) -> dict[str, list[object]]:
     """Obtem um conjunto de entidades ordenadas para uma síntese."""
     return cls.ORDERED_SYNTHESIS_ENTITIES[s]
 
@@ -52,45 +52,50 @@ def get_ordered_entities(
 def resolve_dispatch(
     synthesis: tuple[Variable, SpatialResolution],
     logger: logging.Logger | None = None,
-) -> Callable:
+) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
     """Retorna a função de resolução correspondente à síntese fornecida."""
     from app.services.synthesis.operation import resolution as r
 
-    def sbm(col: str) -> Callable:
+    def sbm(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_pdo_sist_sbm(uow, col, logger)
 
-    def sin(col: str) -> Callable:
+    def sin(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_pdo_sist_sin(uow, col, logger)
 
-    def hidr(col: str) -> Callable:
+    def hidr(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_pdo_hidr_uhe(uow, col, logger)
 
-    def hidr_sbm(col: str) -> Callable:
+    def hidr_sbm(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_pdo_hidr_sbm(uow, col, logger)
 
-    def hidr_sin(col: str) -> Callable:
+    def hidr_sin(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_pdo_hidr_sin(uow, col, logger)
 
-    def eol_sbm(col: str) -> Callable:
+    def eol_sbm(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_pdo_eolica_sbm(uow, col, logger)
 
-    def eol_sin(col: str) -> Callable:
+    def eol_sin(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_pdo_eolica_sin(uow, col, logger)
 
-    def costs(col: str) -> Callable:
+    def costs(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_pdo_operacao_costs(uow, col, logger)
 
-    def thermal_sbm(col: str) -> Callable:
+    def thermal_sbm(
+        col: str,
+    ) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_thermal_submarkets_pdo_sist_sbm(
             uow, col, logger
         )
 
-    def hydro_sbm(col: str) -> Callable:
+    def hydro_sbm(col: str) -> Callable[[AbstractUnitOfWork], pl.DataFrame]:
         return lambda uow: r.resolve_hydro_submarkets_pdo_sist_sbm(
             uow, col, logger
         )
 
-    _rules: dict[tuple[Variable, SpatialResolution], Callable] = {
+    _rules: dict[
+        tuple[Variable, SpatialResolution],
+        Callable[[AbstractUnitOfWork], pl.DataFrame],
+    ] = {
         (V.CUSTO_OPERACAO, SR.SISTEMA_INTERLIGADO): costs("custo_presente"),
         (V.CUSTO_FUTURO, SR.SISTEMA_INTERLIGADO): costs("custo_futuro"),
         (V.CUSTO_MARGINAL_OPERACAO, SR.SUBMERCADO): sbm("cmo"),
@@ -192,8 +197,16 @@ def post_resolve(
     df: pl.DataFrame,
     s: OperationSynthesis,
     uow: AbstractUnitOfWork,
-    early_hooks: list[Callable] = [],
-    late_hooks: list[Callable] = [],
+    early_hooks: list[
+        Callable[
+            [OperationSynthesis, pl.DataFrame, AbstractUnitOfWork], pl.DataFrame
+        ]
+    ] = [],
+    late_hooks: list[
+        Callable[
+            [OperationSynthesis, pl.DataFrame, AbstractUnitOfWork], pl.DataFrame
+        ]
+    ] = [],
 ) -> pl.DataFrame:
     """Realiza pós-processamento após a resolução da extração de todos os dados."""
     with time_and_log(
@@ -245,9 +258,11 @@ def resolve_bounds(
 
 def stub_mappings(
     cls: "type[OperationSynthetizer]", s: OperationSynthesis
-) -> Callable | None:  # noqa
+) -> Callable[[OperationSynthesis, AbstractUnitOfWork], pl.DataFrame] | None:
     """Obtem a função stub para sínteses fora do fluxo padrão."""
-    f = None
+    f: (
+        Callable[[OperationSynthesis, AbstractUnitOfWork], pl.DataFrame] | None
+    ) = None
     return f
 
 

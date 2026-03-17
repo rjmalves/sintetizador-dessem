@@ -262,11 +262,8 @@ em relação ao conjunto de elementos do sistema.
 Estado do Desenvolvimento
 ***************************
 
-Todas as variáveis das categorias `Sistema` que são listadas e estão disponíveis no
+Todas as variáveis das categorias `Sistema` e `Execução` que são listadas e estão disponíveis no
 modelo DESSEM, estão disponíveis para uso no sintetizador.
-
- e `Execução` que são listadas
-e estão presentes no modelo DESSEM, estão disponíveis para uso no sintetizador.
 
 Já para as categorias de `Operação` e `Execução`, nem todas as combinações de agregações espaciais, temporais e variáveis
 fazem sentido, ou especialmente são modeladas ou possíveis de se obter no DESSEM. Desta forma,

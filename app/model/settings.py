@@ -4,7 +4,7 @@ from app.utils.singleton import Singleton
 
 
 class Settings(metaclass=Singleton):
-    def __init__(self):
+    def __init__(self) -> None:
         # Execution parameters
         self.installdir = getenv("APP_INSTALLDIR")
         self.basedir = getenv("APP_BASEDIR")

@@ -5,9 +5,9 @@ Covers pdo_oper_uct, pdo_oper_term, per-unit cost extraction,
 generation bounds, and aggregation helpers for thermal synthesis.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, cast
 
-import pandas as pd  # type: ignore
+import pandas as pd
 import polars as pl
 from idessem.dessem.pdo_oper_term import PdoOperTerm
 from idessem.dessem.pdo_oper_uct import PdoOperUct
@@ -35,7 +35,7 @@ from app.utils.operations import fast_group_df
 
 def pdo_oper_uct(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("pdo_oper_uct")
@@ -60,7 +60,7 @@ def pdo_oper_uct(
 
 def pdo_oper_term(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("pdo_oper_term")
@@ -112,7 +112,7 @@ def pdo_oper_term(
 def pdo_oper_term_ute(
     col: str,
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = pdo_oper_term(deck_cls, cache, uow).rename({col: VALUE_COL})
@@ -136,7 +136,7 @@ def pdo_oper_term_ute(
 
 def thermal_costs(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("thermal_costs")
@@ -173,8 +173,8 @@ def thermal_costs(
 
 def _group_thermal_bounds_df(
     df: pl.DataFrame,
-    grouping_column: Optional[str] = None,
-    extract_columns: List[str] = [VALUE_COL],
+    grouping_column: str | None = None,
+    extract_columns: list[str] = [VALUE_COL],
 ) -> pl.DataFrame:
     """
     Realiza a agregação de variáveis fornecidas a nível de usina
@@ -186,7 +186,7 @@ def _group_thermal_bounds_df(
         THERMAL_CODE_COL,
         SUBMARKET_CODE_COL,
     ]
-    grouping_column_map: Dict[str, List[str]] = {
+    grouping_column_map: dict[str, list[str]] = {
         THERMAL_CODE_COL: [
             THERMAL_CODE_COL,
             SUBMARKET_CODE_COL,
@@ -212,7 +212,7 @@ def _group_thermal_bounds_df(
 
 def thermal_generation_bounds(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     name = "thermal_generation_bounds"
@@ -240,4 +240,4 @@ def thermal_generation_bounds(
             ]
         )
         cache[name] = df
-    return cache[name]
+    return cast(pl.DataFrame, cache[name])

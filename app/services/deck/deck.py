@@ -11,10 +11,10 @@ All public methods delegate to focused submodules:
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
-import numpy as np  # type: ignore
-import pandas as pd  # type: ignore
+import pandas as pd
+import polars as pl
 from idessem.dessem.dadvaz import Dadvaz
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.entdados import Entdados
@@ -31,9 +31,9 @@ from app.services.unitofwork import AbstractUnitOfWork
 
 
 class Deck:
-    logger: Optional[logging.Logger] = None
+    logger: logging.Logger | None = None
 
-    DECK_DATA_CACHING: Dict[str, Any] = {}
+    DECK_DATA_CACHING: dict[str, Any] = {}
 
     @classmethod
     def _log(cls, msg: str, level: int = logging.INFO) -> None:
@@ -41,7 +41,7 @@ class Deck:
             cls.logger.log(level, msg)
 
     @classmethod
-    def _c(cls) -> Dict[str, Any]:
+    def _c(cls) -> dict[str, Any]:
         return cls.DECK_DATA_CACHING
 
     # --- Cached file accessors ---
@@ -73,14 +73,8 @@ class Deck:
     # --- Temporal ---
 
     @classmethod
-    def stages_durations(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def stages_durations(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _temporal.stages_durations(cls, cls._c(), uow)
-
-    @classmethod
-    def date_arrays(
-        cls, line: pd.Series, uow: AbstractUnitOfWork
-    ) -> np.ndarray:
-        return _temporal.date_arrays(cls, cls._c(), line, uow)
 
     @classmethod
     def version(cls, uow: AbstractUnitOfWork) -> str:
@@ -91,47 +85,47 @@ class Deck:
         return _temporal.title(cls, cls._c(), uow)
 
     @classmethod
-    def block_map(cls, uow: AbstractUnitOfWork) -> dict:
+    def block_map(cls, uow: AbstractUnitOfWork) -> dict[str, int]:
         return _temporal.block_map(cls, cls._c(), uow)
 
     @classmethod
-    def stage_block_map(cls, uow: AbstractUnitOfWork) -> dict:
+    def stage_block_map(cls, uow: AbstractUnitOfWork) -> dict[int, int]:
         return _temporal.stage_block_map(cls, cls._c(), uow)
 
     @classmethod
-    def blocks_durations(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def blocks_durations(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _temporal.blocks_durations(cls, cls._c(), uow)
 
     # --- Entities ---
 
     @classmethod
-    def eer_submarket_map(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def eer_submarket_map(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _entities.eer_submarket_map(cls, cls._c(), uow)
 
     @classmethod
-    def hydro_eer_map(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def hydro_eer_map(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _entities.hydro_eer_map(cls, cls._c(), uow)
 
     @classmethod
-    def hydro_eer_submarket_map(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def hydro_eer_submarket_map(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _entities.hydro_eer_submarket_map(cls, cls._c(), uow)
 
     @classmethod
-    def hydro_initial_volumes(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def hydro_initial_volumes(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _entities.hydro_initial_volumes(cls, cls._c(), uow)
 
     @classmethod
-    def thermals(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def thermals(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _entities.thermals(cls, cls._c(), uow)
 
     @classmethod
-    def submarkets(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def submarkets(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _entities.submarkets(cls, cls._c(), uow)
 
     # --- Hydro ---
 
     @classmethod
-    def pdo_eco_usih(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_eco_usih(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.pdo_eco_usih(cls, cls._c(), uow)
 
     @classmethod
@@ -139,51 +133,51 @@ class Deck:
         return _hydro.pdo_operacao(cls, cls._c(), uow)
 
     @classmethod
-    def hydro_inflows(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def hydro_inflows(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.hydro_inflows(cls, cls._c(), uow)
 
     @classmethod
-    def pdo_hidr(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_hidr(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.pdo_hidr(cls, cls._c(), uow)
 
     @classmethod
-    def pdo_oper_tviag_calha(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_oper_tviag_calha(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.pdo_oper_tviag_calha(cls, cls._c(), uow)
 
     @classmethod
-    def pdo_hidr_hydro(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_hidr_hydro(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.pdo_hidr_hydro(col, cls, cls._c(), uow)
 
     @classmethod
-    def pdo_hidr_eer(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_hidr_eer(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.pdo_hidr_eer(col, cls, cls._c(), uow)
 
     @classmethod
-    def pdo_hidr_sbm(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_hidr_sbm(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.pdo_hidr_sbm(col, cls, cls._c(), uow)
 
     @classmethod
-    def pdo_hidr_sin(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_hidr_sin(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.pdo_hidr_sin(col, cls, cls._c(), uow)
 
     @classmethod
     def pdo_oper_tviag_calha_hydro(
         cls, col: str, uow: AbstractUnitOfWork
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         return _hydro.pdo_oper_tviag_calha_hydro(col, cls, cls._c(), uow)
 
     @classmethod
-    def hydro_generation_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def hydro_generation_bounds(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.hydro_generation_bounds(cls, cls._c(), uow)
 
     @classmethod
-    def stored_volume_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def stored_volume_bounds(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.stored_volume_bounds(cls, cls._c(), uow)
 
     @classmethod
     def _get_hydro_flow_operative_constraints(
         cls, uow: AbstractUnitOfWork, constraint_type: int
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         return _hydro._get_hydro_flow_operative_constraints(
             cls, cls._c(), uow, constraint_type
         )
@@ -191,77 +185,77 @@ class Deck:
     @classmethod
     def hydro_turbined_flow_bounds(
         cls, uow: AbstractUnitOfWork
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         return _hydro.hydro_turbined_flow_bounds(cls, cls._c(), uow)
 
     @classmethod
-    def hydro_outflow_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def hydro_outflow_bounds(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.hydro_outflow_bounds(cls, cls._c(), uow)
 
     @classmethod
-    def hydro_spilled_flow_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def hydro_spilled_flow_bounds(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _hydro.hydro_spilled_flow_bounds(cls, cls._c(), uow)
 
     # --- Thermal ---
 
     @classmethod
-    def pdo_oper_uct(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_oper_uct(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _thermal.pdo_oper_uct(cls, cls._c(), uow)
 
     @classmethod
-    def pdo_oper_term(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_oper_term(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _thermal.pdo_oper_term(cls, cls._c(), uow)
 
     @classmethod
     def pdo_oper_term_ute(
         cls, col: str, uow: AbstractUnitOfWork
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         return _thermal.pdo_oper_term_ute(col, cls, cls._c(), uow)
 
     @classmethod
-    def thermal_costs(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def thermal_costs(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _thermal.thermal_costs(cls, cls._c(), uow)
 
     @classmethod
-    def thermal_generation_bounds(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def thermal_generation_bounds(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _thermal.thermal_generation_bounds(cls, cls._c(), uow)
 
     # --- System ---
 
     @classmethod
-    def pdo_sist(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_sist(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _system.pdo_sist(cls, cls._c(), uow)
 
     @classmethod
-    def pdo_eolica(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_eolica(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _system.pdo_eolica(cls, cls._c(), uow)
 
     @classmethod
-    def pdo_inter(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_inter(cls, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _system.pdo_inter(cls, cls._c(), uow)
 
     @classmethod
-    def pdo_sist_sbm(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_sist_sbm(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _system.pdo_sist_sbm(col, cls, cls._c(), uow)
 
     @classmethod
-    def pdo_sist_sin(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_sist_sin(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _system.pdo_sist_sin(col, cls, cls._c(), uow)
 
     @classmethod
-    def pdo_eolica_sbm(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_eolica_sbm(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _system.pdo_eolica_sbm(col, cls, cls._c(), uow)
 
     @classmethod
-    def pdo_eolica_sin(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_eolica_sin(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _system.pdo_eolica_sin(col, cls, cls._c(), uow)
 
     @classmethod
-    def pdo_inter_sbp(cls, col: str, uow: AbstractUnitOfWork) -> pd.DataFrame:
+    def pdo_inter_sbp(cls, col: str, uow: AbstractUnitOfWork) -> pl.DataFrame:
         return _system.pdo_inter_sbp(col, cls, cls._c(), uow)
 
     @classmethod
     def pdo_operacao_costs(
         cls, col: str, uow: AbstractUnitOfWork
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         return _system.pdo_operacao_costs(col, cls, cls._c(), uow)

@@ -1,9 +1,9 @@
 import logging
 from logging import ERROR, INFO
 from traceback import print_exc
-from typing import Callable, List, Optional
+from typing import Callable
 
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from app.internal.constants import (
     EXECUTION_SYNTHESIS_METADATA_OUTPUT,
@@ -21,21 +21,21 @@ from app.utils.timing import time_and_log
 
 
 class ExecutionSynthetizer:
-    DEFAULT_EXECUTION_SYNTHESIS_ARGS: List[str] = SUPPORTED_SYNTHESIS
+    DEFAULT_EXECUTION_SYNTHESIS_ARGS: list[str] = SUPPORTED_SYNTHESIS
 
-    logger: Optional[logging.Logger] = None
+    logger: logging.Logger | None = None
 
     @classmethod
-    def _log(cls, msg: str, level: int = INFO):
+    def _log(cls, msg: str, level: int = INFO) -> None:
         if cls.logger is not None:
             cls.logger.log(level, msg)
 
     @classmethod
-    def _default_args(cls) -> List[str]:
+    def _default_args(cls) -> list[str]:
         return cls.DEFAULT_EXECUTION_SYNTHESIS_ARGS
 
     @classmethod
-    def _match_wildcards(cls, variables: List[str]) -> List[str]:
+    def _match_wildcards(cls, variables: list[str]) -> list[str]:
         return match_variables_with_wildcards(
             variables, cls.DEFAULT_EXECUTION_SYNTHESIS_ARGS
         )
@@ -43,8 +43,8 @@ class ExecutionSynthetizer:
     @classmethod
     def _process_variable_arguments(
         cls,
-        args: List[str],
-    ) -> List[ExecutionSynthesis]:
+        args: list[str],
+    ) -> list[ExecutionSynthesis]:
         args_data = [ExecutionSynthesis.factory(c) for c in args]
         valid_args = [arg for arg in args_data if arg is not None]
         for i, a in enumerate(args_data):
@@ -55,8 +55,8 @@ class ExecutionSynthetizer:
 
     @classmethod
     def _preprocess_synthesis_variables(
-        cls, variables: List[str], uow: AbstractUnitOfWork
-    ) -> List[ExecutionSynthesis]:
+        cls, variables: list[str], uow: AbstractUnitOfWork
+    ) -> list[ExecutionSynthesis]:
         """
         Realiza o pré-processamento das variáveis de síntese fornecidas,
         filtrando as válidas para o caso em questão.
@@ -78,7 +78,7 @@ class ExecutionSynthetizer:
     def _resolve(
         cls, synthesis: ExecutionSynthesis, uow: AbstractUnitOfWork
     ) -> pd.DataFrame:
-        RULES: dict[Variable, Callable] = {
+        RULES: dict[Variable, Callable[[AbstractUnitOfWork], pd.DataFrame]] = {
             Variable.PROGRAMA: cls._resolve_program,
             Variable.VERSAO: cls._resolve_version,
             Variable.TITULO: cls._resolve_title,
@@ -134,9 +134,9 @@ class ExecutionSynthetizer:
     @classmethod
     def _export_metadata(
         cls,
-        success_synthesis: List[ExecutionSynthesis],
+        success_synthesis: list[ExecutionSynthesis],
         uow: AbstractUnitOfWork,
-    ):
+    ) -> None:
         metadata_df = pd.DataFrame(
             columns=[
                 "chave",
@@ -158,7 +158,7 @@ class ExecutionSynthetizer:
     @classmethod
     def _synthetize_single_variable(
         cls, s: ExecutionSynthesis, uow: AbstractUnitOfWork
-    ) -> Optional[ExecutionSynthesis]:
+    ) -> ExecutionSynthesis | None:
         """
         Realiza a síntese de execução para uma variável
         fornecida.
@@ -182,7 +182,7 @@ class ExecutionSynthetizer:
                 return None
 
     @classmethod
-    def synthetize(cls, variables: List[str], uow: AbstractUnitOfWork):
+    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork) -> None:
         cls.logger = logging.getLogger("main")
         uow.subdir = EXECUTION_SYNTHESIS_SUBDIR
 
@@ -193,7 +193,7 @@ class ExecutionSynthetizer:
                 variables, uow
             )
 
-            success_synthesis: List[ExecutionSynthesis] = []
+            success_synthesis: list[ExecutionSynthesis] = []
             for s in synthesis_variables:
                 r = cls._synthetize_single_variable(s, uow)
                 if r:

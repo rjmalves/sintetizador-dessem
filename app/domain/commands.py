@@ -1,17 +1,16 @@
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass
 class SynthetizeSystem:
-    variables: List[str]
+    variables: list[str]
 
 
 @dataclass
 class SynthetizeExecution:
-    variables: List[str]
+    variables: list[str]
 
 
 @dataclass
 class SynthetizeOperation:
-    variables: List[str]
+    variables: list[str]

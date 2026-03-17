@@ -1,3 +1,5 @@
+from typing import Callable
+
 import polars as pl
 
 from app.internal.constants import (
@@ -9,20 +11,20 @@ from app.internal.constants import (
 
 def fast_group_df(
     df: pl.DataFrame,
-    grouping_columns: list,
-    extract_columns: list,
+    grouping_columns: list[str],
+    extract_columns: list[str],
     operation: str,
     reset_index: bool = True,
 ) -> pl.DataFrame:
     """
     Agrupa um DataFrame aplicando uma operação.
     """
-    operation_map = {
+    operation_map: dict[str, Callable[[pl.Expr], pl.Expr]] = {
         "mean": pl.Expr.mean,
         "std": pl.Expr.std,
         "sum": pl.Expr.sum,
     }
-    agg_fn = operation_map[operation]
+    agg_fn: Callable[[pl.Expr], pl.Expr] = operation_map[operation]
     grouped_df = df.group_by(grouping_columns).agg(
         [agg_fn(pl.col(c)) for c in extract_columns]
     )

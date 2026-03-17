@@ -5,9 +5,9 @@ Covers hydro/EER/submarket/thermal entity maps extracted from entdados,
 dadvaz, and pdo_oper_term files.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-import pandas as pd  # type: ignore
+import pandas as pd
 import polars as pl
 from idessem.dessem.pdo_oper_term import PdoOperTerm
 
@@ -29,7 +29,7 @@ from app.services.unitofwork import AbstractUnitOfWork
 
 def eer_submarket_map(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("eer_submarket_map")
@@ -72,7 +72,7 @@ def eer_submarket_map(
 
 def hydro_eer_map(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("hydro_eer_map")
@@ -94,7 +94,7 @@ def hydro_eer_map(
 
 def hydro_eer_submarket_map(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("hydro_eer_submarket_map")
@@ -117,7 +117,7 @@ def hydro_eer_submarket_map(
 
 def hydro_initial_volumes(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("hydro_initial_volumes")
@@ -156,7 +156,7 @@ def hydro_initial_volumes(
 
 def thermals(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("thermals")
@@ -198,7 +198,7 @@ def thermals(
 
 def submarkets(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("submarkets")

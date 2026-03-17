@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from app.model.execution.variable import Variable
 
@@ -12,7 +11,7 @@ class ExecutionSynthesis:
         return self.variable.value
 
     @classmethod
-    def factory(cls, synthesis: str) -> Optional["ExecutionSynthesis"]:
+    def factory(cls, synthesis: str) -> "ExecutionSynthesis | None":
         return cls(
             Variable.factory(synthesis),
         )

@@ -7,13 +7,12 @@ import sys
 import time
 from multiprocessing import Process
 from multiprocessing.queues import Queue as MPQueue
-from typing import Optional
 
 from app.utils.singleton import Singleton
 
 
 class Log(metaclass=Singleton):
-    listener: Optional[Process] = None
+    listener: Process | None = None
 
     @classmethod
     def logging_process(cls, q: MPQueue[logging.LogRecord]) -> None:

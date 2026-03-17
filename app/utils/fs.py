@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from types import TracebackType
 
 
 class set_directory:
@@ -8,14 +9,19 @@ class set_directory:
     in HPC script executions.
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str) -> None:
         self.path = Path(path)
         self.origin = Path().absolute()
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         os.chdir(self.path)
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         os.chdir(self.origin)
 
 

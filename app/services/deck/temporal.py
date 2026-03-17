@@ -6,9 +6,9 @@ DataFrame transformation helpers (add_single_scenario, add_submarket_code)
 that are shared across system, hydro, and thermal modules.
 """
 
-from typing import Any, Dict
+from typing import Any
 
-import pandas as pd  # type: ignore
+import pandas as pd
 import polars as pl
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.dessemarq import DessemArq
@@ -28,7 +28,6 @@ from app.internal.constants import (
 from app.services.deck import accessors
 from app.services.unitofwork import AbstractUnitOfWork
 
-
 # ---------------------------------------------------------------------------
 # DataFrame helpers shared across modules
 # ---------------------------------------------------------------------------
@@ -41,7 +40,7 @@ def add_single_scenario(df: pl.DataFrame) -> pl.DataFrame:
 
 def add_submarket_code(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
     df: pl.DataFrame,
     submarket_name_col: str,
@@ -76,7 +75,7 @@ def add_submarket_code(
 
 def stages_durations(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("stages_durations")
@@ -110,7 +109,7 @@ def stages_durations(
 
 def version(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> str:
     val = cache.get("version")
@@ -128,7 +127,7 @@ def version(
 
 def title(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> str:
     val = cache.get("title")
@@ -154,16 +153,16 @@ def title(
 
 def block_map(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> dict:
+) -> dict[str, int]:
     map_dict = cache.get("block_map")
     if map_dict is None:
         entdados = accessors.entdados(deck_cls, cache, uow)
         tm_df = accessors.validate_data(
             deck_cls, entdados.tm(df=True), pd.DataFrame, "TM"
         )
-        blocks: list = tm_df["nome_patamar"].unique().tolist()
+        blocks: list[str] = tm_df["nome_patamar"].unique().tolist()
         blocks.sort(reverse=True)
         map_dict = {b: i for i, b in enumerate(blocks)}
         cache["block_map"] = map_dict
@@ -172,9 +171,9 @@ def block_map(
 
 def stage_block_map(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> dict:
+) -> dict[int, int]:
     map_dict = cache.get("stage_block_map")
     if map_dict is None:
         bm = block_map(deck_cls, cache, uow)
@@ -182,7 +181,7 @@ def stage_block_map(
         tm_df = accessors.validate_data(
             deck_cls, entdados.tm(df=True), pd.DataFrame, "TM"
         )
-        blocks: list = tm_df["nome_patamar"]
+        blocks: list[str] = tm_df["nome_patamar"]
         map_dict = {i + 1: bm[b] for i, b in enumerate(blocks)}
         cache["stage_block_map"] = map_dict
     return map_dict
@@ -190,7 +189,7 @@ def stage_block_map(
 
 def blocks_durations(
     deck_cls: Any,
-    cache: Dict[str, Any],
+    cache: dict[str, Any],
     uow: AbstractUnitOfWork,
 ) -> pl.DataFrame:
     df = cache.get("blocks_durations")

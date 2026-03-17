@@ -73,8 +73,7 @@ Os metadados são armazenados em arquivos com o prefixo `METADADOS_` e o nome da
 
 Por exemplo, em uma síntese da operação, os metadados podem ser acessados como:
 
-    
-.. code-block:: python
+.. code-block:: text
 
     import pandas as pd
     meta_df = pd.read_parquet("sintese/METADADOS_OPERACAO.parquet")

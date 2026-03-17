@@ -1,15 +1,14 @@
 import asyncio
-from typing import List, Optional, Tuple
 
 RETRY_DEFAULT = 3
 TIMEOUT_DEFAULT = 10
 
 
 async def run_terminal_retry(
-    cmds: List[str],
+    cmds: list[str],
     num_retry: int = RETRY_DEFAULT,
     timeout: float = TIMEOUT_DEFAULT,
-) -> Tuple[int, str]:
+) -> tuple[int, str]:
     """
     Runs a command on the terminal (with retries) and returns.
 
@@ -27,8 +26,8 @@ async def run_terminal_retry(
 
 
 async def run_terminal(
-    cmds: List[str], timeout: float = TIMEOUT_DEFAULT
-) -> Tuple[Optional[int], str]:
+    cmds: list[str], timeout: float = TIMEOUT_DEFAULT
+) -> tuple[int | None, str]:
     """
     Runs a command on the terminal and returns.
 

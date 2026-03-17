@@ -1,9 +1,9 @@
 import logging
 from logging import ERROR, INFO
 from traceback import print_exc
-from typing import Callable, Optional
+from typing import Callable
 
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from app.internal.constants import (
     BLOCK_COL,
@@ -31,10 +31,10 @@ from app.utils.timing import time_and_log
 class SystemSynthetizer:
     DEFAULT_SYSTEM_SYNTHESIS_ARGS = SUPPORTED_SYNTHESIS
 
-    logger: Optional[logging.Logger] = None
+    logger: logging.Logger | None = None
 
     @classmethod
-    def _log(cls, msg: str, level: int = INFO):
+    def _log(cls, msg: str, level: int = INFO) -> None:
         if cls.logger is not None:
             cls.logger.log(level, msg)
 
@@ -86,7 +86,7 @@ class SystemSynthetizer:
     def _resolve(
         cls, synthesis: SystemSynthesis, uow: AbstractUnitOfWork
     ) -> pd.DataFrame:
-        RULES: dict[Variable, Callable] = {
+        RULES: dict[Variable, Callable[[AbstractUnitOfWork], pd.DataFrame]] = {
             Variable.EST: cls._resolve_EST,
             Variable.PAT: cls._resolve_PAT,
             Variable.SBM: cls._resolve_SBM,
@@ -165,7 +165,7 @@ class SystemSynthetizer:
         cls,
         success_synthesis: list[SystemSynthesis],
         uow: AbstractUnitOfWork,
-    ):
+    ) -> None:
         metadata_df = pd.DataFrame(
             columns=[
                 "chave",
@@ -187,7 +187,7 @@ class SystemSynthetizer:
     @classmethod
     def _synthetize_single_variable(
         cls, s: SystemSynthesis, uow: AbstractUnitOfWork
-    ) -> Optional[SystemSynthesis]:
+    ) -> SystemSynthesis | None:
         """
         Realiza a síntese de sistema para uma variável
         fornecida.
@@ -211,7 +211,7 @@ class SystemSynthetizer:
                 return None
 
     @classmethod
-    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork):
+    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork) -> None:
         cls.logger = logging.getLogger("main")
         uow.subdir = SYSTEM_SYNTHESIS_SUBDIR
 
