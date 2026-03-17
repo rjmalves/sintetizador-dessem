@@ -9,7 +9,7 @@ class Log(metaclass=Singleton):
     LOGGER = None
 
     @classmethod
-    def configure_logging(cls, diretorio: str):
+    def configure_logging(cls, diretorio: str) -> None:
         root = logging.getLogger("main")
         f = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
         # Logger para STDOUT

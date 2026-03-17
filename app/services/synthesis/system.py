@@ -3,7 +3,7 @@ from logging import ERROR, INFO
 from traceback import print_exc
 from typing import Callable, Optional
 
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from app.internal.constants import (
     BLOCK_COL,
@@ -34,13 +34,13 @@ class SystemSynthetizer:
     logger: Optional[logging.Logger] = None
 
     @classmethod
-    def _log(cls, msg: str, level: int = INFO):
+    def _log(cls, msg: str, level: int = INFO) -> None:
         if cls.logger is not None:
             cls.logger.log(level, msg)
 
     @classmethod
     def _default_args(cls) -> list[str]:
-        return cls.DEFAULT_SYSTEM_SYNTHESIS_ARGS
+        return list(cls.DEFAULT_SYSTEM_SYNTHESIS_ARGS)
 
     @classmethod
     def _match_wildcards(cls, variables: list[str]) -> list[str]:
@@ -86,7 +86,7 @@ class SystemSynthetizer:
     def _resolve(
         cls, synthesis: SystemSynthesis, uow: AbstractUnitOfWork
     ) -> pd.DataFrame:
-        RULES: dict[Variable, Callable] = {
+        RULES: dict[Variable, Callable[..., pd.DataFrame]] = {
             Variable.EST: cls._resolve_EST,
             Variable.PAT: cls._resolve_PAT,
             Variable.SBM: cls._resolve_SBM,
@@ -163,7 +163,7 @@ class SystemSynthetizer:
         cls,
         success_synthesis: list[SystemSynthesis],
         uow: AbstractUnitOfWork,
-    ):
+    ) -> None:
         metadata_df = pd.DataFrame(
             columns=[
                 "chave",
@@ -209,7 +209,7 @@ class SystemSynthetizer:
                 return None
 
     @classmethod
-    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork):
+    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork) -> None:
         cls.logger = logging.getLogger("main")
         uow.subdir = SYSTEM_SYNTHESIS_SUBDIR
 

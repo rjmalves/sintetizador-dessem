@@ -3,7 +3,7 @@ from logging import ERROR, INFO
 from traceback import print_exc
 from typing import Callable, List, Optional
 
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from app.internal.constants import (
     EXECUTION_SYNTHESIS_METADATA_OUTPUT,
@@ -26,13 +26,13 @@ class ExecutionSynthetizer:
     logger: Optional[logging.Logger] = None
 
     @classmethod
-    def _log(cls, msg: str, level: int = INFO):
+    def _log(cls, msg: str, level: int = INFO) -> None:
         if cls.logger is not None:
             cls.logger.log(level, msg)
 
     @classmethod
     def _default_args(cls) -> List[str]:
-        return cls.DEFAULT_EXECUTION_SYNTHESIS_ARGS
+        return list(cls.DEFAULT_EXECUTION_SYNTHESIS_ARGS)
 
     @classmethod
     def _match_wildcards(cls, variables: List[str]) -> List[str]:
@@ -78,7 +78,7 @@ class ExecutionSynthetizer:
     def _resolve(
         cls, synthesis: ExecutionSynthesis, uow: AbstractUnitOfWork
     ) -> pd.DataFrame:
-        RULES: dict[Variable, Callable] = {
+        RULES: dict[Variable, Callable[..., pd.DataFrame]] = {
             Variable.PROGRAMA: cls._resolve_program,
             Variable.VERSAO: cls._resolve_version,
             Variable.TITULO: cls._resolve_title,
@@ -90,11 +90,11 @@ class ExecutionSynthetizer:
     @classmethod
     def _resolve_program(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         return pd.DataFrame(data={"programa": ["DESSEM"]})
-    
+
     @classmethod
     def _resolve_version(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         return pd.DataFrame(data={"versao": [Deck.version(uow)]})
-    
+
     @classmethod
     def _resolve_title(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         return pd.DataFrame(data={"titulo": [Deck.title(uow)]})
@@ -136,7 +136,7 @@ class ExecutionSynthetizer:
         cls,
         success_synthesis: List[ExecutionSynthesis],
         uow: AbstractUnitOfWork,
-    ):
+    ) -> None:
         metadata_df = pd.DataFrame(
             columns=[
                 "chave",
@@ -182,7 +182,7 @@ class ExecutionSynthetizer:
                 return None
 
     @classmethod
-    def synthetize(cls, variables: List[str], uow: AbstractUnitOfWork):
+    def synthetize(cls, variables: List[str], uow: AbstractUnitOfWork) -> None:
         cls.logger = logging.getLogger("main")
         uow.subdir = EXECUTION_SYNTHESIS_SUBDIR
 

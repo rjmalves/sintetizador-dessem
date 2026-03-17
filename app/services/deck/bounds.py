@@ -2,23 +2,23 @@ from logging import INFO, Logger
 from typing import Callable, Dict, Optional, TypeVar
 
 import numpy as np
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from app.internal.constants import (
+    HYDRO_CODE_COL,
+    IDENTIFICATION_COLUMNS,
     LOWER_BOUND_COL,
-    UPPER_BOUND_COL,
-    VALUE_COL,
-    THERMAL_CODE_COL,
     STAGE_COL,
     SUBMARKET_CODE_COL,
-    IDENTIFICATION_COLUMNS,
-    HYDRO_CODE_COL,
+    THERMAL_CODE_COL,
+    UPPER_BOUND_COL,
+    VALUE_COL,
 )
-from app.services.deck.deck import Deck
 from app.model.operation.operationsynthesis import OperationSynthesis
-from app.services.unitofwork import AbstractUnitOfWork
-from app.model.operation.variable import Variable
 from app.model.operation.spatialresolution import SpatialResolution
+from app.model.operation.variable import Variable
+from app.services.deck.deck import Deck
+from app.services.unitofwork import AbstractUnitOfWork
 from app.utils.operations import fast_group_df
 
 
@@ -32,7 +32,7 @@ class OperationVariableBounds:
     T = TypeVar("T")
     logger: Optional[Logger] = None
 
-    MAPPINGS: Dict[OperationSynthesis, Callable] = {
+    MAPPINGS: Dict[OperationSynthesis, Callable[..., pd.DataFrame]] = {
         OperationSynthesis(
             Variable.GERACAO_TERMICA,
             SpatialResolution.USINA_TERMELETRICA,
@@ -188,7 +188,7 @@ class OperationVariableBounds:
     }
 
     @classmethod
-    def _log(cls, msg: str, level: int = INFO):
+    def _log(cls, msg: str, level: int = INFO) -> None:
         if cls.logger is not None:
             cls.logger.log(level, msg)
 
@@ -510,7 +510,7 @@ class OperationVariableBounds:
         cls,
         s: OperationSynthesis,
         df: pd.DataFrame,
-        ordered_synthesis_entities: Dict[str, list],
+        ordered_synthesis_entities: Dict[str, list[str]],
         uow: AbstractUnitOfWork,
     ) -> pd.DataFrame:
         """

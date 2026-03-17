@@ -7,10 +7,10 @@ name = "sintetizador-dessem"
 dynamic = ["version"]
 dependencies = [
     "click>=8.1.8",
-    "idessem>=1.0.0",
+    "idessem>=1.2.1",
     "pyarrow>=19.0.0",
 ]
-requires-python = ">= 3.10"
+requires-python = ">= 3.11"
 authors = [
   {name = "Rogerio Alves", email = "rogerioalves.ee@gmail.com"},
   {name = "Mariana Noel", email = "marianasimoesnoel@gmail.com"},
@@ -22,7 +22,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Operating System :: OS Independent",
 ]
 
@@ -59,3 +59,35 @@ include = [
 
 [tool.ruff]
 line-length = 80
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.mypy]
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["idessem.*"]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["cfinterface.*"]
+ignore_errors = true
+
+# idessem .read() classmethods return base types (SectionFile,
+# BlockFile, RegisterFile) instead of Self, causing many false-positive
+# errors throughout this module.
+[[tool.mypy.overrides]]
+module = ["app.adapters.repository.files"]
+disable_error_code = ["assignment", "return-value", "attr-defined", "unused-ignore"]
+
+[[tool.mypy.overrides]]
+module = ["dateutil.*"]
+ignore_errors = true

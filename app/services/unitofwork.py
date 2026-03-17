@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from os import chdir, curdir
 from pathlib import Path
-from typing import Dict, Type
+from typing import Any, Dict, Optional, Type
 
 from app.adapters.repository.export import (
     AbstractExportRepository,
@@ -23,11 +23,11 @@ class AbstractUnitOfWork(ABC):
     def __enter__(self) -> "AbstractUnitOfWork":
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:
         self.rollback()
 
     @abstractmethod
-    def rollback(self):
+    def rollback(self) -> None:
         raise NotImplementedError
 
     @property
@@ -45,7 +45,7 @@ class AbstractUnitOfWork(ABC):
         return self._subdir
 
     @subdir.setter
-    def subdir(self, subdir: str):
+    def subdir(self, subdir: str) -> None:
         self._subdir = subdir
 
 
@@ -54,10 +54,10 @@ class FSUnitOfWork(AbstractUnitOfWork):
         super().__init__()
         self._current_path = Path(curdir).resolve()
         self._path = Path(directory).resolve()
-        self._files = None
-        self._exporter = None
+        self._files: Optional[AbstractFilesRepository] = None
+        self._exporter: Optional[AbstractExportRepository] = None
 
-    def __create_repository(self):
+    def __create_repository(self) -> None:
         if self._files is None:
             self._files = RawFilesRepository(str(self._path))
         if self._exporter is None:
@@ -74,7 +74,7 @@ class FSUnitOfWork(AbstractUnitOfWork):
         self.__create_repository()
         return super().__enter__()
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:
         chdir(self._current_path)
         super().__exit__(*args)
 
@@ -90,11 +90,11 @@ class FSUnitOfWork(AbstractUnitOfWork):
             raise RuntimeError()
         return self._exporter
 
-    def rollback(self):
+    def rollback(self) -> None:
         pass
 
 
-def factory(kind: str, *args, **kwargs) -> AbstractUnitOfWork:
+def factory(kind: str, *args: Any, **kwargs: Any) -> AbstractUnitOfWork:
     mappings: Dict[str, Type[AbstractUnitOfWork]] = {
         "FS": FSUnitOfWork,
     }

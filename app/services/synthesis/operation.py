@@ -3,7 +3,7 @@ from logging import DEBUG, ERROR, INFO, WARNING
 from traceback import print_exc
 from typing import Callable, List, TypeVar
 
-import pandas as pd  # type: ignore
+import pandas as pd
 
 from app.internal.constants import (
     IDENTIFICATION_COLUMNS,
@@ -11,9 +11,9 @@ from app.internal.constants import (
     OPERATION_SYNTHESIS_STATS_ROOT,
     OPERATION_SYNTHESIS_SUBDIR,
     STRING_DF_TYPE,
+    SUBMARKET_CODE_COL,
     VALUE_COL,
     VARIABLE_COL,
-    SUBMARKET_CODE_COL,
 )
 from app.model.operation.operationsynthesis import (
     SUPPORTED_SYNTHESIS,
@@ -45,13 +45,13 @@ class OperationSynthetizer:
 
     # Estratégias de cache para reduzir tempo total de síntese
     CACHED_SYNTHESIS: dict[OperationSynthesis, pd.DataFrame] = {}
-    ORDERED_SYNTHESIS_ENTITIES: dict[OperationSynthesis, dict[str, list]] = {}
+    ORDERED_SYNTHESIS_ENTITIES: dict[OperationSynthesis, dict[str, list[str]]] = {}
 
     # Estatísticas das sínteses são armazenadas separadamente
     SYNTHESIS_STATS: dict[SpatialResolution, list[pd.DataFrame]] = {}
 
     @classmethod
-    def clear_cache(cls):
+    def clear_cache(cls) -> None:
         """
         Limpa o cache de síntese de operação.
         """
@@ -60,17 +60,17 @@ class OperationSynthetizer:
         cls.SYNTHESIS_STATS.clear()
 
     @classmethod
-    def _log(cls, msg: str, level: int = INFO):
+    def _log(cls, msg: str, level: int = INFO) -> None:
         if cls.logger is not None:
             cls.logger.log(level, msg)
 
     @classmethod
     def _resolve(
         cls, synthesis: tuple[Variable, SpatialResolution]
-    ) -> Callable:
+    ) -> Callable[..., pd.DataFrame]:
         _rules: dict[
             tuple[Variable, SpatialResolution],
-            Callable,
+            Callable[..., pd.DataFrame],
         ] = {
             (
                 Variable.CUSTO_OPERACAO,
@@ -441,7 +441,7 @@ class OperationSynthetizer:
 
     @classmethod
     def _default_args(cls) -> List[str]:
-        return cls.DEFAULT_OPERATION_SYNTHESIS_ARGS
+        return list(cls.DEFAULT_OPERATION_SYNTHESIS_ARGS)
 
     @classmethod
     def _match_wildcards(cls, variables: list[str]) -> list[str]:
@@ -485,7 +485,7 @@ class OperationSynthetizer:
         def _add_synthesis_dependencies_recursive(
             current_synthesis: list[OperationSynthesis],
             todo_synthesis: OperationSynthesis,
-        ):
+        ) -> None:
             if todo_synthesis in SYNTHESIS_DEPENDENCIES.keys():
                 for dep in SYNTHESIS_DEPENDENCIES[todo_synthesis]:
                     _add_synthesis_dependencies_recursive(
@@ -502,7 +502,7 @@ class OperationSynthetizer:
     @classmethod
     def _get_unique_column_values_in_order(
         cls, df: pd.DataFrame, cols: list[str]
-    ):
+    ) -> dict[str, list[str]]:
         """
         Extrai valores únicos na ordem em que aparecem para um
         conjunto de colunas de um DataFrame.
@@ -511,15 +511,15 @@ class OperationSynthetizer:
 
     @classmethod
     def _set_ordered_entities(
-        cls, s: OperationSynthesis, entities: dict[str, list]
-    ):
+        cls, s: OperationSynthesis, entities: dict[str, list[str]]
+    ) -> None:
         """
         Armazena um conjunto de entidades ordenadas para uma síntese.
         """
         cls.ORDERED_SYNTHESIS_ENTITIES[s] = entities
 
     @classmethod
-    def _get_ordered_entities(cls, s: OperationSynthesis) -> dict[str, list]:
+    def _get_ordered_entities(cls, s: OperationSynthesis) -> dict[str, list[str]]:
         """
         Obtem um conjunto de entidades ordenadas para uma síntese.
         """
@@ -543,7 +543,7 @@ class OperationSynthetizer:
             raise RuntimeError()
 
     @classmethod
-    def _stub_mappings(cls, s: OperationSynthesis) -> Callable | None:  # noqa
+    def _stub_mappings(cls, s: OperationSynthesis) -> Callable[..., pd.DataFrame] | None:  # noqa
         """
         Obtem a função de resolução de cada síntese que foge ao
         fluxo de resolução padrão, por meio de um mapeamento de
@@ -586,7 +586,7 @@ class OperationSynthetizer:
     @classmethod
     def __store_in_cache_if_needed(
         cls, s: OperationSynthesis, df: pd.DataFrame
-    ):
+    ) -> None:
         """
         Adiciona um DataFrame com os dados de uma síntese à cache
         caso esta seja uma variável que deva ser armazenada.
@@ -625,8 +625,8 @@ class OperationSynthetizer:
         df: pd.DataFrame,
         s: OperationSynthesis,
         uow: AbstractUnitOfWork,
-        early_hooks: list[Callable] = [],
-        late_hooks: list[Callable] = [],
+        early_hooks: list[Callable[..., pd.DataFrame]] = [],
+        late_hooks: list[Callable[..., pd.DataFrame]] = [],
     ) -> pd.DataFrame:
         """
         Realiza pós-processamento após a resolução da extração
@@ -679,7 +679,7 @@ class OperationSynthetizer:
         cls,
         success_synthesis: list[OperationSynthesis],
         uow: AbstractUnitOfWork,
-    ):
+    ) -> None:
         """
         Cria um DataFrame com os metadados das variáveis de síntese
         e realiza a exportação para um arquivo de metadados.
@@ -713,7 +713,7 @@ class OperationSynthetizer:
             )
 
     @classmethod
-    def _add_synthesis_stats(cls, s: OperationSynthesis, df: pd.DataFrame):
+    def _add_synthesis_stats(cls, s: OperationSynthesis, df: pd.DataFrame) -> None:
         """
         Adiciona um DataFrame com estatísticas de uma síntese ao
         DataFrame de estatísticas da agregação espacial em questão.
@@ -728,7 +728,7 @@ class OperationSynthetizer:
     @classmethod
     def _export_scenario_synthesis(
         cls, s: OperationSynthesis, df: pd.DataFrame, uow: AbstractUnitOfWork
-    ):
+    ) -> None:
         """
         Realiza a exportação dos dados para uma síntese da
         operação desejada. Opcionalmente, os dados são armazenados
@@ -757,7 +757,7 @@ class OperationSynthetizer:
     def _export_stats(
         cls,
         uow: AbstractUnitOfWork,
-    ):
+    ) -> None:
         """
         Realiza a exportação dos dados de estatísticas de síntese
         da operação. As estatísticas são exportadas para um arquivo
@@ -848,7 +848,7 @@ class OperationSynthetizer:
                 return None
 
     @classmethod
-    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork):
+    def synthetize(cls, variables: list[str], uow: AbstractUnitOfWork) -> None:
         cls.logger = logging.getLogger("main")
         Deck.logger = cls.logger
         OperationVariableBounds.logger = cls.logger

@@ -1,4 +1,5 @@
 import os
+from typing import Tuple
 
 import click
 
@@ -9,7 +10,7 @@ from app.utils.log import Log
 
 
 @click.group()
-def app():
+def app() -> None:
     """
     Aplicação para realizar a síntese de informações em
     um modelo unificado de dados para o DESSEM.
@@ -25,21 +26,24 @@ def app():
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def sistema(variaveis, formato):
+def sistema(variaveis: Tuple[str, ...], formato: str) -> None:
     """
     Realiza a síntese dos dados do sistema do DECOMP.
     """
     os.environ["FORMATO_SINTESE"] = formato
-    Log.log().info("# Realizando síntese do SISTEMA #")
+    logger = Log.log()
+    if logger is not None:
+        logger.info("# Realizando síntese do SISTEMA #")
 
     uow = factory(
         "FS",
         os.curdir,
     )
-    command = commands.SynthetizeSystem(variaveis)
+    command = commands.SynthetizeSystem(list(variaveis))
     handlers.synthetize_system(command, uow)
 
-    Log.log().info("# Fim da síntese #")
+    if logger is not None:
+        logger.info("# Fim da síntese #")
 
 
 @click.command("operacao")
@@ -50,21 +54,24 @@ def sistema(variaveis, formato):
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def operacao(variaveis, formato):
+def operacao(variaveis: Tuple[str, ...], formato: str) -> None:
     """
     Realiza a síntese dos dados da operação do DESSEM.
     """
     os.environ["FORMATO_SINTESE"] = formato
-    Log.log().info("# Realizando síntese da OPERACAO #")
+    logger = Log.log()
+    if logger is not None:
+        logger.info("# Realizando síntese da OPERACAO #")
 
     uow = factory(
         "FS",
         os.curdir,
     )
-    command = commands.SynthetizeOperation(variaveis)
+    command = commands.SynthetizeOperation(list(variaveis))
     handlers.synthetize_operation(command, uow)
 
-    Log.log().info("# Fim da síntese #")
+    if logger is not None:
+        logger.info("# Fim da síntese #")
 
 
 @click.command("execucao")
@@ -75,25 +82,28 @@ def operacao(variaveis, formato):
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def execucao(variaveis, formato):
+def execucao(variaveis: Tuple[str, ...], formato: str) -> None:
     """
     Realiza a síntese dos dados da execução do DESSEM.
     """
     os.environ["FORMATO_SINTESE"] = formato
-    Log.log().info("# Realizando síntese da EXECUÇÃO #")
+    logger = Log.log()
+    if logger is not None:
+        logger.info("# Realizando síntese da EXECUÇÃO #")
 
     uow = factory(
         "FS",
         os.curdir,
     )
-    command = commands.SynthetizeExecution(variaveis)
+    command = commands.SynthetizeExecution(list(variaveis))
     handlers.synthetize_execution(command, uow)
 
-    Log.log().info("# Fim da síntese #")
+    if logger is not None:
+        logger.info("# Fim da síntese #")
 
 
 @click.command("limpeza")
-def limpeza():
+def limpeza() -> None:
     """
     Realiza a limpeza dos dados resultantes de uma síntese.
     """
@@ -113,25 +123,33 @@ def limpeza():
 @click.option(
     "--formato", default="PARQUET", help="formato para escrita da síntese"
 )
-def completa(sistema, operacao, execucao, formato):
+def completa(
+    sistema: Tuple[str, ...],
+    operacao: Tuple[str, ...],
+    execucao: Tuple[str, ...],
+    formato: str,
+) -> None:
     """
     Realiza a síntese completa do DESSEM.
     """
     os.environ["FORMATO_SINTESE"] = formato
-    Log.log().info("# Realizando síntese COMPLETA #")
+    logger = Log.log()
+    if logger is not None:
+        logger.info("# Realizando síntese COMPLETA #")
 
     uow = factory(
         "FS",
         os.curdir,
     )
-    command = commands.SynthetizeSystem(sistema)
-    handlers.synthetize_system(command, uow)
-    command = commands.SynthetizeOperation(operacao)
-    handlers.synthetize_operation(command, uow)
-    command = commands.SynthetizeExecution(execucao)
-    handlers.synthetize_execution(command, uow)
+    system_command = commands.SynthetizeSystem(list(sistema))
+    handlers.synthetize_system(system_command, uow)
+    operation_command = commands.SynthetizeOperation(list(operacao))
+    handlers.synthetize_operation(operation_command, uow)
+    execution_command = commands.SynthetizeExecution(list(execucao))
+    handlers.synthetize_execution(execution_command, uow)
 
-    Log.log().info("# Fim da síntese #")
+    if logger is not None:
+        logger.info("# Fim da síntese #")
 
 
 app.add_command(completa)
