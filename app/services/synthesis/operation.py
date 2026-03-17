@@ -45,7 +45,9 @@ class OperationSynthetizer:
 
     # Estratégias de cache para reduzir tempo total de síntese
     CACHED_SYNTHESIS: dict[OperationSynthesis, pd.DataFrame] = {}
-    ORDERED_SYNTHESIS_ENTITIES: dict[OperationSynthesis, dict[str, list[str]]] = {}
+    ORDERED_SYNTHESIS_ENTITIES: dict[
+        OperationSynthesis, dict[str, list[str]]
+    ] = {}
 
     # Estatísticas das sínteses são armazenadas separadamente
     SYNTHESIS_STATS: dict[SpatialResolution, list[pd.DataFrame]] = {}
@@ -519,7 +521,9 @@ class OperationSynthetizer:
         cls.ORDERED_SYNTHESIS_ENTITIES[s] = entities
 
     @classmethod
-    def _get_ordered_entities(cls, s: OperationSynthesis) -> dict[str, list[str]]:
+    def _get_ordered_entities(
+        cls, s: OperationSynthesis
+    ) -> dict[str, list[str]]:
         """
         Obtem um conjunto de entidades ordenadas para uma síntese.
         """
@@ -543,7 +547,9 @@ class OperationSynthetizer:
             raise RuntimeError()
 
     @classmethod
-    def _stub_mappings(cls, s: OperationSynthesis) -> Callable[..., pd.DataFrame] | None:  # noqa
+    def _stub_mappings(
+        cls, s: OperationSynthesis
+    ) -> Callable[..., pd.DataFrame] | None:  # noqa
         """
         Obtem a função de resolução de cada síntese que foge ao
         fluxo de resolução padrão, por meio de um mapeamento de
@@ -713,7 +719,9 @@ class OperationSynthetizer:
             )
 
     @classmethod
-    def _add_synthesis_stats(cls, s: OperationSynthesis, df: pd.DataFrame) -> None:
+    def _add_synthesis_stats(
+        cls, s: OperationSynthesis, df: pd.DataFrame
+    ) -> None:
         """
         Adiciona um DataFrame com estatísticas de uma síntese ao
         DataFrame de estatísticas da agregação espacial em questão.

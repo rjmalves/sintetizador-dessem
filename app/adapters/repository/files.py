@@ -165,9 +165,7 @@ class RawFilesRepository(AbstractFilesRepository):
         if installdir is None:
             return
         script = str(
-            pathlib.Path(installdir).joinpath(
-                Settings().encoding_script
-            )
+            pathlib.Path(installdir).joinpath(Settings().encoding_script)
         )
         asyncio.run(converte_codificacao(path, script))
 
@@ -419,9 +417,7 @@ class RawFilesRepository(AbstractFilesRepository):
                     version = self.__pdo_eco_usih.versao
                     if version is None:
                         raise FileNotFoundError()
-                    self.__pdo_eco_usih = PdoEcoUsih.read(
-                        path, version=version
-                    )
+                    self.__pdo_eco_usih = PdoEcoUsih.read(path, version=version)
             except Exception as e:
                 if logger is not None:
                     logger.error(f"Erro na leitura do {filename}: {e}")

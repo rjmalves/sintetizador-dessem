@@ -36,26 +36,26 @@ class OperationVariableBounds:
         OperationSynthesis(
             Variable.GERACAO_TERMICA,
             SpatialResolution.USINA_TERMELETRICA,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._thermal_generation_bounds(
-            df, uow, entity_column=THERMAL_CODE_COL
+        ): lambda df, uow, _: (
+            OperationVariableBounds._thermal_generation_bounds(
+                df, uow, entity_column=THERMAL_CODE_COL
+            )
         ),
         OperationSynthesis(
             Variable.GERACAO_TERMICA,
             SpatialResolution.SUBMERCADO,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._thermal_generation_bounds(
-            df, uow, entity_column=SUBMARKET_CODE_COL
+        ): lambda df, uow, _: (
+            OperationVariableBounds._thermal_generation_bounds(
+                df, uow, entity_column=SUBMARKET_CODE_COL
+            )
         ),
         OperationSynthesis(
             Variable.GERACAO_TERMICA,
             SpatialResolution.SISTEMA_INTERLIGADO,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._thermal_generation_bounds(
-            df, uow, entity_column=None
+        ): lambda df, uow, _: (
+            OperationVariableBounds._thermal_generation_bounds(
+                df, uow, entity_column=None
+            )
         ),
         OperationSynthesis(
             Variable.GERACAO_HIDRAULICA,
@@ -126,36 +126,36 @@ class OperationVariableBounds:
         OperationSynthesis(
             Variable.VOLUME_ARMAZENADO_PERCENTUAL_INICIAL,
             SpatialResolution.USINA_HIDROELETRICA,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._stored_volume_percentual_bounds(
-            df,
-            uow,
+        ): lambda df, uow, _: (
+            OperationVariableBounds._stored_volume_percentual_bounds(
+                df,
+                uow,
+            )
         ),
         OperationSynthesis(
             Variable.VOLUME_ARMAZENADO_PERCENTUAL_FINAL,
             SpatialResolution.USINA_HIDROELETRICA,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._stored_volume_percentual_bounds(
-            df,
-            uow,
+        ): lambda df, uow, _: (
+            OperationVariableBounds._stored_volume_percentual_bounds(
+                df,
+                uow,
+            )
         ),
         OperationSynthesis(
             Variable.VAZAO_TURBINADA,
             SpatialResolution.USINA_HIDROELETRICA,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._hydro_turbined_flow_bounds(
-            df, uow, entity_column=HYDRO_CODE_COL
+        ): lambda df, uow, _: (
+            OperationVariableBounds._hydro_turbined_flow_bounds(
+                df, uow, entity_column=HYDRO_CODE_COL
+            )
         ),
         OperationSynthesis(
             Variable.VAZAO_TURBINADA,
             SpatialResolution.SISTEMA_INTERLIGADO,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._hydro_turbined_flow_bounds(
-            df, uow, entity_column=None
+        ): lambda df, uow, _: (
+            OperationVariableBounds._hydro_turbined_flow_bounds(
+                df, uow, entity_column=None
+            )
         ),
         OperationSynthesis(
             Variable.VAZAO_DEFLUENTE,
@@ -172,18 +172,18 @@ class OperationVariableBounds:
         OperationSynthesis(
             Variable.VAZAO_VERTIDA,
             SpatialResolution.USINA_HIDROELETRICA,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._hydro_spilled_flow_bounds(
-            df, uow, entity_column=HYDRO_CODE_COL
+        ): lambda df, uow, _: (
+            OperationVariableBounds._hydro_spilled_flow_bounds(
+                df, uow, entity_column=HYDRO_CODE_COL
+            )
         ),
         OperationSynthesis(
             Variable.VAZAO_VERTIDA,
             SpatialResolution.SISTEMA_INTERLIGADO,
-        ): lambda df,
-        uow,
-        _: OperationVariableBounds._hydro_spilled_flow_bounds(
-            df, uow, entity_column=None
+        ): lambda df, uow, _: (
+            OperationVariableBounds._hydro_spilled_flow_bounds(
+                df, uow, entity_column=None
+            )
         ),
     }
 
