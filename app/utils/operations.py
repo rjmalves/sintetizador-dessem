@@ -1,17 +1,19 @@
-import pandas as pd  # type: ignore
 from typing import Callable, Dict
+
+import pandas as pd
+
 from app.internal.constants import (
+    PANDAS_GROUPING_ENGINE,
     PROBABILITY_COL,
     SCENARIO_COL,
     VALUE_COL,
-    PANDAS_GROUPING_ENGINE,
 )
 
 
 def fast_group_df(
     df: pd.DataFrame,
-    grouping_columns: list,
-    extract_columns: list,
+    grouping_columns: list[str],
+    extract_columns: list[str],
     operation: str,
     reset_index: bool = True,
 ) -> pd.DataFrame:

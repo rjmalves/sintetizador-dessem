@@ -3,9 +3,9 @@ import pathlib
 from abc import ABC, abstractmethod
 from typing import Type
 
-import pandas as pd  # type: ignore
-import pyarrow as pa  # type: ignore
-import pyarrow.parquet as pq  # type: ignore
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from app.utils.log import Log
 from app.utils.tz import enforce_utc
@@ -20,7 +20,7 @@ class AbstractExportRepository(ABC):
         pass
 
     @abstractmethod
-    def synthetize_df(self, df: pd.DataFrame, filename: str):
+    def synthetize_df(self, df: pd.DataFrame, filename: str) -> None:
         pass
 
 
@@ -39,7 +39,7 @@ class ParquetExportRepository(AbstractExportRepository):
         else:
             return None
 
-    def synthetize_df(self, df: pd.DataFrame, filename: str):
+    def synthetize_df(self, df: pd.DataFrame, filename: str) -> None:
         pq.write_table(
             pa.Table.from_pandas(enforce_utc(df)),
             self.path.joinpath(filename + ".parquet"),
@@ -48,7 +48,6 @@ class ParquetExportRepository(AbstractExportRepository):
             coerce_timestamps="ms",
             allow_truncated_timestamps=True,
         )
-        return True
 
 
 class CSVExportRepository(AbstractExportRepository):
@@ -66,7 +65,7 @@ class CSVExportRepository(AbstractExportRepository):
         else:
             return None
 
-    def synthetize_df(self, df: pd.DataFrame, filename: str):
+    def synthetize_df(self, df: pd.DataFrame, filename: str) -> None:
         enforce_utc(df).to_csv(
             self.path.joinpath(filename + ".csv"), index=False
         )
@@ -83,11 +82,11 @@ class TestExportRepository(AbstractExportRepository):
     def read_df(self, filename: str) -> pd.DataFrame | None:
         return None
 
-    def synthetize_df(self, df: pd.DataFrame, filename: str) -> bool:
-        return df
+    def synthetize_df(self, df: pd.DataFrame, filename: str) -> None:
+        pass
 
 
-def factory(kind: str, *args, **kwargs) -> AbstractExportRepository:
+def factory(kind: str, *args: str, **kwargs: str) -> AbstractExportRepository:
     mapping: dict[str, Type[AbstractExportRepository]] = {
         "PARQUET": ParquetExportRepository,
         "CSV": CSVExportRepository,

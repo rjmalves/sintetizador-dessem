@@ -560,7 +560,10 @@ def test_sintese_varpi_uhe(test_settings):
     df, df_meta = __sintetiza_com_mock(synthesis_str)
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99].copy()
-    df_eco = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT")).tabela
+    _eco_file = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT"))
+    df_eco = PdoEcoUsih.read(
+        join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT"), version=_eco_file.versao
+    ).tabela
     num_uhes = len(df_eco)
     initial_volumes = df_eco["volume_util_inicial_percentual"].to_numpy()
     final_volumes = df_pdo_hidr["volume_final_percentual"].to_numpy()[
@@ -587,7 +590,10 @@ def test_sintese_varmi_uhe(test_settings):
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99].copy()
     # Obtem volume inicial
-    df_eco = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT")).tabela
+    _eco_file = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT"))
+    df_eco = PdoEcoUsih.read(
+        join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT"), version=_eco_file.versao
+    ).tabela
     num_uhes = len(df_eco)
     initial_volumes = df_eco["volume_util_inicial_hm3"].to_numpy()
     final_volumes = df_pdo_hidr["volume_final_hm3"].to_numpy()[:-num_uhes]
@@ -615,7 +621,10 @@ def test_sintese_varmi_sbm(test_settings):
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99].copy()
 
     # Obtem volume inicial
-    df_eco = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT")).tabela
+    _eco_file = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT"))
+    df_eco = PdoEcoUsih.read(
+        join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT"), version=_eco_file.versao
+    ).tabela
     num_uhes = len(df_eco)
     initial_volumes = df_eco["volume_util_inicial_hm3"].to_numpy()
     final_volumes = df_pdo_hidr["volume_final_hm3"].to_numpy()[:-num_uhes]
@@ -646,7 +655,10 @@ def test_sintese_varmi_sin(test_settings):
     df_pdo_hidr = PdoHidr.read(join(DECK_TEST_DIR, "PDO_HIDR.DAT")).tabela
     df_pdo_hidr = df_pdo_hidr.loc[df_pdo_hidr["conjunto"] == 99].copy()
     # Obtem volume inicial
-    df_eco = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT")).tabela
+    _eco_file = PdoEcoUsih.read(join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT"))
+    df_eco = PdoEcoUsih.read(
+        join(DECK_TEST_DIR, "PDO_ECO_USIH.DAT"), version=_eco_file.versao
+    ).tabela
     num_uhes = len(df_eco)
     initial_volumes = df_eco["volume_util_inicial_hm3"].to_numpy()
     final_volumes = df_pdo_hidr["volume_final_hm3"].to_numpy()[:-num_uhes]

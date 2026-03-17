@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from functools import partial
 from typing import Any, Dict, Optional, Type, TypeVar
 
-import numpy as np  # type: ignore
-import pandas as pd  # type: ignore
+import numpy as np
+import pandas as pd
 from idessem.dessem.dadvaz import Dadvaz
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.dessemarq import DessemArq
@@ -151,7 +151,7 @@ class Deck:
             return pdo
 
     @classmethod
-    def _validate_data(cls, data, type: Type[T], msg: str = "dados") -> T:
+    def _validate_data(cls, data: Any, type: Type[T], msg: str = "dados") -> T:
         if not isinstance(data, type):
             if cls.logger is not None:
                 cls.logger.error(f"Erro na leitura de {msg}")
@@ -621,7 +621,11 @@ class Deck:
                 PdoOperUct,
                 "pdo_oper_uct",
             )
-            df = pdo_oper_uct.tabela
+            df = cls._validate_data(
+                pdo_oper_uct.tabela,
+                pd.DataFrame,
+                "pdo_oper_uct.tabela",
+            )
             # Acrescenta datas iniciais e finais
             # Faz uma atribuicao nao posicional.
             # A maneira mais pythonica é lenta.
@@ -715,7 +719,7 @@ class Deck:
         return cls.DECK_DATA_CACHING["pdo_eco_usih"]
 
     @classmethod
-    def stages_durations(cls, uow) -> pd.DataFrame:
+    def stages_durations(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         df = cls.DECK_DATA_CACHING.get("stages_durations")
         if df is None:
             arq_pdo = cls.pdo_operacao(uow)
@@ -740,7 +744,7 @@ class Deck:
         cls, line: pd.Series, uow: AbstractUnitOfWork
     ) -> np.ndarray:
         stage_df = cls.stages_durations(uow)
-        return (
+        result: np.ndarray = (
             stage_df.loc[
                 stage_df[STAGE_COL] == line[STAGE_COL],
                 [START_DATE_COL, END_DATE_COL],
@@ -748,6 +752,7 @@ class Deck:
             .to_numpy()
             .flatten()
         )
+        return result
 
     @classmethod
     def version(cls, uow: AbstractUnitOfWork) -> str:
@@ -787,7 +792,7 @@ class Deck:
         return title
 
     @classmethod
-    def hydro_inflows(cls, uow) -> pd.DataFrame:
+    def hydro_inflows(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
         df = cls.DECK_DATA_CACHING.get("hydro_inflows")
         if df is None:
             arq_dadvaz = cls.dadvaz(uow)
@@ -806,7 +811,7 @@ class Deck:
         return df.copy()
 
     @classmethod
-    def block_map(cls, uow: AbstractUnitOfWork) -> dict:
+    def block_map(cls, uow: AbstractUnitOfWork) -> dict[str, int]:
         map_dict = cls.DECK_DATA_CACHING.get("block_map")
         if map_dict is None:
             entdados = cls.entdados(uow)
@@ -815,14 +820,14 @@ class Deck:
                 pd.DataFrame,
                 "TM",
             )
-            blocks: list = tm_df["nome_patamar"].unique().tolist()
+            blocks: list[str] = tm_df["nome_patamar"].unique().tolist()
             blocks.sort(reverse=True)
             map_dict = {b: i for i, b in enumerate(blocks)}
             cls.DECK_DATA_CACHING["block_map"] = map_dict
         return map_dict
 
     @classmethod
-    def stage_block_map(cls, uow: AbstractUnitOfWork) -> dict:
+    def stage_block_map(cls, uow: AbstractUnitOfWork) -> dict[int, int]:
         map_dict = cls.DECK_DATA_CACHING.get("stage_block_map")
         if map_dict is None:
             block_map = cls.block_map(uow)
@@ -832,7 +837,7 @@ class Deck:
                 pd.DataFrame,
                 "TM",
             )
-            blocks: list = tm_df["nome_patamar"]
+            blocks: list[str] = tm_df["nome_patamar"]
             map_dict = {i + 1: block_map[b] for i, b in enumerate(blocks)}
             cls.DECK_DATA_CACHING["stage_block_map"] = map_dict
         return map_dict
@@ -1639,7 +1644,7 @@ class Deck:
             )
             return df
 
-        def __cast_constraints_stages_to_datetime(row: pd.Series, period: str):
+        def __cast_constraints_stages_to_datetime(row: pd.Series, period: str) -> Any:
             # Processa os dados de stages_durations para a futura conversao
             df_stages["day"] = df_stages["data_inicio"].dt.day
             df_stages["month"] = df_stages["data_inicio"].dt.month
@@ -1764,7 +1769,7 @@ class Deck:
         cls,
         df: pd.DataFrame,
         df_constraints: pd.DataFrame,
-    ):
+    ) -> pd.DataFrame:
         if df_constraints.empty:
             return df
 
