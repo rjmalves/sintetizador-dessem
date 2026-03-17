@@ -103,7 +103,7 @@ class SystemSynthetizer:
         if df is None:
             cls._log("Dados de estágios não encontrados", ERROR)
             raise RuntimeError()
-        return df[[STAGE_COL, START_DATE_COL, END_DATE_COL]]
+        return df.select([STAGE_COL, START_DATE_COL, END_DATE_COL]).to_pandas()
 
     @classmethod
     def _resolve_PAT(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -111,8 +111,9 @@ class SystemSynthetizer:
         if df is None:
             cls._log("Dados de duração de patamares não encontrados", ERROR)
             raise RuntimeError()
-        df = df.rename(columns={BLOCK_DURATION_COL: VALUE_COL})
-        return df[[START_DATE_COL, STAGE_COL, BLOCK_COL, VALUE_COL]]
+        df_pd = df.to_pandas()
+        df_pd = df_pd.rename(columns={BLOCK_DURATION_COL: VALUE_COL})
+        return df_pd[[START_DATE_COL, STAGE_COL, BLOCK_COL, VALUE_COL]]
 
     @classmethod
     def _resolve_SBM(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -120,7 +121,7 @@ class SystemSynthetizer:
         if df is None:
             cls._log("Dados de submercados não encontrados", ERROR)
             raise RuntimeError()
-        return df
+        return df.to_pandas()
 
     @classmethod
     def _resolve_REE(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -129,7 +130,8 @@ class SystemSynthetizer:
             cls._log("Dados de reservatório equivalente não encontrados", ERROR)
             raise RuntimeError()
         return (
-            df[[EER_CODE_COL, EER_NAME_COL]]
+            df.select([EER_CODE_COL, EER_NAME_COL])
+            .to_pandas()
             .sort_values(by=[EER_CODE_COL])
             .reset_index(drop=True)
         )
@@ -140,7 +142,7 @@ class SystemSynthetizer:
         if df is None:
             cls._log("Dados de usinas térmicas não encontrados", ERROR)
             raise RuntimeError()
-        return df
+        return df.to_pandas()
 
     @classmethod
     def _resolve_CVU(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -148,7 +150,7 @@ class SystemSynthetizer:
         if df is None:
             cls._log("Dados de CVU de usinas térmicas não encontrados", ERROR)
             raise RuntimeError()
-        return df
+        return df.to_pandas()
 
     @classmethod
     def _resolve_UHE(cls, uow: AbstractUnitOfWork) -> pd.DataFrame:
@@ -156,7 +158,7 @@ class SystemSynthetizer:
         if df is None:
             cls._log("Dados de usinas hidrelétricas não encontrados", ERROR)
             raise RuntimeError()
-        return df
+        return df.to_pandas()
 
     @classmethod
     def _export_metadata(

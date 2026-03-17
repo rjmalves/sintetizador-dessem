@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, List
 
 import pandas as pd
+import polars as pl
 
 from app.internal.constants import (
     OPERATION_SYNTHESIS_METADATA_OUTPUT,
     OPERATION_SYNTHESIS_STATS_ROOT,
-    STRING_DF_TYPE,
     VARIABLE_COL,
 )
 from app.model.operation.operationsynthesis import (
@@ -33,6 +33,7 @@ def export_metadata(
     """
     Cria um DataFrame com os metadados das variáveis de síntese
     e realiza a exportação para um arquivo de metadados.
+    Kept as pandas since it is built row-by-row and is not a hot path.
     """
     metadata_df = pd.DataFrame(
         columns=[
@@ -66,13 +67,13 @@ def export_metadata(
 def add_synthesis_stats(
     cls: "type[OperationSynthetizer]",
     s: OperationSynthesis,
-    df: pd.DataFrame,
+    df: pl.DataFrame,
 ) -> None:
     """
     Adiciona um DataFrame com estatísticas de uma síntese ao
     DataFrame de estatísticas da agregação espacial em questão.
     """
-    df[VARIABLE_COL] = s.variable.value
+    df = df.with_columns(pl.lit(s.variable.value).alias(VARIABLE_COL))
 
     if s.spatial_resolution not in cls.SYNTHESIS_STATS:
         cls.SYNTHESIS_STATS[s.spatial_resolution] = [df]
@@ -83,7 +84,7 @@ def add_synthesis_stats(
 def export_scenario_synthesis(
     cls: "type[OperationSynthetizer]",
     s: OperationSynthesis,
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     uow: AbstractUnitOfWork,
 ) -> None:
     """
@@ -99,9 +100,7 @@ def export_scenario_synthesis(
         message_root="Tempo para preparacao para exportacao",
         logger=cls.logger,
     ):
-        df = df.sort_values(
-            s.spatial_resolution.sorting_synthesis_df_columns
-        ).reset_index(drop=True)
+        df = df.sort(s.spatial_resolution.sorting_synthesis_df_columns)
         stats_df = calc_statistics(df)
         add_synthesis_stats(cls, s, stats_df)
         store_in_cache_if_needed(cls, s, df)
@@ -109,8 +108,8 @@ def export_scenario_synthesis(
         message_root="Tempo para exportacao dos dados", logger=cls.logger
     ):
         with uow:
-            df = df[s.spatial_resolution.all_synthesis_df_columns]
-            uow.export.synthetize_df(df, filename)
+            df = df.select(s.spatial_resolution.all_synthesis_df_columns)
+            uow.export.synthetize_pl(df, filename)
 
 
 def export_stats(
@@ -125,12 +124,10 @@ def export_stats(
     """
     for res, dfs in cls.SYNTHESIS_STATS.items():
         with uow:
-            df = pd.concat(dfs, ignore_index=True)
-            df = df[[VARIABLE_COL] + res.all_synthesis_df_columns]
-            df = df.astype({VARIABLE_COL: STRING_DF_TYPE})
-            df = df.sort_values(
-                [VARIABLE_COL] + res.sorting_synthesis_df_columns
-            ).reset_index(drop=True)
-            uow.export.synthetize_df(
+            df = pl.concat(dfs, how="diagonal")
+            df = df.select([VARIABLE_COL] + res.all_synthesis_df_columns)
+            df = df.with_columns(pl.col(VARIABLE_COL).cast(pl.Utf8))
+            df = df.sort([VARIABLE_COL] + res.sorting_synthesis_df_columns)
+            uow.export.synthetize_pl(
                 df, f"{OPERATION_SYNTHESIS_STATS_ROOT}_{res.value}"
             )

@@ -1,14 +1,17 @@
+import logging
 import os
 import pathlib
 from abc import ABC, abstractmethod
 from typing import Type
 
 import pandas as pd  # type: ignore
+import polars as pl
 import pyarrow as pa  # type: ignore
 import pyarrow.parquet as pq  # type: ignore
 
-from app.utils.log import Log
 from app.utils.tz import enforce_utc
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractExportRepository(ABC):
@@ -22,6 +25,9 @@ class AbstractExportRepository(ABC):
     @abstractmethod
     def synthetize_df(self, df: pd.DataFrame, filename: str):
         pass
+
+    def synthetize_pl(self, df: pl.DataFrame, filename: str) -> bool:
+        return self.synthetize_df(df.to_pandas(), filename)
 
 
 class ParquetExportRepository(AbstractExportRepository):
@@ -49,6 +55,32 @@ class ParquetExportRepository(AbstractExportRepository):
             allow_truncated_timestamps=True,
         )
         return True
+
+    def synthetize_pl(self, df: pl.DataFrame, filename: str) -> bool:
+        for col_name in df.columns:
+            dtype = df[col_name].dtype
+            if isinstance(dtype, pl.Datetime) and dtype.time_zone is None:
+                df = df.with_columns(
+                    pl.col(col_name).dt.replace_time_zone("UTC")
+                )
+        try:
+            arrow_table = pa.Table.from_pandas(df.to_arrow().to_pandas())
+            pq.write_table(
+                arrow_table,
+                self.path.joinpath(filename + ".parquet"),
+                write_statistics=False,
+                flavor="spark",
+                coerce_timestamps="ms",
+                allow_truncated_timestamps=True,
+            )
+            return True
+        except Exception:
+            logger.warning(
+                "synthetize_pl failed for %s; falling back to pandas path",
+                filename,
+                exc_info=True,
+            )
+            return self.synthetize_df(df.to_pandas(), filename)
 
 
 class CSVExportRepository(AbstractExportRepository):
@@ -84,7 +116,7 @@ class TestExportRepository(AbstractExportRepository):
         return None
 
     def synthetize_df(self, df: pd.DataFrame, filename: str) -> bool:
-        return df
+        return True
 
 
 def factory(kind: str, *args, **kwargs) -> AbstractExportRepository:
@@ -96,8 +128,6 @@ def factory(kind: str, *args, **kwargs) -> AbstractExportRepository:
     kind = kind.upper()
     if kind not in mapping.keys():
         msg = f"Formato de síntese {kind} não suportado"
-        logger = Log.log()
-        if logger is not None:
-            logger.error(msg)
+        logger.error(msg)
         raise ValueError(msg)
     return mapping.get(kind, ParquetExportRepository)(*args, **kwargs)

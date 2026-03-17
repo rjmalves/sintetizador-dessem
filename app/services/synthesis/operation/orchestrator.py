@@ -3,7 +3,7 @@ from logging import ERROR, INFO, WARNING
 from traceback import print_exc
 from typing import List, TypeVar
 
-import pandas as pd  # type: ignore
+import polars as pl
 
 from app.internal.constants import OPERATION_SYNTHESIS_SUBDIR
 from app.model.operation.operationsynthesis import (
@@ -35,11 +35,11 @@ class OperationSynthetizer:
     )
 
     # Estratégias de cache para reduzir tempo total de síntese
-    CACHED_SYNTHESIS: dict[OperationSynthesis, pd.DataFrame] = {}
+    CACHED_SYNTHESIS: dict[OperationSynthesis, pl.DataFrame] = {}
     ORDERED_SYNTHESIS_ENTITIES: dict[OperationSynthesis, dict[str, list]] = {}
 
     # Estatísticas das sínteses são armazenadas separadamente
-    SYNTHESIS_STATS: dict[SpatialResolution, list[pd.DataFrame]] = {}
+    SYNTHESIS_STATS: dict[SpatialResolution, list[pl.DataFrame]] = {}
 
     @classmethod
     def clear_cache(cls):
@@ -161,12 +161,12 @@ class OperationSynthetizer:
                 cls._log(f"Realizando sintese de {filename}")
                 df = _cache_mod.get_from_cache_if_exists(cls, s)
                 is_stub = _pipeline_mod.stub_mappings(cls, s) is not None
-                if df.empty:
+                if df.is_empty():
                     df, is_stub = _pipeline_mod.resolve_stub(cls, s, uow)
                     if not is_stub:
                         df = _pipeline_mod.resolve_synthesis(cls, s, uow)
                 if df is not None:
-                    if not df.empty:
+                    if not df.is_empty():
                         found_synthesis = True
                         _export_mod.export_scenario_synthesis(cls, s, df, uow)
                         return s

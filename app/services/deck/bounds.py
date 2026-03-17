@@ -1,8 +1,7 @@
 from logging import INFO, Logger
 from typing import Callable, Dict, Optional, TypeVar
 
-import numpy as np
-import pandas as pd  # type: ignore
+import polars as pl
 
 from app.internal.constants import (
     HYDRO_CODE_COL,
@@ -201,35 +200,40 @@ class OperationVariableBounds:
         return s in cls.MAPPINGS
 
     @classmethod
-    def _unbounded(cls, df: pd.DataFrame) -> pd.DataFrame:
+    def _unbounded(cls, df: pl.DataFrame) -> pl.DataFrame:
         """
         Adiciona os valores padrão para variáveis não limitadas.
         """
-        df[LOWER_BOUND_COL] = -float("inf")
-        df[UPPER_BOUND_COL] = float("inf")
-        return df
+        return df.with_columns(
+            [
+                pl.lit(-float("inf")).alias(LOWER_BOUND_COL),
+                pl.lit(float("inf")).alias(UPPER_BOUND_COL),
+            ]
+        )
 
     @classmethod
     def _lower_bounded_bounds(
-        cls, df: pd.DataFrame, uow: AbstractUnitOfWork
-    ) -> pd.DataFrame:
+        cls, df: pl.DataFrame, uow: AbstractUnitOfWork
+    ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior zero e superior
         infinito.
         """
-        df[VALUE_COL] = np.round(df[VALUE_COL], 2)
-        df[LOWER_BOUND_COL] = 0.0
-        df[UPPER_BOUND_COL] = float("inf")
-
-        return df
+        return df.with_columns(
+            [
+                pl.col(VALUE_COL).round(2),
+                pl.lit(0.0).alias(LOWER_BOUND_COL),
+                pl.lit(float("inf")).alias(UPPER_BOUND_COL),
+            ]
+        )
 
     @classmethod
     def _group_bounds_df(
         cls,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         grouping_column: Optional[str] = None,
         extract_columns: list[str] = [VALUE_COL],
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
         Realiza a agregação de variáveis fornecidas a nível de usina
         para uma síntese de SBMs ou para o SIN. A agregação
@@ -262,10 +266,10 @@ class OperationVariableBounds:
         ]
 
         if len(grouping_columns) == 0:
-            return pd.DataFrame(
+            return pl.DataFrame(
                 {
-                    LOWER_BOUND_COL: [df[LOWER_BOUND_COL].sum(skipna=True)],
-                    UPPER_BOUND_COL: [df[UPPER_BOUND_COL].sum(skipna=True)],
+                    LOWER_BOUND_COL: [df[LOWER_BOUND_COL].sum()],
+                    UPPER_BOUND_COL: [df[UPPER_BOUND_COL].sum()],
                 }
             )
 
@@ -279,19 +283,19 @@ class OperationVariableBounds:
 
     @classmethod
     def __round_values_and_bounds(
-        cls, df: pd.DataFrame, cols: list[str], digits: int
-    ) -> pd.DataFrame:
-        for col in cols:
-            df[col] = np.round(df[col], digits)
-        return df
+        cls, df: pl.DataFrame, cols: list[str], digits: int
+    ) -> pl.DataFrame:
+        return df.with_columns(
+            [pl.col(c).round(digits) for c in cols if c in df.columns]
+        )
 
     @classmethod
     def _thermal_generation_bounds(
         cls,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         uow: AbstractUnitOfWork,
         entity_column: Optional[str],
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
         para a variável de Geração Térmica (GTER) para cada UHE, submercado e SIN.
@@ -304,14 +308,12 @@ class OperationVariableBounds:
                 extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
             )
         entity_column_list = [] if entity_column is None else [entity_column]
-        df = pd.merge(
-            df,
-            df_bounds,
-            how="left",
-            on=[STAGE_COL] + entity_column_list,
-            suffixes=[None, "_bounds"],
-        )
-        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        join_cols = [STAGE_COL] + entity_column_list
+        df = df.join(df_bounds, how="left", on=join_cols, suffix="_bounds")
+        # Drop any duplicate columns from the join
+        bounds_cols = [c for c in df.columns if c.endswith("_bounds")]
+        if bounds_cols:
+            df = df.drop(bounds_cols)
         df = cls.__round_values_and_bounds(
             df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
         )
@@ -320,10 +322,10 @@ class OperationVariableBounds:
     @classmethod
     def _hydro_generation_bounds(
         cls,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         uow: AbstractUnitOfWork,
         entity_column: Optional[str],
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
         para a variável de Geração Hidráulica (GHID) para cada UHE, submercado e SIN.
@@ -336,14 +338,11 @@ class OperationVariableBounds:
                 extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
             )
         entity_column_list = [] if entity_column is None else [entity_column]
-        df = pd.merge(
-            df,
-            df_bounds,
-            how="left",
-            on=[STAGE_COL] + entity_column_list,
-            suffixes=[None, "_bounds"],
-        )
-        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        join_cols = [STAGE_COL] + entity_column_list
+        df = df.join(df_bounds, how="left", on=join_cols, suffix="_bounds")
+        bounds_cols = [c for c in df.columns if c.endswith("_bounds")]
+        if bounds_cols:
+            df = df.drop(bounds_cols)
         df = cls.__round_values_and_bounds(
             df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
         )
@@ -352,10 +351,10 @@ class OperationVariableBounds:
     @classmethod
     def _hydro_turbined_flow_bounds(
         cls,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         uow: AbstractUnitOfWork,
         entity_column: Optional[str],
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
         para a variável de Vazão Turbinada (QTUR) para cada UHE, submercado e SIN.
@@ -368,14 +367,11 @@ class OperationVariableBounds:
                 extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
             )
         entity_column_list = [] if entity_column is None else [entity_column]
-        df = pd.merge(
-            df,
-            df_bounds,
-            how="left",
-            on=[STAGE_COL] + entity_column_list,
-            suffixes=[None, "_bounds"],
-        )
-        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        join_cols = [STAGE_COL] + entity_column_list
+        df = df.join(df_bounds, how="left", on=join_cols, suffix="_bounds")
+        bounds_cols = [c for c in df.columns if c.endswith("_bounds")]
+        if bounds_cols:
+            df = df.drop(bounds_cols)
         df = cls.__round_values_and_bounds(
             df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
         )
@@ -384,10 +380,10 @@ class OperationVariableBounds:
     @classmethod
     def _hydro_outflow_bounds(
         cls,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         uow: AbstractUnitOfWork,
         entity_column: Optional[str],
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
         para a variável de Vazão Turbinada (QDEF) para cada UHE, submercado e SIN.
@@ -401,27 +397,23 @@ class OperationVariableBounds:
                 extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
             )
         entity_column_list = [] if entity_column is None else [entity_column]
-        df = pd.merge(
-            df,
-            df_bounds,
-            how="left",
-            on=[STAGE_COL] + entity_column_list,
-            suffixes=[None, "_bounds"],
-        )
-        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        join_cols = [STAGE_COL] + entity_column_list
+        df = df.join(df_bounds, how="left", on=join_cols, suffix="_bounds")
+        bounds_cols = [c for c in df.columns if c.endswith("_bounds")]
+        if bounds_cols:
+            df = df.drop(bounds_cols)
         df = cls.__round_values_and_bounds(
             df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
         )
-
         return df
 
     @classmethod
     def _hydro_spilled_flow_bounds(
         cls,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         uow: AbstractUnitOfWork,
         entity_column: Optional[str],
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
         para a variável de Vazão Turbinada (QDEF) para cada UHE, submercado e SIN.
@@ -435,32 +427,27 @@ class OperationVariableBounds:
                 extract_columns=[LOWER_BOUND_COL, UPPER_BOUND_COL],
             )
         entity_column_list = [] if entity_column is None else [entity_column]
-        df = pd.merge(
-            df,
-            df_bounds,
-            how="left",
-            on=[STAGE_COL] + entity_column_list,
-            suffixes=[None, "_bounds"],
-        )
-        df.drop([c for c in df.columns if "_bounds" in c], axis=1, inplace=True)
+        join_cols = [STAGE_COL] + entity_column_list
+        df = df.join(df_bounds, how="left", on=join_cols, suffix="_bounds")
+        bounds_cols = [c for c in df.columns if c.endswith("_bounds")]
+        if bounds_cols:
+            df = df.drop(bounds_cols)
         df = cls.__round_values_and_bounds(
             df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
         )
-
         return df
 
     @classmethod
     def _stored_volume_bounds(
         cls,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         uow: AbstractUnitOfWork,
         entity_column: Optional[str],
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
         para as variáveis de Volume Armazenado Absoluto (VARM) para cada UHE.
         """
-
         df_bounds = Deck.stored_volume_bounds(uow)
 
         if entity_column != HYDRO_CODE_COL:
@@ -471,53 +458,58 @@ class OperationVariableBounds:
             )
         entity_column_list = [] if entity_column is None else [entity_column]
         if len(entity_column_list) > 0:
-            df = pd.merge(
-                df,
+            df = df.join(
                 df_bounds,
                 how="left",
                 on=entity_column_list,
-                suffixes=[None, "_bounds"],
+                suffix="_bounds",
             )
-            df.drop(
-                [c for c in df.columns if "_bounds" in c], axis=1, inplace=True
-            )
+            bounds_cols = [c for c in df.columns if c.endswith("_bounds")]
+            if bounds_cols:
+                df = df.drop(bounds_cols)
         else:
-            df[LOWER_BOUND_COL] = df_bounds[LOWER_BOUND_COL].iloc[0]
-            df[UPPER_BOUND_COL] = df_bounds[UPPER_BOUND_COL].iloc[0]
+            lb = df_bounds[LOWER_BOUND_COL][0]
+            ub = df_bounds[UPPER_BOUND_COL][0]
+            df = df.with_columns(
+                [
+                    pl.lit(lb).alias(LOWER_BOUND_COL),
+                    pl.lit(ub).alias(UPPER_BOUND_COL),
+                ]
+            )
 
         df = cls.__round_values_and_bounds(
             df, [VALUE_COL, UPPER_BOUND_COL, LOWER_BOUND_COL], 2
         )
-
         return df
 
     @classmethod
     def _stored_volume_percentual_bounds(
-        cls, df: pd.DataFrame, uow: AbstractUnitOfWork
-    ) -> pd.DataFrame:
+        cls, df: pl.DataFrame, uow: AbstractUnitOfWork
+    ) -> pl.DataFrame:
         """
         Adiciona ao DataFrame da síntese os limites inferior e superior
         para as variáveis de Volume Armazenado Percentual (VARP) para cada UHE.
         """
-        df[VALUE_COL] = np.round(df[VALUE_COL], 2)
-        df[LOWER_BOUND_COL] = 0.0
-        df[UPPER_BOUND_COL] = 100.0
-
-        return df
+        return df.with_columns(
+            [
+                pl.col(VALUE_COL).round(2),
+                pl.lit(0.0).alias(LOWER_BOUND_COL),
+                pl.lit(100.0).alias(UPPER_BOUND_COL),
+            ]
+        )
 
     @classmethod
     def resolve_bounds(
         cls,
         s: OperationSynthesis,
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         ordered_synthesis_entities: Dict[str, list],
         uow: AbstractUnitOfWork,
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """
         Adiciona colunas de limite inferior e superior a um DataFrame,
         calculando os valores necessários caso a variável seja limitada
         ou atribuindo -inf e +inf caso contrário.
-
         """
         if cls.is_bounded(s):
             try:

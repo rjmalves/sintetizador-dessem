@@ -1,6 +1,6 @@
 {
   "plan": "dessem-overhaul",
-  "last_updated": "2026-03-16T23:48:40Z",
+  "last_updated": "2026-03-17T00:21:39Z",
   "progressive": true,
   "tickets": {
     "ticket-001-update-pyproject-and-python-version.md": {
@@ -436,20 +436,100 @@
       "workflow_step": null
     },
     "ticket-019-add-polars-dependency.md": {
-      "status": "pending",
-      "detail_level": "outline"
+      "status": "completed",
+      "detail_level": "refined",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        },
+        "quality": 0.95,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
+        }
+      },
+      "workflow_step": null,
+      "agent": "direct"
     },
     "ticket-020-add-polars-export-repository.md": {
-      "status": "pending",
-      "detail_level": "outline"
+      "status": "completed",
+      "detail_level": "refined",
+      "scores": {
+        "readiness": 1.0,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 1.0
+        },
+        "quality": 0.95,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 1.0,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
+        }
+      },
+      "workflow_step": null,
+      "agent": "direct"
     },
     "ticket-021-migrate-deck-hot-paths-to-polars.md": {
-      "status": "pending",
-      "detail_level": "outline"
+      "status": "completed",
+      "detail_level": "refined",
+      "scores": {
+        "readiness": 0.94,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 0.4
+        },
+        "quality": 0.93,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 0.95,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
+        }
+      },
+      "workflow_step": null,
+      "agent": "python-task-automation-developer"
     },
     "ticket-022-migrate-operation-synthesis-to-polars.md": {
-      "status": "pending",
-      "detail_level": "outline"
+      "status": "completed",
+      "detail_level": "refined",
+      "scores": {
+        "readiness": 0.98,
+        "readiness_breakdown": {
+          "structure": 1.0,
+          "testability": 1.0,
+          "boundary": 1.0,
+          "dependency_clarity": 1.0,
+          "atomicity": 0.8
+        },
+        "quality": 0.93,
+        "quality_breakdown": {
+          "conformance": 1.0,
+          "scope_adherence": 0.95,
+          "lint_cleanliness": 1.0,
+          "type_safety": 0.75,
+          "test_delta": 1.0
+        }
+      },
+      "workflow_step": null,
+      "agent": "python-task-automation-developer"
     },
     "ticket-023-add-multiprocessing-logger.md": {
       "status": "pending",
@@ -490,11 +570,11 @@
       "learning_extracted": true
     },
     "epic-04-operation-decomposition": {
-      "phase": "executing",
-      "learning_extracted": false
+      "phase": "completed",
+      "learning_extracted": true
     },
     "epic-05-polars-migration": {
-      "phase": "outline",
+      "phase": "executing",
       "learning_extracted": false
     },
     "epic-06-parallelism": {

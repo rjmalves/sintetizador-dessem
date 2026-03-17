@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Callable
 
-import pandas as pd
+import polars as pl
 
 from app.internal.constants import IDENTIFICATION_COLUMNS, VALUE_COL
 from app.model.operation.operationsynthesis import OperationSynthesis
@@ -20,18 +20,17 @@ V = Variable
 SR = SpatialResolution
 
 
-def post_resolve_file(df: pd.DataFrame) -> pd.DataFrame:
+def post_resolve_file(df: pl.DataFrame) -> pl.DataFrame:
     """Filtra o DataFrame para manter apenas colunas de identificação e valor."""
     cols = [c for c in df.columns if c in IDENTIFICATION_COLUMNS]
-    df = df[cols + [VALUE_COL]]
-    return df
+    return df.select(cols + [VALUE_COL])
 
 
 def get_unique_column_values_in_order(
-    df: pd.DataFrame, cols: list[str]
+    df: pl.DataFrame, cols: list[str]
 ) -> dict[str, list]:
     """Extrai valores únicos na ordem em que aparecem para um conjunto de colunas."""
-    return {col: df[col].unique().tolist() for col in cols}
+    return {col: df[col].unique(maintain_order=True).to_list() for col in cols}
 
 
 def set_ordered_entities(
@@ -190,12 +189,12 @@ def resolve_dispatch(
 
 def post_resolve(
     cls: "type[OperationSynthetizer]",
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     s: OperationSynthesis,
     uow: AbstractUnitOfWork,
     early_hooks: list[Callable] = [],
     late_hooks: list[Callable] = [],
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Realiza pós-processamento após a resolução da extração de todos os dados."""
     with time_and_log(
         message_root="Tempo para compactacao dos dados", logger=cls.logger
@@ -205,9 +204,7 @@ def post_resolve(
         for c in early_hooks:
             df = c(s, df, uow)
 
-        df = df.sort_values(
-            spatial_resolution.sorting_synthesis_df_columns
-        ).reset_index(drop=True)
+        df = df.sort(spatial_resolution.sorting_synthesis_df_columns)
 
         entity_columns_order = get_unique_column_values_in_order(
             df,
@@ -229,9 +226,9 @@ def post_resolve(
 def resolve_bounds(
     cls: "type[OperationSynthetizer]",
     s: OperationSynthesis,
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Realiza o cálculo dos limites superiores e inferiores para a síntese."""
     with time_and_log(
         message_root="Tempo para calculo dos limites",
@@ -258,13 +255,13 @@ def resolve_stub(
     cls: "type[OperationSynthetizer]",
     s: OperationSynthesis,
     uow: AbstractUnitOfWork,
-) -> tuple[pd.DataFrame, bool]:
+) -> tuple[pl.DataFrame, bool]:
     """Realiza a resolução da síntese via implementação alternativa (stub)."""
     f = stub_mappings(cls, s)
     if f:
         df, is_stub = f(s, uow), True
     else:
-        df, is_stub = pd.DataFrame(), False
+        df, is_stub = pl.DataFrame(), False
     if is_stub:
         df = post_resolve(cls, df, s, uow)
         df = resolve_bounds(cls, s, df, uow)
@@ -275,7 +272,7 @@ def resolve_synthesis(
     cls: "type[OperationSynthetizer]",
     s: OperationSynthesis,
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Realiza a resolução de uma síntese com limites opcionais."""
     df = resolve_dispatch((s.variable, s.spatial_resolution), cls.logger)(uow)
     if df is not None:

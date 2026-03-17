@@ -10,6 +10,7 @@ from typing import Any, Dict
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+import polars as pl
 from idessem.dessem.operuh import Operuh
 from idessem.dessem.pdo_eco_usih import PdoEcoUsih
 from idessem.dessem.pdo_hidr import PdoHidr
@@ -47,7 +48,7 @@ def pdo_eco_usih(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     val = cache.get("pdo_eco_usih")
     if val is None:
         file = accessors.validate_data(
@@ -56,14 +57,19 @@ def pdo_eco_usih(
             PdoEcoUsih,
             "pdo_eco_usih",
         )
-        df = accessors.validate_data(
+        raw_df = accessors.validate_data(
             deck_cls, file.tabela, pd.DataFrame, "pdo_eco_usih"
         )
+        df = pl.from_pandas(raw_df)
         # Filter to hydros present in the study
-        hydros = _entities.hydro_eer_submarket_map(deck_cls, cache, uow)[
-            HYDRO_CODE_COL
-        ].unique()
-        df = df.loc[df[HYDRO_CODE_COL].isin(hydros)]
+        hydros = (
+            _entities.hydro_eer_submarket_map(deck_cls, cache, uow)[
+                HYDRO_CODE_COL
+            ]
+            .unique()
+            .to_list()
+        )
+        df = df.filter(pl.col(HYDRO_CODE_COL).is_in(hydros))
         cache["pdo_eco_usih"] = df
     return cache["pdo_eco_usih"]
 
@@ -99,21 +105,21 @@ def hydro_inflows(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = cache.get("hydro_inflows")
     if df is None:
         arq_dadvaz = accessors.dadvaz(deck_cls, cache, uow)
-        df = accessors.validate_data(
+        raw_df = accessors.validate_data(
             deck_cls, arq_dadvaz.vazoes, pd.DataFrame, "vazões das usinas"
         )
-        df = df.rename(
-            columns={
+        df = pl.from_pandas(raw_df).rename(
+            {
                 "codigo_usina": HYDRO_CODE_COL,
                 "nome_usina": HYDRO_NAME_COL,
             }
         )
         cache["hydro_inflows"] = df
-    return df.copy()
+    return df
 
 
 # ---------------------------------------------------------------------------
@@ -122,11 +128,11 @@ def hydro_inflows(
 
 
 def _get_initial_volume(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Compute initial volumes (percentual and absolute) for each UHE."""
     df_vol_ini = _entities.hydro_initial_volumes(deck_cls, cache, uow)
     perc_initial_volumes = df_vol_ini["volume_inicial"].to_numpy()
@@ -138,7 +144,7 @@ def _get_initial_volume(
             df["volume_final_percentual"].to_numpy()[:-total_uhes],
         )
     )
-    df["volume_inicial_percentual"] = perc_volumes
+    df = df.with_columns(pl.Series("volume_inicial_percentual", perc_volumes))
 
     min_volumes = df["volume_armazenado_minimo_hm3"].to_numpy()[:total_uhes]
     max_volumes = df["volume_armazenado_maximo_hm3"].to_numpy()[:total_uhes]
@@ -151,26 +157,36 @@ def _get_initial_volume(
             df["volume_final_absoluto_hm3"].to_numpy()[:-total_uhes],
         )
     )
-    df["volume_inicial_absoluto_hm3"] = abs_volumes
+    df = df.with_columns(pl.Series("volume_inicial_absoluto_hm3", abs_volumes))
     return df
 
 
 def _cast_volumes_to_absolute(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Convert relative volume columns to absolute hm3 values."""
     col_min_vol = "volume_armazenado_minimo_hm3"
     col_max_vol = "volume_armazenado_maximo_hm3"
-    df_eco = pdo_eco_usih(deck_cls, cache, uow)[
+    df_eco = pdo_eco_usih(deck_cls, cache, uow).select(
         [HYDRO_CODE_COL, col_min_vol, col_max_vol]
-    ]
+    )
     num_stages = len(_temporal.stages_durations(deck_cls, cache, uow))
-    df[col_min_vol] = np.tile(df_eco[col_min_vol].to_numpy(), num_stages)
-    df[col_max_vol] = np.tile(df_eco[col_max_vol].to_numpy(), num_stages)
-    df["volume_final_absoluto_hm3"] = df["volume_final_hm3"] + df[col_min_vol]
+    min_arr = np.tile(df_eco[col_min_vol].to_numpy(), num_stages)
+    max_arr = np.tile(df_eco[col_max_vol].to_numpy(), num_stages)
+    df = df.with_columns(
+        [
+            pl.Series(col_min_vol, min_arr),
+            pl.Series(col_max_vol, max_arr),
+        ]
+    )
+    df = df.with_columns(
+        (pl.col("volume_final_hm3") + pl.col(col_min_vol)).alias(
+            "volume_final_absoluto_hm3"
+        )
+    )
     return df
 
 
@@ -183,7 +199,7 @@ def pdo_hidr(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = cache.get("pdo_hidr")
     if df is None:
         raw = accessors.validate_data(
@@ -192,17 +208,19 @@ def pdo_hidr(
             PdoHidr,
             "pdo_hidr",
         )
-        df = accessors.validate_data(
+        raw_df = accessors.validate_data(
             deck_cls, raw.tabela, pd.DataFrame, "pdo_hidr"
         )
-        df = df.loc[df["conjunto"] == 99].reset_index(drop=True)
-        df = df.drop(columns=["nome_usina", "conjunto", "unidade"])
+        df = pl.from_pandas(raw_df)
+        df = df.filter(pl.col("conjunto") == 99).drop(
+            ["nome_usina", "conjunto", "unidade"]
+        )
         df = _cast_volumes_to_absolute(df, deck_cls, cache, uow)
         df = _get_initial_volume(df, deck_cls, cache, uow)
 
         df = _temporal.add_single_scenario(df)
         df = df.rename(
-            columns={
+            {
                 "estagio": STAGE_COL,
                 "nome_patamar": BLOCK_COL,
                 "nome_submercado": SUBMARKET_CODE_COL,
@@ -210,54 +228,65 @@ def pdo_hidr(
         )
 
         submarket_map_df = _entities.eer_submarket_map(deck_cls, cache, uow)
-        submarket_map_df = submarket_map_df.drop_duplicates(
-            subset=[SUBMARKET_CODE_COL]
-        )
+        submarket_map_df = submarket_map_df.unique(subset=[SUBMARKET_CODE_COL])
         submarket_map = {
             name: code
             for name, code in zip(
-                submarket_map_df[SUBMARKET_NAME_COL],
-                submarket_map_df[SUBMARKET_CODE_COL],
+                submarket_map_df[SUBMARKET_NAME_COL].to_list(),
+                submarket_map_df[SUBMARKET_CODE_COL].to_list(),
             )
         }
         eer_map_df = _entities.hydro_eer_map(deck_cls, cache, uow)
         eer_map = {
             hydro_code: eer_code
             for hydro_code, eer_code in zip(
-                eer_map_df[HYDRO_CODE_COL],
-                eer_map_df[EER_CODE_COL],
+                eer_map_df[HYDRO_CODE_COL].to_list(),
+                eer_map_df[EER_CODE_COL].to_list(),
             )
         }
         bm = _temporal.block_map(deck_cls, cache, uow)
-        df[BLOCK_COL] = df[BLOCK_COL].map(bm)
-        df[SUBMARKET_CODE_COL] = df[SUBMARKET_CODE_COL].map(submarket_map)
-        df[EER_CODE_COL] = df[HYDRO_CODE_COL].map(eer_map)
+        df = df.with_columns(
+            [
+                pl.col(BLOCK_COL).replace(bm).alias(BLOCK_COL),
+                pl.col(SUBMARKET_CODE_COL)
+                .replace(submarket_map)
+                .cast(pl.Int64)
+                .alias(SUBMARKET_CODE_COL),
+                pl.col(HYDRO_CODE_COL)
+                .replace(eer_map)
+                .cast(pl.Int64)
+                .alias(EER_CODE_COL),
+            ]
+        )
 
-        num_entities = len(df.loc[df[STAGE_COL] == 1])
-        stage_df = _temporal.stages_durations(deck_cls, cache, uow)[
-            [START_DATE_COL, END_DATE_COL]
-        ]
-        df[START_DATE_COL] = np.repeat(
-            stage_df[START_DATE_COL].tolist(), num_entities
+        # Assign start/end dates by joining on STAGE_COL
+        num_entities = df.filter(pl.col(STAGE_COL) == 1).height
+        stage_df = _temporal.stages_durations(deck_cls, cache, uow).select(
+            [STAGE_COL, START_DATE_COL, END_DATE_COL]
         )
-        df[END_DATE_COL] = np.repeat(
-            stage_df[END_DATE_COL].tolist(), num_entities
-        )
-        df[BLOCK_DURATION_COL] = (
-            df[END_DATE_COL] - df[START_DATE_COL]
-        ) / pd.Timedelta(hours=1)
+        df = df.join(stage_df, on=STAGE_COL, how="left")
 
-        df["vazao_defluente_m3s"] = (
-            df["vazao_turbinada_m3s"] + df["vazao_vertida_m3s"]
+        df = df.with_columns(
+            (
+                (pl.col(END_DATE_COL) - pl.col(START_DATE_COL)).dt.total_hours()
+            ).alias(BLOCK_DURATION_COL)
         )
-        df["vazao_afluente_m3s"] = (
-            df["vazao_incremental_m3s"]
-            + df["vazao_montante_m3s"]
-            + df["vazao_montante_tempo_viagem_m3s"]
+
+        df = df.with_columns(
+            (pl.col("vazao_turbinada_m3s") + pl.col("vazao_vertida_m3s")).alias(
+                "vazao_defluente_m3s"
+            )
         )
-        df.sort_values([HYDRO_CODE_COL, STAGE_COL], inplace=True)
-        cache["pdo_hidr"] = df.reset_index(drop=True)
-    return cache["pdo_hidr"].copy()
+        df = df.with_columns(
+            (
+                pl.col("vazao_incremental_m3s")
+                + pl.col("vazao_montante_m3s")
+                + pl.col("vazao_montante_tempo_viagem_m3s")
+            ).alias("vazao_afluente_m3s")
+        )
+        df = df.sort([HYDRO_CODE_COL, STAGE_COL])
+        cache["pdo_hidr"] = df
+    return cache["pdo_hidr"]
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +298,7 @@ def pdo_oper_tviag_calha(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = cache.get("pdo_oper_tviag_calha")
     if df is None:
         raw = accessors.validate_data(
@@ -278,14 +307,12 @@ def pdo_oper_tviag_calha(
             PdoOperTviagCalha,
             "pdo_oper_tviag_calha",
         )
-        df = accessors.validate_data(
+        raw_df = accessors.validate_data(
             deck_cls, raw.tabela, pd.DataFrame, "pdo_oper_tviag_calha"
         )
-        df = df.loc[df["tipo_elemento_jusante"] == "USIH"].reset_index(
-            drop=True
-        )
-        df = df.drop(
-            columns=[
+        df = pl.from_pandas(raw_df)
+        df = df.filter(pl.col("tipo_elemento_jusante") == "USIH").drop(
+            [
                 "codigo_usina_montante",
                 "nome_usina_montante",
                 "tipo_elemento_jusante",
@@ -294,7 +321,7 @@ def pdo_oper_tviag_calha(
         )
         df = _temporal.add_single_scenario(df)
         df = df.rename(
-            columns={
+            {
                 "estagio": STAGE_COL,
                 "duracao": BLOCK_DURATION_COL,
                 "codigo_elemento_jusante": HYDRO_CODE_COL,
@@ -304,34 +331,42 @@ def pdo_oper_tviag_calha(
         eer_map = {
             hc: ec
             for hc, ec in zip(
-                eer_map_df[HYDRO_CODE_COL], eer_map_df[EER_CODE_COL]
+                eer_map_df[HYDRO_CODE_COL].to_list(),
+                eer_map_df[EER_CODE_COL].to_list(),
             )
         }
         submarket_map_df = _entities.eer_submarket_map(deck_cls, cache, uow)
         submarket_map = {
             ec: sc
             for ec, sc in zip(
-                submarket_map_df[EER_CODE_COL],
-                submarket_map_df[SUBMARKET_CODE_COL],
+                submarket_map_df[EER_CODE_COL].to_list(),
+                submarket_map_df[SUBMARKET_CODE_COL].to_list(),
             )
         }
         bm = _temporal.stage_block_map(deck_cls, cache, uow)
-        df[BLOCK_COL] = df[STAGE_COL].map(bm)
-        df[EER_CODE_COL] = df[HYDRO_CODE_COL].map(eer_map)
-        df[SUBMARKET_CODE_COL] = df[EER_CODE_COL].map(submarket_map)
+        df = df.with_columns(
+            [
+                pl.col(STAGE_COL).replace(bm).alias(BLOCK_COL),
+                pl.col(HYDRO_CODE_COL)
+                .replace(eer_map)
+                .cast(pl.Int64)
+                .alias(EER_CODE_COL),
+            ]
+        )
+        df = df.with_columns(
+            pl.col(EER_CODE_COL)
+            .replace(submarket_map)
+            .cast(pl.Int64)
+            .alias(SUBMARKET_CODE_COL)
+        )
 
-        num_entities = len(df.loc[df[STAGE_COL] == 1])
-        stage_df = _temporal.stages_durations(deck_cls, cache, uow)[
-            [START_DATE_COL, END_DATE_COL]
-        ]
-        df[START_DATE_COL] = np.repeat(
-            stage_df[START_DATE_COL].tolist(), num_entities
+        # Assign start/end dates by joining on STAGE_COL
+        stage_df = _temporal.stages_durations(deck_cls, cache, uow).select(
+            [STAGE_COL, START_DATE_COL, END_DATE_COL]
         )
-        df[END_DATE_COL] = np.repeat(
-            stage_df[END_DATE_COL].tolist(), num_entities
-        )
+        df = df.join(stage_df, on=STAGE_COL, how="left")
         cache["pdo_oper_tviag_calha"] = df
-    return cache["pdo_oper_tviag_calha"].copy()
+    return cache["pdo_oper_tviag_calha"]
 
 
 # ---------------------------------------------------------------------------
@@ -344,11 +379,8 @@ def pdo_hidr_hydro(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
-    df = accessors.validate_data(
-        deck_cls, pdo_hidr(deck_cls, cache, uow), pd.DataFrame, "pdo_hidr_hydro"
-    )
-    df = df.rename(columns={col: VALUE_COL})
+) -> pl.DataFrame:
+    df = pdo_hidr(deck_cls, cache, uow).rename({col: VALUE_COL})
     common_cols = [
         c
         for c in df.columns
@@ -365,7 +397,7 @@ def pdo_hidr_hydro(
             END_DATE_COL,
         ]
     ]
-    return df[common_cols + [VALUE_COL]]
+    return df.select(common_cols + [VALUE_COL])
 
 
 def pdo_hidr_eer(
@@ -373,13 +405,8 @@ def pdo_hidr_eer(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
-    df = accessors.validate_data(
-        deck_cls,
-        pdo_hidr_hydro(col, deck_cls, cache, uow),
-        pd.DataFrame,
-        "pdo_hidr_eer",
-    )
+) -> pl.DataFrame:
+    df = pdo_hidr_hydro(col, deck_cls, cache, uow)
     common_cols = [
         c
         for c in df.columns
@@ -395,15 +422,13 @@ def pdo_hidr_eer(
             END_DATE_COL,
         ]
     ]
-    df = (
-        df.groupby(common_cols, as_index=False)
-        .sum(numeric_only=True)
-        .reset_index(drop=True)
+    df = df.group_by(common_cols).agg(pl.col(VALUE_COL).fill_nan(None).sum())
+    df = df.with_columns(
+        (
+            (pl.col(END_DATE_COL) - pl.col(START_DATE_COL)).dt.total_hours()
+        ).alias(BLOCK_DURATION_COL)
     )
-    df[BLOCK_DURATION_COL] = (
-        df[END_DATE_COL] - df[START_DATE_COL]
-    ) / pd.Timedelta(hours=1)
-    return df[common_cols + [VALUE_COL]]
+    return df.select(common_cols + [VALUE_COL])
 
 
 def pdo_hidr_sbm(
@@ -411,13 +436,8 @@ def pdo_hidr_sbm(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
-    df = accessors.validate_data(
-        deck_cls,
-        pdo_hidr_hydro(col, deck_cls, cache, uow),
-        pd.DataFrame,
-        "pdo_hidr_hydro",
-    )
+) -> pl.DataFrame:
+    df = pdo_hidr_hydro(col, deck_cls, cache, uow)
     common_cols = [
         c
         for c in df.columns
@@ -432,15 +452,13 @@ def pdo_hidr_sbm(
             END_DATE_COL,
         ]
     ]
-    df = (
-        df.groupby(common_cols, as_index=False)
-        .sum(numeric_only=True)
-        .reset_index(drop=True)
+    df = df.group_by(common_cols).agg(pl.col(VALUE_COL).fill_nan(None).sum())
+    df = df.with_columns(
+        (
+            (pl.col(END_DATE_COL) - pl.col(START_DATE_COL)).dt.total_hours()
+        ).alias(BLOCK_DURATION_COL)
     )
-    df[BLOCK_DURATION_COL] = (
-        df[END_DATE_COL] - df[START_DATE_COL]
-    ) / pd.Timedelta(hours=1)
-    return df[common_cols + [VALUE_COL]]
+    return df.select(common_cols + [VALUE_COL])
 
 
 def pdo_hidr_sin(
@@ -448,13 +466,8 @@ def pdo_hidr_sin(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
-    df = accessors.validate_data(
-        deck_cls,
-        pdo_hidr_hydro(col, deck_cls, cache, uow),
-        pd.DataFrame,
-        "pdo_hidr_sin",
-    )
+) -> pl.DataFrame:
+    df = pdo_hidr_hydro(col, deck_cls, cache, uow)
     common_cols = [
         c
         for c in df.columns
@@ -468,15 +481,13 @@ def pdo_hidr_sin(
             END_DATE_COL,
         ]
     ]
-    df = (
-        df.groupby(common_cols, as_index=False)
-        .sum(numeric_only=True)
-        .reset_index(drop=True)
+    df = df.group_by(common_cols).agg(pl.col(VALUE_COL).fill_nan(None).sum())
+    df = df.with_columns(
+        (
+            (pl.col(END_DATE_COL) - pl.col(START_DATE_COL)).dt.total_hours()
+        ).alias(BLOCK_DURATION_COL)
     )
-    df[BLOCK_DURATION_COL] = (
-        df[END_DATE_COL] - df[START_DATE_COL]
-    ) / pd.Timedelta(hours=1)
-    return df[common_cols + [VALUE_COL]]
+    return df.select(common_cols + [VALUE_COL])
 
 
 def pdo_oper_tviag_calha_hydro(
@@ -484,14 +495,8 @@ def pdo_oper_tviag_calha_hydro(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
-    df = accessors.validate_data(
-        deck_cls,
-        pdo_oper_tviag_calha(deck_cls, cache, uow),
-        pd.DataFrame,
-        "pdo_oper_tviag_calha",
-    )
-    df = df.rename(columns={col: VALUE_COL})
+) -> pl.DataFrame:
+    df = pdo_oper_tviag_calha(deck_cls, cache, uow).rename({col: VALUE_COL})
     common_cols = [
         c
         for c in df.columns
@@ -508,11 +513,14 @@ def pdo_oper_tviag_calha_hydro(
             END_DATE_COL,
         ]
     ]
-    return df[common_cols + [VALUE_COL]]
+    return df.select(common_cols + [VALUE_COL])
 
 
 # ---------------------------------------------------------------------------
 # Hydro bounds - operative constraints helpers
+# NOTE: _get_hydro_flow_operative_constraints uses iterrows() internally
+# and is kept in pandas due to the complex nested loop logic.
+# It is converted back to pl.DataFrame at the return boundary.
 # ---------------------------------------------------------------------------
 
 
@@ -592,7 +600,12 @@ def _get_hydro_flow_operative_constraints(
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
     constraint_type: int,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
+    """
+    Kept in pandas internally due to complex nested iterrows() logic.
+    Returns a pl.DataFrame at the boundary.
+    """
+
     def __get_constraints_dates_and_stages(df: pd.DataFrame) -> pd.DataFrame:
         df[START_DATE_COL] = df.apply(
             lambda row: __cast_constraints_stages_to_datetime(row, "inicial"),
@@ -697,39 +710,47 @@ def _get_hydro_flow_operative_constraints(
     ].copy()
     if not df.empty:
         df = pd.merge(df, df_lim, how="left", on="codigo_restricao")
-        df_stages = _temporal.stages_durations(deck_cls, cache, uow)
+        # Convert stages to pandas for this function
+        df_stages = _temporal.stages_durations(deck_cls, cache, uow).to_pandas()
         df = __get_constraints_dates_and_stages(df)
         df = __expand_constraints_by_stages(df, df_stages)
         df.drop(columns=[START_DATE_COL], inplace=True)
+        return pl.from_pandas(df)
 
-    return df
+    return pl.DataFrame(
+        schema={
+            HYDRO_CODE_COL: pl.Int64,
+            STAGE_COL: pl.Int64,
+            LOWER_BOUND_COL: pl.Float64,
+            UPPER_BOUND_COL: pl.Float64,
+        }
+    )
 
 
 def _overwrite_hydro_bounds_with_operative_constraints(
-    df: pd.DataFrame,
-    df_constraints: pd.DataFrame,
-) -> pd.DataFrame:
-    if df_constraints.empty:
+    df: pl.DataFrame,
+    df_constraints: pl.DataFrame,
+) -> pl.DataFrame:
+    if df_constraints.is_empty():
         return df
 
-    df = pd.merge(
-        df, df_constraints, how="left", on=[HYDRO_CODE_COL, STAGE_COL]
+    df = df.join(
+        df_constraints,
+        how="left",
+        on=[HYDRO_CODE_COL, STAGE_COL],
+        suffix="_right",
     )
-    df[LOWER_BOUND_COL] = df[
-        [LOWER_BOUND_COL + "_x", LOWER_BOUND_COL + "_y"]
-    ].max(axis=1)
-    df[UPPER_BOUND_COL] = df[
-        [UPPER_BOUND_COL + "_x", UPPER_BOUND_COL + "_y"]
-    ].min(axis=1)
-    df.drop(
-        columns=[
-            LOWER_BOUND_COL + "_x",
-            LOWER_BOUND_COL + "_y",
-            UPPER_BOUND_COL + "_x",
-            UPPER_BOUND_COL + "_y",
-        ],
-        inplace=True,
+    df = df.with_columns(
+        [
+            pl.max_horizontal(
+                [LOWER_BOUND_COL, LOWER_BOUND_COL + "_right"]
+            ).alias(LOWER_BOUND_COL),
+            pl.min_horizontal(
+                [UPPER_BOUND_COL, UPPER_BOUND_COL + "_right"]
+            ).alias(UPPER_BOUND_COL),
+        ]
     )
+    df = df.drop([LOWER_BOUND_COL + "_right", UPPER_BOUND_COL + "_right"])
     return df
 
 
@@ -739,22 +760,22 @@ def _initialize_df_hydro_bounds(
     uow: AbstractUnitOfWork,
     lower: float,
     upper: float,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     stages = _temporal.stages_durations(deck_cls, cache, uow)[
         STAGE_COL
-    ].tolist()
+    ].to_list()
     hydros = (
         _entities.hydro_eer_map(deck_cls, cache, uow)[HYDRO_CODE_COL]
         .unique()
-        .tolist()
+        .to_list()
     )
 
-    return pd.DataFrame(
+    return pl.DataFrame(
         {
-            HYDRO_CODE_COL: np.tile(hydros, len(stages)),
-            STAGE_COL: np.repeat(stages, len(hydros)),
-            LOWER_BOUND_COL: np.repeat(lower, len(hydros) * len(stages)),
-            UPPER_BOUND_COL: np.repeat(upper, len(hydros) * len(stages)),
+            HYDRO_CODE_COL: np.tile(hydros, len(stages)).tolist(),
+            STAGE_COL: np.repeat(stages, len(hydros)).tolist(),
+            LOWER_BOUND_COL: [lower] * (len(hydros) * len(stages)),
+            UPPER_BOUND_COL: [upper] * (len(hydros) * len(stages)),
         }
     )
 
@@ -768,18 +789,17 @@ def hydro_generation_bounds(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     name = "hydro_generation_bounds"
     val = cache.get(name)
     if val is None:
-        df = accessors.validate_data(
-            deck_cls, pdo_hidr(deck_cls, cache, uow), pd.DataFrame, "pdo_hidr"
+        df = pdo_hidr(deck_cls, cache, uow).rename(
+            {"geracao_maxima": UPPER_BOUND_COL}
         )
-        df = df.rename(columns={"geracao_maxima": UPPER_BOUND_COL})
-        df = df[
+        df = df.select(
             [STAGE_COL, HYDRO_CODE_COL, SUBMARKET_CODE_COL, UPPER_BOUND_COL]
-        ]
-        df[LOWER_BOUND_COL] = float(0.0)
+        )
+        df = df.with_columns(pl.lit(0.0).alias(LOWER_BOUND_COL))
         df_constraints = _get_hydro_flow_operative_constraints(
             deck_cls, cache, uow, constraint_type=7
         )
@@ -794,60 +814,73 @@ def stored_volume_bounds(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     name = "stored_volume_bounds"
     if name not in cache:
-        df = pdo_eco_usih(deck_cls, cache, uow)
-        df = df.rename(
-            columns={
+        df = pdo_eco_usih(deck_cls, cache, uow).rename(
+            {
                 "codigo_usina": HYDRO_CODE_COL,
                 "volume_armazenado_maximo_hm3": UPPER_BOUND_COL,
                 "volume_armazenado_minimo_hm3": LOWER_BOUND_COL,
             }
         )
         df_eco_usih = pdo_eco_usih(deck_cls, cache, uow)
-        hydos_run_of_river = df_eco_usih.loc[
-            np.isnan(df_eco_usih["volume_util_inicial_hm3"])
-        ][HYDRO_CODE_COL].unique()
-
-        df.loc[df[HYDRO_CODE_COL].isin(hydos_run_of_river), LOWER_BOUND_COL] = (
-            np.nan
+        hydros_run_of_river = (
+            df_eco_usih.filter(
+                pl.col("volume_util_inicial_hm3").is_null()
+                | pl.col("volume_util_inicial_hm3").is_nan()
+            )
+            .get_column(HYDRO_CODE_COL)
+            .unique()
+            .to_list()
         )
-        df.loc[df[HYDRO_CODE_COL].isin(hydos_run_of_river), UPPER_BOUND_COL] = (
-            np.nan
+
+        df = df.with_columns(
+            [
+                pl.when(pl.col(HYDRO_CODE_COL).is_in(hydros_run_of_river))
+                .then(None)
+                .otherwise(pl.col(LOWER_BOUND_COL))
+                .alias(LOWER_BOUND_COL),
+                pl.when(pl.col(HYDRO_CODE_COL).is_in(hydros_run_of_river))
+                .then(None)
+                .otherwise(pl.col(UPPER_BOUND_COL))
+                .alias(UPPER_BOUND_COL),
+            ]
         )
 
         df = _temporal.add_submarket_code(
             deck_cls, cache, uow, df, "nome_submercado", SUBMARKET_CODE_COL
         )
-        df = df[
+        df = df.select(
             [
                 HYDRO_CODE_COL,
                 SUBMARKET_CODE_COL,
                 LOWER_BOUND_COL,
                 UPPER_BOUND_COL,
             ]
-        ]
+        )
         cache[name] = df
-    return cache[name].copy()
+    return cache[name]
 
 
 def hydro_turbined_flow_bounds(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     name = "hydro_turbined_bounds"
     val = cache.get(name)
     if val is None:
-        df = accessors.validate_data(
-            deck_cls, pdo_hidr(deck_cls, cache, uow), pd.DataFrame, "pdo_hidr"
+        df = pdo_hidr(deck_cls, cache, uow)
+        df = df.with_columns(
+            [
+                pl.col("vazao_turbinada_minima_m3s").alias(LOWER_BOUND_COL),
+                pl.min_horizontal(
+                    ["vazao_turbinada_maxima_m3s", "engolimento_maximo_m3s"]
+                ).alias(UPPER_BOUND_COL),
+            ]
         )
-        df[LOWER_BOUND_COL] = df["vazao_turbinada_minima_m3s"]
-        df[UPPER_BOUND_COL] = df[
-            ["vazao_turbinada_maxima_m3s", "engolimento_maximo_m3s"]
-        ].min(axis=1)
-        df = df[
+        df = df.select(
             [
                 STAGE_COL,
                 HYDRO_CODE_COL,
@@ -855,7 +888,7 @@ def hydro_turbined_flow_bounds(
                 LOWER_BOUND_COL,
                 UPPER_BOUND_COL,
             ]
-        ]
+        )
         df_constraints = _get_hydro_flow_operative_constraints(
             deck_cls, cache, uow, constraint_type=3
         )
@@ -870,7 +903,7 @@ def hydro_outflow_bounds(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     name = "hydro_outflow_bounds"
     val = cache.get(name)
     if val is None:
@@ -891,7 +924,7 @@ def hydro_spilled_flow_bounds(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     name = "hydro_spilled_flow_bounds"
     val = cache.get(name)
     if val is None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import pandas as pd
+import polars as pl
 
 if TYPE_CHECKING:
     from app.services.unitofwork import AbstractUnitOfWork
@@ -11,12 +11,12 @@ if TYPE_CHECKING:
 
 @dataclass
 class DeckContext:
-    stages_durations: pd.DataFrame
-    blocks_durations: pd.DataFrame
-    eer_submarket_map: pd.DataFrame
-    hydro_eer_submarket_map: pd.DataFrame
-    submarkets: pd.DataFrame
-    thermals: pd.DataFrame
+    stages_durations: pl.DataFrame
+    blocks_durations: pl.DataFrame
+    eer_submarket_map: pl.DataFrame
+    hydro_eer_submarket_map: pl.DataFrame
+    submarkets: pl.DataFrame
+    thermals: pl.DataFrame
 
     def __post_init__(self) -> None:
         for field_name, value in self.__dict__.items():

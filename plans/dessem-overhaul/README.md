@@ -19,7 +19,7 @@ Modernize sintetizador-dessem to match sintetizador-newave's refactored architec
 | 02   | idessem Upgrade & API Adaptation          | 3       | Detailed     |
 | 03   | Code Decomposition - Deck Service         | 7       | Detailed     |
 | 04   | Code Decomposition - Operation Synthesis  | 4       | Refined      |
-| 05   | Polars Migration                          | 4       | Outline      |
+| 05   | Polars Migration                          | 4       | Refined      |
 | 06   | Parallelism & Logging                     | 3       | Outline      |
 | 07   | Quality & Polish                          | 3       | Outline      |
 
@@ -45,10 +45,10 @@ Modernize sintetizador-dessem to match sintetizador-newave's refactored architec
 | ticket-016 | Extract operation cache and export             | epic-04 | completed | Refined      | 1.00      | 0.95    | EXCELLENT  |
 | ticket-017 | Extract spatial resolution modules             | epic-04 | completed | Refined      | 1.00      | 0.95    | EXCELLENT  |
 | ticket-018 | Create operation orchestrator and pipeline     | epic-04 | completed | Refined      | 0.98      | 0.95    | EXCELLENT  |
-| ticket-019 | Add Polars dependency and export method        | epic-05 | pending   | Outline      | --        | --      | --         |
-| ticket-020 | Implement native Polars Parquet export         | epic-05 | pending   | Outline      | --        | --      | --         |
-| ticket-021 | Migrate deck hot paths to Polars               | epic-05 | pending   | Outline      | --        | --      | --         |
-| ticket-022 | Migrate operation synthesis to Polars          | epic-05 | pending   | Outline      | --        | --      | --         |
+| ticket-019 | Add Polars dependency and export method        | epic-05 | completed | Refined      | 1.00      | 0.95    | EXCELLENT  |
+| ticket-020 | Implement native Polars Parquet export         | epic-05 | completed | Refined      | 1.00      | 0.95    | EXCELLENT  |
+| ticket-021 | Migrate deck hot paths to Polars               | epic-05 | completed | Refined      | 0.94      | 0.93    | EXCELLENT  |
+| ticket-022 | Migrate operation synthesis to Polars          | epic-05 | completed | Refined      | 0.98      | 0.93    | EXCELLENT  |
 | ticket-023 | Add multiprocessing-safe logger                | epic-06 | pending   | Outline      | --        | --      | --         |
 | ticket-024 | Add --processadores CLI option                 | epic-06 | pending   | Outline      | --        | --      | --         |
 | ticket-025 | Integrate ProcessPoolExecutor                  | epic-06 | pending   | Outline      | --        | --      | --         |

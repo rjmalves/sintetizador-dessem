@@ -1,9 +1,6 @@
-from typing import Callable, Dict
-
-import pandas as pd  # type: ignore
+import polars as pl
 
 from app.internal.constants import (
-    PANDAS_GROUPING_ENGINE,
     PROBABILITY_COL,
     SCENARIO_COL,
     VALUE_COL,
@@ -11,52 +8,42 @@ from app.internal.constants import (
 
 
 def fast_group_df(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     grouping_columns: list,
     extract_columns: list,
     operation: str,
     reset_index: bool = True,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """
-    Agrupa um DataFrame aplicando uma operação, tentando utilizar a engine mais
-    adequada para o agrupamento.
+    Agrupa um DataFrame aplicando uma operação.
     """
-    grouped_df = df.groupby(grouping_columns, sort=False)[extract_columns]
-
-    operation_map: Dict[str, Callable[..., pd.DataFrame]] = {
-        "mean": grouped_df.mean,
-        "std": grouped_df.std,
-        "sum": grouped_df.sum,
+    operation_map = {
+        "mean": pl.Expr.mean,
+        "std": pl.Expr.std,
+        "sum": pl.Expr.sum,
     }
-
-    try:
-        grouped_df = operation_map[operation](engine=PANDAS_GROUPING_ENGINE)
-    except ZeroDivisionError:
-        grouped_df = operation_map[operation](engine="cython")
-
-    if reset_index:
-        grouped_df = grouped_df.reset_index()
+    agg_fn = operation_map[operation]
+    grouped_df = df.group_by(grouping_columns).agg(
+        [agg_fn(pl.col(c)) for c in extract_columns]
+    )
     return grouped_df
 
 
-def _calc_mean(df: pd.DataFrame) -> pd.DataFrame:
+def _calc_mean(df: pl.DataFrame) -> pl.DataFrame:
     """
     Realiza o pós-processamento para calcular o valor médio e o desvio
     padrão de uma variável operativa dentre todos os estágios e patamares,
     agrupando de acordo com as demais colunas.
     """
-
     value_columns = [SCENARIO_COL, VALUE_COL, PROBABILITY_COL]
     grouping_columns = [c for c in df.columns if c not in value_columns]
 
-    df_mean = df.groupby(grouping_columns, sort=False).mean().reset_index()
-    df_mean[SCENARIO_COL] = "mean"
-
-    df_mean = df_mean.rename(columns={0: VALUE_COL})
+    df_mean = df.group_by(grouping_columns).agg(pl.col(VALUE_COL).mean())
+    df_mean = df_mean.with_columns(pl.lit("mean").alias(SCENARIO_COL))
     return df_mean
 
 
-def calc_statistics(df: pd.DataFrame) -> pd.DataFrame:
+def calc_statistics(df: pl.DataFrame) -> pl.DataFrame:
     """
     Realiza o pós-processamento de um DataFrame com dados da
     síntese da operação de uma determinada variável, calculando

@@ -1,6 +1,6 @@
 import logging
 
-import pandas as pd
+import polars as pl
 
 from app.internal.constants import SUBMARKET_CODE_COL, VALUE_COL
 from app.services.deck.deck import Deck
@@ -12,7 +12,7 @@ def resolve_pdo_sist_sbm(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -27,7 +27,7 @@ def resolve_pdo_sist_sin(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -42,7 +42,7 @@ def resolve_pdo_hidr_uhe(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -50,7 +50,9 @@ def resolve_pdo_hidr_uhe(
         logger=logger,
     ):
         df = Deck.pdo_hidr_hydro(col, uow)
-        df = df.loc[(~df[VALUE_COL].isna())].reset_index(drop=True)
+        df = df.filter(
+            ~pl.col(VALUE_COL).is_null() & ~pl.col(VALUE_COL).is_nan()
+        )
         return post_resolve_file(df)
 
 
@@ -58,7 +60,7 @@ def resolve_pdo_hidr_eer(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -73,7 +75,7 @@ def resolve_pdo_hidr_sbm(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -88,7 +90,7 @@ def resolve_pdo_hidr_sin(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -103,7 +105,7 @@ def resolve_pdo_eolica_sbm(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -118,7 +120,7 @@ def resolve_pdo_eolica_sin(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -133,7 +135,7 @@ def resolve_pdo_oper_term_ute(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -148,7 +150,7 @@ def resolve_pdo_operacao_costs(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -163,7 +165,7 @@ def resolve_pdo_inter_sbp(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -178,7 +180,7 @@ def resolve_pdo_oper_tviag_calha_uhe(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     from app.services.synthesis.operation.pipeline import post_resolve_file
 
     with time_and_log(
@@ -193,11 +195,11 @@ def resolve_thermal_submarkets_pdo_sist_sbm(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = resolve_pdo_sist_sbm(uow, col, logger)
     thermals = Deck.thermals(uow)
-    submarkets = thermals[SUBMARKET_CODE_COL].unique().tolist()
-    df = df.loc[df[SUBMARKET_CODE_COL].isin(submarkets)].reset_index(drop=True)
+    submarkets = thermals[SUBMARKET_CODE_COL].unique().to_list()
+    df = df.filter(pl.col(SUBMARKET_CODE_COL).is_in(submarkets))
     return df
 
 
@@ -205,9 +207,9 @@ def resolve_hydro_submarkets_pdo_sist_sbm(
     uow: AbstractUnitOfWork,
     col: str,
     logger: logging.Logger | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = resolve_pdo_sist_sbm(uow, col, logger)
     hydros = Deck.hydro_eer_submarket_map(uow)
-    submarkets = hydros[SUBMARKET_CODE_COL].unique().tolist()
-    df = df.loc[df[SUBMARKET_CODE_COL].isin(submarkets)].reset_index(drop=True)
+    submarkets = hydros[SUBMARKET_CODE_COL].unique().to_list()
+    df = df.filter(pl.col(SUBMARKET_CODE_COL).is_in(submarkets))
     return df

@@ -1,7 +1,7 @@
 from logging import DEBUG, ERROR
 from typing import TYPE_CHECKING
 
-import pandas as pd
+import polars as pl
 
 from app.model.operation.operationsynthesis import OperationSynthesis
 from app.utils.timing import time_and_log
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 def get_from_cache(
     cls: "type[OperationSynthetizer]", s: OperationSynthesis
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """
     Extrai o resultado de uma síntese da cache caso exista, lançando
     um erro caso contrário.
@@ -25,7 +25,7 @@ def get_from_cache(
         if res is None:
             cls._log(f"Erro na leitura do cache - {str(s)}", ERROR)
             raise RuntimeError()
-        return res.copy()
+        return res.clone()
     else:
         cls._log(f"Erro na leitura do cache - {str(s)}", ERROR)
         raise RuntimeError()
@@ -33,7 +33,7 @@ def get_from_cache(
 
 def get_from_cache_if_exists(
     cls: "type[OperationSynthetizer]", s: OperationSynthesis
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """
     Obtém uma síntese da operação a partir da cache, caso esta
     exista. Caso contrário, retorna um DataFrame vazio.
@@ -41,13 +41,13 @@ def get_from_cache_if_exists(
     if s in cls.CACHED_SYNTHESIS.keys():
         return get_from_cache(cls, s)
     else:
-        return pd.DataFrame()
+        return pl.DataFrame()
 
 
 def store_in_cache_if_needed(
     cls: "type[OperationSynthetizer]",
     s: OperationSynthesis,
-    df: pd.DataFrame,
+    df: pl.DataFrame,
 ) -> None:
     """
     Adiciona um DataFrame com os dados de uma síntese à cache
@@ -58,4 +58,4 @@ def store_in_cache_if_needed(
             message_root="Tempo para armazenamento na cache",
             logger=cls.logger,
         ):
-            cls.CACHED_SYNTHESIS[s] = df.copy()
+            cls.CACHED_SYNTHESIS[s] = df.clone()

@@ -1,17 +1,108 @@
 # ticket-019 Add Polars Dependency and Export Method
 
-> **[OUTLINE]** This ticket requires refinement before execution.
-> It will be refined with learnings from earlier epics.
+## Context
 
-## Objective
+### Background
 
-Add `polars >= 1.0.0` as a project dependency in `pyproject.toml` and add the `synthetize_pl()` method to the export repositories (ParquetExportRepository, CSVExportRepository, TestExportRepository) following the pattern established in sintetizador-newave.
+Epics 01-04 completed the infrastructure modernization and code decomposition of sintetizador-dessem. The codebase currently uses pandas exclusively for all DataFrame operations. To improve performance on hot-path data processing, Polars needs to be introduced. This ticket adds the `polars` dependency and establishes the `synthetize_pl()` method on the export repository hierarchy, following the pattern established in sintetizador-newave's `app/adapters/repository/export.py`.
 
-## Anticipated Scope
+### Relation to Epic
 
-- **Files likely to be modified**: `pyproject.toml`, `app/adapters/repository/export.py`, `uv.lock`
-- **Key decisions needed**: Whether CSVExportRepository should have a native Polars path or just convert to Pandas
-- **Open questions**: Should `synthetize_pl()` be added to AbstractExportRepository as a default implementation that converts to Pandas?
+This is the first ticket in Epic 05 (Polars Migration). It establishes the foundation that all subsequent tickets depend on: the polars package availability and the `synthetize_pl()` method that later tickets will call instead of `synthetize_df()` when exporting Polars DataFrames.
+
+### Current State
+
+- `pyproject.toml` lists dependencies: `click>=8.1.8`, `idessem>=1.1.0`, `pandas>=3.0.0`, `pyarrow>=19.0.0`. Polars is not present.
+- `app/adapters/repository/export.py` defines `AbstractExportRepository` with `read_df()` and `synthetize_df()` abstract methods, plus `ParquetExportRepository`, `CSVExportRepository`, `TestExportRepository`, and a `factory()` function.
+- There is no `synthetize_pl()` method anywhere in the codebase.
+- sintetizador-newave already has the target pattern: `AbstractExportRepository.synthetize_pl()` as a default implementation that converts to pandas, and `ParquetExportRepository.synthetize_pl()` as a native Polars path.
+
+## Specification
+
+### Requirements
+
+1. Add `polars>=1.0.0` to `pyproject.toml` `[project.dependencies]`.
+2. Add a default `synthetize_pl(self, df: pl.DataFrame, filename: str) -> bool` method on `AbstractExportRepository` that converts to pandas via `df.to_pandas()` and delegates to `self.synthetize_df()`.
+3. `CSVExportRepository` inherits the default `synthetize_pl()` from the ABC (no override needed -- CSV export via pandas conversion is acceptable).
+4. `TestExportRepository` inherits the default `synthetize_pl()` from the ABC (no override needed).
+5. The `ParquetExportRepository.synthetize_pl()` native implementation is NOT part of this ticket -- that is ticket-020.
+6. Run `uv lock` to regenerate `uv.lock` with the new dependency.
+
+### Inputs/Props
+
+- `df: pl.DataFrame` -- a Polars DataFrame to be exported.
+- `filename: str` -- output filename (without extension).
+
+### Outputs/Behavior
+
+- `synthetize_pl()` returns `bool` (True on success, matching `synthetize_df()` return pattern).
+- The default implementation on the ABC converts to pandas and delegates, so behavior is identical to `synthetize_df()` for CSV and Test repositories.
+
+### Error Handling
+
+- If `df.to_pandas()` raises an exception, it propagates to the caller (same behavior as the current `synthetize_df()` -- no swallowing of exceptions at this level).
+
+## Acceptance Criteria
+
+- [ ] Given the file `pyproject.toml`, when inspected, then `"polars>=1.0.0"` appears in the `[project.dependencies]` list.
+- [ ] Given a fresh virtual environment, when `uv sync` is run, then `polars` is installed and `python -c "import polars; print(polars.__version__)"` prints a version >= 1.0.0.
+- [ ] Given the file `app/adapters/repository/export.py`, when inspected, then `AbstractExportRepository` has a concrete method `synthetize_pl(self, df: pl.DataFrame, filename: str) -> bool` that calls `self.synthetize_df(df.to_pandas(), filename)`.
+- [ ] Given the file `app/adapters/repository/export.py`, when inspected, then `CSVExportRepository` does NOT override `synthetize_pl` and `TestExportRepository` does NOT override `synthetize_pl`.
+- [ ] Given the test suite, when `python -m pytest tests/` is run, then all 82 existing tests pass without modification.
+
+## Implementation Guide
+
+### Suggested Approach
+
+1. Edit `pyproject.toml`: add `"polars>=1.0.0"` to the `dependencies` list (after `"pandas>=3.0.0"`).
+2. Run `uv lock` to regenerate `uv.lock`.
+3. Edit `app/adapters/repository/export.py`:
+   - Add `import polars as pl` at the top (after the `import pandas as pd` line).
+   - Add a concrete `synthetize_pl` method to `AbstractExportRepository`:
+     ```python
+     def synthetize_pl(self, df: pl.DataFrame, filename: str) -> bool:
+         """Default implementation: convert to pandas and use existing path."""
+         return self.synthetize_df(df.to_pandas(), filename)
+     ```
+   - Ensure `synthetize_df` on `TestExportRepository` returns `True` (it currently returns `df`, which is incorrect -- fix the return type to `return True` for consistency). This bug exists on line 87 where it returns `df` instead of `True`.
+4. Run `python -m pytest tests/` to verify all tests pass.
+
+### Key Files to Modify
+
+- `pyproject.toml` (line 8-13, dependencies list)
+- `app/adapters/repository/export.py` (add import, add method to ABC, fix TestExportRepository.synthetize_df return)
+- `uv.lock` (regenerated by `uv lock`)
+
+### Patterns to Follow
+
+- Follow the exact pattern from sintetizador-newave's `app/adapters/repository/export.py` lines 26-28 for the default `synthetize_pl()` method.
+- Use `import polars as pl` as the conventional alias (consistent with newave).
+
+### Pitfalls to Avoid
+
+- Do NOT add the native Polars Parquet path to `ParquetExportRepository` in this ticket -- that is ticket-020.
+- Do NOT add a `[[tool.mypy.overrides]]` for polars -- polars ships with type stubs, so mypy should work without overrides.
+- Do NOT change any existing `synthetize_df()` signatures or behavior (except the TestExportRepository bug fix).
+
+## Out of Scope
+
+- Native Polars Parquet export (ticket-020)
+- Any migration of existing pandas code to polars (tickets 021-022)
+- Adding polars-specific utility functions
+
+## Testing Requirements
+
+### Unit Tests
+
+- No new test files required. Existing tests validate that the export repository hierarchy works. The `synthetize_pl()` method is a trivial delegation that will be tested end-to-end when tickets 021-022 are implemented.
+
+### Integration Tests
+
+- Run the full test suite (`python -m pytest tests/`) to confirm no regressions from the new import or method addition.
+
+### E2E Tests
+
+- Not applicable for this ticket.
 
 ## Dependencies
 
@@ -20,5 +111,5 @@ Add `polars >= 1.0.0` as a project dependency in `pyproject.toml` and add the `s
 
 ## Effort Estimate
 
-**Points**: 2
-**Confidence**: Low (will be re-estimated during refinement)
+**Points**: 1
+**Confidence**: High

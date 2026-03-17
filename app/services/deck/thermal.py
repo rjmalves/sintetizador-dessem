@@ -5,11 +5,10 @@ Covers pdo_oper_uct, pdo_oper_term, per-unit cost extraction,
 generation bounds, and aggregation helpers for thermal synthesis.
 """
 
-from functools import partial
 from typing import Any, Dict, List, Optional
 
-import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+import polars as pl
 from idessem.dessem.pdo_oper_term import PdoOperTerm
 from idessem.dessem.pdo_oper_uct import PdoOperUct
 
@@ -38,7 +37,7 @@ def pdo_oper_uct(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = cache.get("pdo_oper_uct")
     if df is None:
         pdo_oper_uct_obj = accessors.validate_data(
@@ -47,29 +46,23 @@ def pdo_oper_uct(
             PdoOperUct,
             "pdo_oper_uct",
         )
-        df = pdo_oper_uct_obj.tabela
-        # Acrescenta datas iniciais e finais
-        # Faz uma atribuicao nao posicional.
-        # A maneira mais pythonica é lenta.
-        num_entities = len(df.loc[df[STAGE_COL] == 1])
-        stage_df = _temporal.stages_durations(deck_cls, cache, uow)[
-            [START_DATE_COL, END_DATE_COL]
-        ]
-        df[START_DATE_COL] = np.repeat(
-            stage_df[START_DATE_COL].tolist(), num_entities
+        raw_df = pdo_oper_uct_obj.tabela
+        df = pl.from_pandas(raw_df)
+
+        # Assign start/end dates by joining on STAGE_COL
+        stage_df = _temporal.stages_durations(deck_cls, cache, uow).select(
+            [STAGE_COL, START_DATE_COL, END_DATE_COL]
         )
-        df[END_DATE_COL] = np.repeat(
-            stage_df[END_DATE_COL].tolist(), num_entities
-        )
+        df = df.join(stage_df, on=STAGE_COL, how="left")
         cache["pdo_oper_uct"] = df
-    return df.copy()
+    return df
 
 
 def pdo_oper_term(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = cache.get("pdo_oper_term")
     if df is None:
         pdo_oper_term_obj = accessors.validate_data(
@@ -78,44 +71,42 @@ def pdo_oper_term(
             PdoOperTerm,
             "pdo_oper_term",
         )
-        df = accessors.validate_data(
+        raw_df = accessors.validate_data(
             deck_cls, pdo_oper_term_obj.tabela, pd.DataFrame, "pdo_oper_term"
         )
-        df = df.drop(columns=["nome_usina", "codigo_unidade", "barra"])
+        df = pl.from_pandas(raw_df)
+        df = df.drop(["nome_usina", "codigo_unidade", "barra"])
         df = _temporal.add_single_scenario(df)
         df = df.rename(
-            columns={
+            {
                 "estagio": STAGE_COL,
                 "nome_submercado": SUBMARKET_CODE_COL,
             }
         )
-        df = df.groupby(
-            [STAGE_COL, SCENARIO_COL, THERMAL_CODE_COL, SUBMARKET_CODE_COL],
-            as_index=False,
-        ).sum(numeric_only=True)
+        df = df.group_by(
+            [STAGE_COL, SCENARIO_COL, THERMAL_CODE_COL, SUBMARKET_CODE_COL]
+        ).agg(pl.all().sum())
         block_map = _temporal.stage_block_map(deck_cls, cache, uow)
-        df[BLOCK_COL] = df[STAGE_COL].map(block_map)
+        df = df.with_columns(
+            pl.col(STAGE_COL).replace(block_map).alias(BLOCK_COL)
+        )
         df = _temporal.add_submarket_code(
             deck_cls, cache, uow, df, SUBMARKET_CODE_COL
         )
-        # Acrescenta datas iniciais e finais
-        # Faz uma atribuicao nao posicional.
-        # A maneira mais pythonica é lenta.
-        num_entities = len(df.loc[df[STAGE_COL] == 1])
-        stage_df = _temporal.stages_durations(deck_cls, cache, uow)[
-            [START_DATE_COL, END_DATE_COL]
-        ]
-        df[START_DATE_COL] = np.repeat(
-            stage_df[START_DATE_COL].tolist(), num_entities
+
+        # Assign start/end dates by joining on STAGE_COL
+        stage_df = _temporal.stages_durations(deck_cls, cache, uow).select(
+            [STAGE_COL, START_DATE_COL, END_DATE_COL]
         )
-        df[END_DATE_COL] = np.repeat(
-            stage_df[END_DATE_COL].tolist(), num_entities
+        df = df.join(stage_df, on=STAGE_COL, how="left")
+
+        df = df.with_columns(
+            (
+                (pl.col(END_DATE_COL) - pl.col(START_DATE_COL)).dt.total_hours()
+            ).alias(BLOCK_DURATION_COL)
         )
-        df[BLOCK_DURATION_COL] = (
-            df[END_DATE_COL] - df[START_DATE_COL]
-        ) / pd.Timedelta(hours=1)
         cache["pdo_oper_term"] = df
-    return df.copy()
+    return df
 
 
 def pdo_oper_term_ute(
@@ -123,14 +114,8 @@ def pdo_oper_term_ute(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
-    df = accessors.validate_data(
-        deck_cls,
-        pdo_oper_term(deck_cls, cache, uow),
-        pd.DataFrame,
-        "pdo_oper_term_ute",
-    )
-    df = df.rename(columns={col: VALUE_COL})
+) -> pl.DataFrame:
+    df = pdo_oper_term(deck_cls, cache, uow).rename({col: VALUE_COL})
     common_cols = [
         c
         for c in df.columns
@@ -146,14 +131,14 @@ def pdo_oper_term_ute(
             END_DATE_COL,
         ]
     ]
-    return df[common_cols + [VALUE_COL]]
+    return df.select(common_cols + [VALUE_COL])
 
 
 def thermal_costs(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = cache.get("thermal_costs")
     if df is None:
         pdo_oper_term_obj = accessors.validate_data(
@@ -162,45 +147,35 @@ def thermal_costs(
             PdoOperTerm,
             "pdo_oper_term",
         )
-        df = accessors.validate_data(
+        raw_df = accessors.validate_data(
             deck_cls, pdo_oper_term_obj.tabela, pd.DataFrame, "pdo_oper_term"
         )
-        df = df.rename(
-            columns={
+        df = pl.from_pandas(raw_df).rename(
+            {
                 "estagio": STAGE_COL,
                 "codigo_usina": THERMAL_CODE_COL,
             }
         )
-        df = df.groupby(
-            [STAGE_COL, THERMAL_CODE_COL],
-            as_index=False,
-        ).min(numeric_only=True)
-        stage_df = _temporal.stages_durations(deck_cls, cache, uow)[
-            [START_DATE_COL]
-        ]
-        num_entities = len(df.loc[df[STAGE_COL] == 1])
-        df[START_DATE_COL] = np.repeat(
-            stage_df[START_DATE_COL].tolist(), num_entities
+        df = df.group_by([STAGE_COL, THERMAL_CODE_COL]).agg(pl.all().min())
+        stage_df = _temporal.stages_durations(deck_cls, cache, uow).select(
+            [STAGE_COL, START_DATE_COL]
         )
-        df = df.rename(
-            columns={
-                "custo_linear": VALUE_COL,
-            }
-        )
+        df = df.join(stage_df, on=STAGE_COL, how="left")
+        df = df.rename({"custo_linear": VALUE_COL})
         df = (
-            df[[THERMAL_CODE_COL, START_DATE_COL, VALUE_COL]]
-            .drop_duplicates()
-            .reset_index(drop=True)
+            df.select([THERMAL_CODE_COL, START_DATE_COL, VALUE_COL])
+            .unique()
+            .sort([THERMAL_CODE_COL, START_DATE_COL])
         )
         cache["thermal_costs"] = df
-    return df.copy()
+    return df
 
 
 def _group_thermal_bounds_df(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     grouping_column: Optional[str] = None,
     extract_columns: List[str] = [VALUE_COL],
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """
     Realiza a agregação de variáveis fornecidas a nível de usina
     para uma síntese de SBMs ou para o SIN. A agregação
@@ -239,31 +214,23 @@ def thermal_generation_bounds(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     name = "thermal_generation_bounds"
     thermal_generation_bounds_df = cache.get(name)
     if thermal_generation_bounds_df is None:
-        df = accessors.validate_data(
-            deck_cls,
-            pdo_oper_uct(deck_cls, cache, uow),
-            pd.DataFrame,
-            "pdo_oper_uct",
-        )
-        df = df.groupby(
-            by=[STAGE_COL, THERMAL_CODE_COL],
-            as_index=False,
-        ).max()
+        df = pdo_oper_uct(deck_cls, cache, uow)
+        df = df.group_by([STAGE_COL, THERMAL_CODE_COL]).agg(pl.all().max())
         df = df.rename(
-            columns={
+            {
                 "geracao_minima": LOWER_BOUND_COL,
                 "geracao_maxima": UPPER_BOUND_COL,
                 "nome_submercado": SUBMARKET_NAME_COL,
-            },
+            }
         )
         df = _temporal.add_submarket_code(
             deck_cls, cache, uow, df, SUBMARKET_NAME_COL, SUBMARKET_CODE_COL
         )
-        df = df[
+        df = df.select(
             [
                 STAGE_COL,
                 THERMAL_CODE_COL,
@@ -271,6 +238,6 @@ def thermal_generation_bounds(
                 LOWER_BOUND_COL,
                 UPPER_BOUND_COL,
             ]
-        ]
+        )
         cache[name] = df
     return cache[name]

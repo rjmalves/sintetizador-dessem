@@ -2,14 +2,14 @@
 Temporal functions for DESSEM deck processing.
 
 Covers stage/date/block calculations, version/title extraction, and
-DataFrame transformation helpers (_add_single_scenario, _add_submarket_code)
+DataFrame transformation helpers (add_single_scenario, add_submarket_code)
 that are shared across system, hydro, and thermal modules.
 """
 
 from typing import Any, Dict
 
-import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
+import polars as pl
 from idessem.dessem.des_log_relato import DesLogRelato
 from idessem.dessem.dessemarq import DessemArq
 from idessem.dessem.modelos.dessemarq import RegistroTitulo
@@ -34,20 +34,19 @@ from app.services.unitofwork import AbstractUnitOfWork
 # ---------------------------------------------------------------------------
 
 
-def add_single_scenario(df: pd.DataFrame) -> pd.DataFrame:
+def add_single_scenario(df: pl.DataFrame) -> pl.DataFrame:
     """Add a constant scenario column (value=1) to a DataFrame."""
-    df[SCENARIO_COL] = 1
-    return df
+    return df.with_columns(pl.lit(1).alias(SCENARIO_COL))
 
 
 def add_submarket_code(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     submarket_name_col: str,
     submarket_code_col_new: str = SUBMARKET_CODE_COL,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Map submarket names to submarket codes.
 
     Calls deck_cls.submarkets() to avoid a circular import with entities.py.
@@ -58,12 +57,16 @@ def add_submarket_code(
     submarket_map = {
         name: code
         for name, code in zip(
-            submarket_map_df[SUBMARKET_NAME_COL],
-            submarket_map_df[SUBMARKET_CODE_COL],
+            submarket_map_df[SUBMARKET_NAME_COL].to_list(),
+            submarket_map_df[SUBMARKET_CODE_COL].to_list(),
         )
     }
-    df[submarket_code_col_new] = df[submarket_name_col].map(submarket_map)
-    return df
+    return df.with_columns(
+        pl.col(submarket_name_col)
+        .replace(submarket_map)
+        .cast(pl.Int64)
+        .alias(submarket_code_col_new)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +78,7 @@ def stages_durations(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = cache.get("stages_durations")
     if df is None:
         pdo_op = accessors.validate_data(
@@ -87,14 +90,14 @@ def stages_durations(
         # Cache the pdo_operacao object too since it's reused
         if cache.get("pdo_operacao") is None:
             cache["pdo_operacao"] = pdo_op
-        df = accessors.validate_data(
+        raw_df = accessors.validate_data(
             deck_cls,
             pdo_op.discretizacao,
             pd.DataFrame,
             "discretização",
         )
-        df = df.rename(
-            columns={
+        df = pl.from_pandas(raw_df).rename(
+            {
                 "estagio": STAGE_COL,
                 "data_inicial": START_DATE_COL,
                 "data_final": END_DATE_COL,
@@ -102,24 +105,7 @@ def stages_durations(
             }
         )
         cache["stages_durations"] = df
-    return df.copy()
-
-
-def date_arrays(
-    deck_cls: Any,
-    cache: Dict[str, Any],
-    line: pd.Series,
-    uow: AbstractUnitOfWork,
-) -> np.ndarray:
-    stage_df = stages_durations(deck_cls, cache, uow)
-    return (
-        stage_df.loc[
-            stage_df[STAGE_COL] == line[STAGE_COL],
-            [START_DATE_COL, END_DATE_COL],
-        ]
-        .to_numpy()
-        .flatten()
-    )
+    return df
 
 
 def version(
@@ -206,11 +192,11 @@ def blocks_durations(
     deck_cls: Any,
     cache: Dict[str, Any],
     uow: AbstractUnitOfWork,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     df = cache.get("blocks_durations")
     if df is None:
         df = stages_durations(deck_cls, cache, uow)
         sbm = stage_block_map(deck_cls, cache, uow)
-        df[BLOCK_COL] = df[STAGE_COL].map(sbm)
+        df = df.with_columns(pl.col(STAGE_COL).replace(sbm).alias(BLOCK_COL))
         cache["blocks_durations"] = df
     return df
